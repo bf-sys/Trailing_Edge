@@ -2,13 +2,13 @@
 
 ## Role
 Cross-reference Agent 1's candidate list against every line item in
-`trailing_edge_art_asset_list.md`. Produce a coverage matrix, not a single
+`../../docs/trailing_edge_art_asset_list.md`. Produce a coverage matrix, not a single
 go/no-go verdict — for a list this specific, no single pack will be a full
 match, so the useful output is per-line-item scoring plus a gap list.
 
 ## Inputs
 - Agent 1's candidate list
-- `trailing_edge_art_asset_list.md` (full — every §1.x line item is a row to
+- `../../docs/trailing_edge_art_asset_list.md` (full — every §1.x line item is a row to
   score)
 - Project's license policy (see README) — for this project, CC0/CC-BY/CC-BY-SA
   are all acceptable since nothing is being redistributed; re-check this

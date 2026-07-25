@@ -1,9 +1,9 @@
 # CLAUDE.md — Trailing Edge
 
 Context for any Claude Code session working in this repo. Full design
-rationale lives in `trailing_edge_gdd_draft_31.md` (the GDD) — this file is a
-working summary of what a coding/asset session needs to not violate, not a
-replacement for it. When this file and the GDD disagree, the GDD wins; flag
+rationale lives in `docs/trailing_edge_gdd_draft_31.md` (the GDD) — this file
+is a working summary of what a coding/asset session needs to not violate, not
+a replacement for it. When this file and the GDD disagree, the GDD wins; flag
 the drift rather than silently trusting whichever you read first.
 
 ## What this project is
@@ -36,14 +36,15 @@ stage, run by the three-agent team documented in `README.md` and
 code work starts (GDD Phase 1, §12) — don't treat any of it as already
 implemented.
 
-Asset prep status lives in `STATUS.md` (read that first for what's
+Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced/extracted vs. still open — e.g. the Relay Beacon sprite is currently
-unresolved). Other reference docs in this repo:
-- `trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
-- `phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
-- `ATTRIBUTION.md` — license/credit ledger for sourced assets
-- `run-log-2026-07-24.md` — search-by-search detail behind the asset-sourcing pass
-- `assets/` — populated per the directory convention in `phase1-manifest-and-tasks.md` (`ship/`, `hazards/`, `resupply/`, `puzzle/`, `ui/`)
+unresolved). Other reference docs live in `docs/`:
+- `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
+- `docs/phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
+- `docs/ATTRIBUTION.md` — license/credit ledger for sourced assets
+- `docs/run-log-2026-07-24.md` — search-by-search detail behind the asset-sourcing pass
+- `docs/asset-procurement-agent-flow.md` — mermaid diagram of the three-agent sourcing pipeline
+- `assets/` — populated per the directory convention in `docs/phase1-manifest-and-tasks.md` (`ship/`, `hazards/`, `resupply/`, `puzzle/`, `ui/`)
 
 ## Tech stack (confirmed, GDD §11)
 
@@ -164,7 +165,7 @@ Beacon Cluster (trail/encircle).
 
 One hazard (Debris Field), one resupply point (Star), one puzzle element
 (Relay Beacon), the ship, minimal HUD. Everything else in the taxonomy is
-Phase 2a/2b — see `STATUS.md` for what's currently sourced-but-not-yet-scoped
+Phase 2a/2b — see `docs/STATUS.md` for what's currently sourced-but-not-yet-scoped
 (Cargo Pod, base tileset) vs. genuinely not started.
 
 ## Open design questions (GDD §9)

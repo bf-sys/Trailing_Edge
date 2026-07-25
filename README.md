@@ -1,8 +1,8 @@
 # Trailing Edge — Asset Sourcing Agent Team
 
-Three role-scoped agents for turning `trailing_edge_art_asset_list.md` into sourced,
+Three role-scoped agents for turning `docs/trailing_edge_art_asset_list.md` into sourced,
 license-checked, import-ready assets. Built and validated in one live run-through
-(see `run-log-2026-07-24.md` for the actual output of that run).
+(see `docs/run-log-2026-07-24.md` for the actual output of that run).
 
 ## Why three agents, not one
 
@@ -17,7 +17,7 @@ diagnosable outputs instead of one vague "couldn't do it."
 1. **`agent-01-sourcing.md`** — searches, returns raw candidates. No judgment calls
    about fit; over-collect rather than under-collect.
 2. **`agent-02-evaluation.md`** — takes Agent 1's candidate list plus
-   `trailing_edge_art_asset_list.md`, scores coverage, flags licenses, flags
+   `docs/trailing_edge_art_asset_list.md`, scores coverage, flags licenses, flags
    cross-pack style mismatches. Produces the artifact that gates Agent 3.
 3. **`agent-03-prep.md`** — only runs on line items Agent 2 marked usable.
    Does not re-evaluate; if it disagrees with a coverage call, it stops and
@@ -49,14 +49,14 @@ changes (e.g., posting to itch.io, a public portfolio).
 - CC-BY-SA accepted for this project — no redistribution planned, so
   share-alike doesn't currently trigger. Re-check if that changes.
 
-## Known gaps as of the last run (see `run-log-2026-07-24.md` for full detail)
+## Known gaps as of the last run (see `docs/run-log-2026-07-24.md` for full detail)
 
 - **Phase 1 is source-complete, not file-complete.** All five Phase-1 source
   packs were located and download-triggered, but this environment can't
   reach kenney.nl/opengameart.org from its sandboxed container, and browser
   downloads land in the operator's local Downloads folder — outside the
   container's reach. Extraction/cropping/renaming (see
-  `phase1-manifest-and-tasks.md`) still needs to happen manually, or from an
+  `docs/phase1-manifest-and-tasks.md`) still needs to happen manually, or from an
   environment with local filesystem access to both the downloads and the
   project folder.
 - Star (Simple Space, flat line art) vs. ship (Space Shooter Remastered,

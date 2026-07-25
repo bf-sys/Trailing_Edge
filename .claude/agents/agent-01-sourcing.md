@@ -6,7 +6,7 @@ judge fit against the asset list — that's Agent 2's job. Over-inclusion here i
 cheap; under-inclusion means Agent 2 has nothing to evaluate.
 
 ## Inputs
-- `trailing_edge_art_asset_list.md` (category headers only — §1.1 through §1.7 —
+- `../../docs/trailing_edge_art_asset_list.md` (category headers only — §1.1 through §1.7 —
   used to generate search terms, not to filter results)
 - A target site list: kenney.nl (CC0-only, reliable metadata), opengameart.org
   (mixed licenses, requires per-item license read), itch.io free-asset tag

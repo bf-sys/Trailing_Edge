@@ -1,6 +1,9 @@
-# Trailing Edge — Asset Sourcing Agent Team
+# Trailing Edge — Agent Teams
 
-Three role-scoped agents for turning `docs/trailing_edge_art_asset_list.md` into sourced, license-checked, import-ready assets. Built and validated across two run-throughs (see `docs/run-log-2026-07-24.md` for the first pass, `docs/phase1-prep-log.md` for the Agent 3 prep detail, and `docs/STATUS.md` for current state).
+`.claude/agents/` holds two separate agent teams for two different phases of this project:
+
+- **Asset-sourcing team** (`agent-01-sourcing.md`, `agent-02-evaluation.md`, `agent-03-prep.md`) — three role-scoped agents for turning `docs/trailing_edge_art_asset_list.md` into sourced, license-checked, import-ready assets. Built and validated across two run-throughs (see `docs/run-log-2026-07-24.md` for the first pass, `docs/phase1-prep-log.md` for the Agent 3 prep detail, and `docs/STATUS.md` for current state). **The rest of this README is about this team specifically.**
+- **Dev-phase agent team** (`core-contract-agent.md`, `content-agent.md`, `config-validator.md`, `compliance-reviewer.md`, `accessibility-reviewer.md`, `asset-integration-agent.md`) — the six roles from the GDD's development plan (§12.1), for once code work starts. Each file documents its own role, inputs, hard rules, and output; see the GDD §12 (`docs/trailing_edge_gdd_draft_31.md`) for how they sequence — Core-Contract Agent runs Phase 1/2a sequentially, Content Agents run Phase 2b in parallel, the remaining three (Config Validator, Compliance Reviewer, Accessibility Reviewer) run continuously alongside both, and Asset Integration continues the asset-sourcing team's pipeline on an as-needed basis. **No game code exists yet** (see `CLAUDE.md`), so this team hasn't run.
 
 ## Run this via Claude Code, not the desktop app, for Prep Agent
 
@@ -27,14 +30,14 @@ Per project owner: CC0 and CC-BY (attribution) and CC-BY-SA (share-alike) are al
 ## Standing decisions (apply on any re-run, don't re-litigate)
 
 - Ship damage-state implementation: **overlay VFX**, not sprite-swap.
-- First Prep pass is scoped to **GDD Phase 1 only** (§12) — one hazard (Debris Field), one resupply point (Star), one puzzle element (Relay Beacon). Full-taxonomy coverage is Phase 2a/2b and out of scope until Phase 1 is source-and-file complete.
+- First Prep pass was scoped to **GDD Phase 1 as of 2026-07-25** — one hazard (Debris Field), one resupply point (Star), one puzzle element (Relay Beacon). **A GDD revision on 2026-07-29 changed this scope** (Star is no longer a resupply object, the puzzle element is renamed Signal Array and moved to Phase 2a, two new required objects — Probe and a redefined Relay Beacon — were added to Phase 1) — see `docs/STATUS.md`'s "Design update" section before treating the original five-item list as current. Full-taxonomy coverage is still Phase 2a/2b, out of scope until Phase 1 is source-and-file complete.
 - CC-BY-SA accepted for this project — no redistribution planned, so share-alike doesn't currently trigger. Re-check if that changes.
 
 ## Current status (see `docs/STATUS.md` for full detail)
 
-Phase 1 is now **source-complete and file-complete** — all five items (ship, Debris Field, Star, Relay Beacon, minimal HUD) are extracted into `assets/`, following the Agent 3 re-run under Claude Code described above.
+**Not currently file-complete** — the 2026-07-29 GDD revision added a required Probe object with no sourced asset at all (a pre-existing gap the revision exposed, not a new invention). Everything else in the current Phase 1 scope (Debris Field, AsteroidField, the redefined Relay Beacon waypoint, Home Marker, ship, HUD) is sourced and extracted, including two reassigned-not-resourced items: the Star asset now serves as `HomeMarker` (launch/return position), and the previously-sourced Relay Beacon satellite sprite now serves the new waypoint rather than the puzzle element (which is unsourced again under its new name, Signal Array).
 
-- Star (Simple Space, flat line art) vs. ship (Space Shooter Remastered, shaded/rendered) — style mismatch confirmed real; owner decision was to keep both as placeholders as-is and revisit later, not to block on it.
-- Phase 2a/2b only, not currently blocking: Cargo Pod/Wreckage still needs prep (already sourced); Beacon Cluster still has no named match; Comet vs. Meteoroid distinction unconfirmed; Ion Storm/Nebula Field style choice (composite vs. pre-made) still open.
+- Home Marker (was: Star; Simple Space, flat line art) vs. ship (Space Shooter Remastered, shaded/rendered) — style mismatch confirmed real; owner decision was to keep both as placeholders as-is and revisit later, not to block on it.
+- Phase 2a/2b only, not currently blocking: Cargo Pod/Wreckage still needs prep (already sourced); Signal Array needs fresh sourcing (its old asset moved to the Relay Beacon waypoint); Beacon Cluster still has no named match; Comet vs. Meteoroid distinction unconfirmed; Ion Storm/Nebula Field style choice (composite vs. pre-made) still open, now also needing to read as lower-stakes than structure-draining hazards per the same GDD revision.
 
-For the original desktop-app run's findings before the Agent 3 re-run, see `docs/run-log-2026-07-24.md`.
+For the original desktop-app run's findings before the Agent 3 re-run, see `docs/run-log-2026-07-24.md`. For the full asset-reassignment detail behind the 2026-07-29 changes above, see `docs/STATUS.md`.

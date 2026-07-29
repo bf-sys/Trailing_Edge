@@ -28,7 +28,7 @@ Three pillars, deliberately separated by **layer** rather than blended at the sa
 
 | Layer | Pillar | What it governs |
 |---|---|---|
-| Macro | Survival | Energy & structure totals; overall expedition risk/buffer |
+| Macro | Survival | Structure as the fail resource; energy as an ability-gating resource; overall expedition risk/buffer |
 | Meso | Exploration | Where you go, what you investigate, routing decisions |
 | Micro | Puzzle-solving | Discrete challenge sites; deterministic, solvable problems |
 
@@ -38,18 +38,19 @@ Three pillars, deliberately separated by **layer** rather than blended at the sa
 
 ## 3. Core Loop (per level)
 
-1. Launch from home base.
-2. Explore level region; scan asteroids (structure material) and locate stars (energy recharge) as you go.
-3. Encounter the level's signature hazard — a specific, learnable environmental threat that primarily drains **either** energy **or** structure (not both, not ambient/random — see §5).
-4. Reach and solve the challenge/puzzle site(s) using current ability set.
-5. Locate the probe, recover cargo/data.
-6. Return home.
-7. Spend recovered data/cargo on new ability unlocks (survival endurance upgrades deferred for the initial build, §7).
-8. Proceed to next level.
+1. Launch from the level's **Home Marker** (a fixed start/return position — currently the Star asset reused as a placeholder, see §11.14).
+2. Explore level region; scan asteroids (structure material) and encounter hazards along the way. Levels typically mix multiple hazard types rather than featuring exactly one — early levels may lean on a single hazard as a soft tutorial (§9).
+3. Locate and recover the probe.
+4. Find and reach the **Relay Beacon** — a mandatory per-level waypoint, required after the probe and before return is possible. Simple navigate-to; not a puzzle (distinct from the Signal Array puzzle element, §6/§9 — this naming was reassigned to avoid a collision, see Appendix).
+5. Return to the Home Marker.
+6. Spend recovered data/cargo on new ability unlocks (survival endurance upgrades deferred for the initial build, §7).
+7. Proceed to next level.
+
+Puzzle-site elements (§6) are optional, additive content encountered along the way (e.g. blocking or bordering the path to the probe) — not a required step in this sequence.
 
 This is structurally similar to an ARPG hub-and-return loop (town → dungeon → town).
 
-**Summary:** Energy/structure reset when a level is first entered; a mid-level hard-fail restart resumes from the last checkpoint (§5) rather than re-triggering this reset. Stakes are level-scoped, not campaign-scoped (see Appendix, §3 for full rationale).
+**Summary:** Energy/structure reset when a level is first entered. A mid-level hard fail (structure reaches zero) fully restarts the level from this same reset state — **no checkpoint system for the initial build** (deferred; see §5 and Appendix). Stakes are level-scoped, not campaign-scoped (see Appendix, §3 for full rationale).
 
 ---
 
@@ -62,15 +63,16 @@ This is structurally similar to an ARPG hub-and-return loop (town → dungeon �
 
 ---
 
-## 5. Survival Systems: Energy & Structure
+## 5. Survival Systems: Structure & Energy
 
-**Player-facing summary:** Your ship runs on two resources, energy and structure. Every level has a signature hazard that threatens one or the other — and hazards are always visible before they hit you, so a loss is on you, not a surprise. Energy recharges at stars; structure gets repaired with material scanned from asteroids. Run either resource to zero and the level fails — but you don't lose everything: you resume from your last checkpoint (earned by solving a puzzle site or visiting a resupply point) with enough banked to give you a real shot at trying again.
+**Player-facing summary:** Your ship runs on two resources with different jobs. Structure is your hit points — hazards are always visible before they hit you, so damage is on you, not a surprise, but run it to zero and the level fails outright: a hard restart from the level's beginning. Energy is more like mana — it gates which abilities you can use, replenishing on its own over time; running low limits what you can do, but it never ends the level by itself.
 
-- **Energy:** replenished at stars. Drained by the level's signature hazard, movement/hazard exposure, and — per-ability — abilities with a nonzero energy cost (per-ability dual gate model; see §7).
-- **Structure:** repaired using material gathered by scanning asteroids. Drained by structural hazards (debris fields, collisions).
+- **Structure (the fail resource):** repaired using material gathered by scanning asteroids (`ResupplyPoint`/AsteroidField, §11.6). Drained by structural hazards (Debris Field, Meteoroid, collisions). Hitting zero triggers a full level restart — position, structure, and energy all reset to the level's starting values. **No checkpoint/partial-resume system for the initial build** — deferred, expected to return once maps and secondary progression grow (see Appendix).
+- **Energy (the ability-gating resource):** regenerates passively at a fixed rate — no dedicated resupply object. Drained directly by some hazards (Solar Flare, Ion Storm, Nebula Field) and by abilities with a nonzero energy cost (per-ability dual gate model; see §7). Reserved, not yet designed: map objects/hazards that modify the regen rate itself (slow or speed up recharge) rather than just draining the pool directly.
 - **Layering rule:** hazards are discrete, telegraphed, and tied to specific level content — not ambient ticking depletion. This keeps survival legible: a hazard is something to learn and route around, similar in character to a puzzle element, rather than a random tax on the player.
+- **Stakes asymmetry:** because only structure can end the level, structure-draining hazards are the higher-stakes family and energy-draining hazards are lower-stakes/ability-limiting pressure. Worth telegraphing that difference visually, not just each hazard's identity (see §9).
 
-**Clarifying details (may not be obvious from the player-facing summary above):** Hazard contact during puzzle-solving draws on the same energy/structure buffer as hazards encountered while flying — there's no separate "puzzle health." On resuming, you're restored to *at least* a fixed, level-authored floor — never less, and never reset down to exactly that value if you had more banked already (this also closes an exploit where deliberately failing could refund resources). That floor is authored as a percentage of each level's capacity rather than a flat number, so it stays meaningful as later levels raise overall capacity — though note this only matters once endurance/capacity upgrades exist; those are deferred for the initial build (§7, §12), so a flat floor value is equivalent for now. (Full rationale for all of the above in Appendix, §5.)
+**Clarifying details:** Hazard contact during puzzle-solving (when puzzle-site elements exist in a level, §6) draws on the same structure buffer as hazards encountered while flying — there's no separate "puzzle health." (Full rationale in Appendix, §5.)
 
 ---
 
@@ -80,7 +82,7 @@ This is structurally similar to an ARPG hub-and-return loop (town → dungeon �
 |---|---|---|---|
 | Object interact / scan | Deduction | Scan Target / Marker | Core information-gathering primitive |
 | Move to a spot | Deduction | *(no phenomenon named yet — only the sequenced and moving-target variants below were given names; this is the same primitive without either)* | Basic traversal/placement |
-| Move to spots in a particular order | Deduction | Relay Beacon | Sequencing puzzle |
+| Move to spots in a particular order | Deduction | Signal Array | Sequencing puzzle (renamed from "Relay Beacon" — that name now belongs to the mandatory core-loop waypoint, §3/§9) |
 | Stay in a moving spot for a duration | **Execution/timing** | Comet (tracking) | Reintroduces twitch-skill demand — flag intentionally if kept |
 | Avoid particular spots/areas | Deduction *or* execution, depending on whether hazards are static (deduction: find the safe path) or dynamic/timed (execution: react in real time) | Debris Field, Nebula Field (static/deduction); Solar Flare, Ion Storm, Meteoroid (dynamic/execution) | Worth tagging each instance explicitly during level design |
 | Move objects near/far or in particular order (push/pull) | Deduction | Cargo Pod / Wreckage | Maps directly to tractor/repulsor abilities |
@@ -88,7 +90,7 @@ This is structurally similar to an ARPG hub-and-return loop (town → dungeon �
 
 **Summary:** Execution/timing puzzles are intentional minority seasoning (e.g., staying near a moving comet to scan it, avoiding a moving asteroid mid-puzzle), not the taxonomy's core (full rationale in Appendix, §6).
 
-**Scope note:** This taxonomy is additive, not all-or-nothing — each row is an independent element type once the `PuzzleElementBase` pattern (§11.3) exists, so the initial build can ship with a subset (e.g. just the deduction-type rows) and add the remainder as time permits, rather than needing all seven implemented before anything is playable. See §12 for how this affects the Content Agents' scope.
+**Scope note:** This taxonomy is additive, not all-or-nothing — each row is an independent element type once the `PuzzleElementBase` pattern (§11.3) exists, so the initial build can ship with a subset (e.g. just the deduction-type rows) and add the remainder as time permits, rather than needing all seven implemented before anything is playable. For the initial 5-week build, Phase 1 ships with **none** of these — the mandatory per-level loop (§3) no longer requires solving a puzzle to reach the probe — with all rows becoming Phase 2a core-track work instead. See §12 for how this affects the Content Agents' scope.
 
 ---
 
@@ -129,6 +131,8 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 
 1. Ion Storm vs. Nebula Field art differentiation — the phenomenon-to-taxonomy mapping (formerly this item; resolved via reference table, see Appendix) settled Ion Storm and Nebula Field as the same visual family (drifting cloud) with motion as the *only* behavioral difference: Ion Storm is a slow-moving hazard area, Nebula Field is static. Current assumption is that color plus simple animation is sufficient to tell them apart at a glance. Worth treating as genuinely open rather than settled: color alone is a weak signal for colorblind players, and "slow-moving" is the kind of difference that's easy to under-read in a still image or a quick glance mid-flight — the actual test is whether a player can tell, in motion, at normal play speed, that one is drifting before they're already in its path, since misreading Ion Storm as static would violate §5's telegraphing rule the same way the original name-collision would have. Recommend validating with an actual placeholder asset during the week 1–2 vertical slice (§12, archived Unreal plan's sequencing logic still applies) rather than deciding this on paper — if color + animation doesn't read clearly, the fallback options (distinct particle trail, a border/outline treatment, or accepting a name change back to two visually distinct phenomena) are worth having in reserve rather than discovering the need for them after several levels already use both.
 
+2. Structure-vs-energy stakes legibility — since only structure can end a level (energy is a non-fail, ability-gating resource, §5), structure-draining hazards (Debris Field, Meteoroid) carry real fail stakes while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't. Whether the current visual language communicates that difference (not just each hazard's individual identity) is untested — worth checking during the week 1–2 vertical slice and again once more hazard types exist in Phase 2b.
+
 ---
 
 ## 10. Explicit Non-Goals (restated for scope discipline)
@@ -148,32 +152,38 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 
 **Engineering principle:** Phaser has no binary/GUI-authored logic layer — everything is already text, already mergeable. The actual multi-agent risk isn't asset mergeability (that problem doesn't exist here); it's that JS/TS projects collapse toward a small number of shared "wiring" files (a main Scene's `create()`, a central index) where every system gets instantiated. That file is the real merge-conflict hazard. Mitigation: a `SystemRegistry.register(system)` call, invoked from each system's own file at module load — agents append to a list of imports, never hand-edit `create()`. Section 12's plan assumes this pattern is in place; if you skip it, expect the "content is safe to parallelize" claim in §12 to stop being true.
 
-### 11.1 `ShipSurvivalComponent` (composed onto the player Ship object)
-*Tracks your ship's energy and structure, and decides what happens when either one runs out.*
-- **State (private):** `currentEnergy`, `maxEnergy`, `currentStructure`, `maxStructure` (`max*` modified by `ProgressionManager` endurance upgrades if/when that track exists — deferred, §7).
-- **Functions:** `consumeEnergy(amount, source): boolean`, `consumeStructure(amount, source): boolean`, `rechargeEnergy(amount): void` (resupply-point objects only), `repairStructure(amount): void` (resupply-point objects only), `applyCheckpoint(data): void` — resumes at `max(data.actual, levelFloor)` per §5's lower-bound rule, `getCheckpointSnapshot(): CheckpointData`.
-- **Events:** Phaser's built-in `EventEmitter` — `onEnergyDepleted`, `onStructureDepleted` (either triggers `CheckpointManager.restartFromCheckpoint()`), `onResourceChanged` (HUD binding only).
-- **Hard rule (TS-enforced):** `currentEnergy`/`currentStructure` are `private`. No puzzle element, hazard, or ability may reference them directly.
+**Asset/gameplay-size decoupling:** gameplay-relevant dimensions (a hazard's collision shape, the ship's hitbox, a puzzle element's interaction radius) are always authored data, never derived from a sprite's native pixel size. Sprites are scaled to fit the authored size via Phaser's `setDisplaySize()`/`setScale()` — never the reverse. This decouples a future art pass (including resolution changes) from gameplay/collision tuning; swapping a texture should never require re-tuning a hazard's feel.
 
-### 11.2 `CheckpointManager` (per-level)
-*Remembers where you last made real progress, so a failure sends you back there instead of to the very start of the level.*
-- **State:** `lastCheckpointLocation`, `lastCheckpointResourceSnapshot`, `puzzleSitesSolvedSinceLevelStart` (held in a plain object, not Phaser's Scene `data` manager, so a Scene restart can't accidentally clear it before intended).
-- **Functions:** `registerCheckpoint(source, data): void` (called by resupply-point objects and `PuzzleSite.onSiteSolved()`, §5), `restartFromCheckpoint(): void` — repositions player, calls `ShipSurvivalComponent.applyCheckpoint()`, restores solved-puzzle state; does **not** restore in-progress-unsolved puzzle state.
+**Tunable parameters:** gameplay-numeric constants (ship speed/acceleration/deceleration, energy regen rate, structure repair rate, per-hazard costs, per-ability costs) live in per-subsystem, plain-data TS config modules (e.g. `shipConfig.ts`, `survivalConfig.ts`) — never inline in a class's logic. This generalizes §11.7's "authored data" pattern to all tunable values, not just per-level/per-hazard content. In dev builds, these config objects are also exposed on `window` (e.g. `window.tuning = shipConfig`) for live tweaking from the browser console without a file edit or reload — cheap to add, and worth building on day one of Phase 1 given how much of Phase 1 is feel-tuning (ship movement, energy regen rate).
+
+### 11.1 `ShipSurvivalComponent` (composed onto the player Ship object)
+*Tracks your ship's structure and energy. Structure is the fail resource; energy just gates ability use.*
+- **State (private):** `currentEnergy`, `maxEnergy`, `currentStructure`, `maxStructure` (`max*` modified by `ProgressionManager` endurance upgrades if/when that track exists — deferred, §7).
+- **Functions:** `consumeEnergy(amount, source): boolean` — gates ability activation only, never fails the level; `consumeStructure(amount, source): boolean`; `regenEnergy(delta): void` — called every update tick at the authored passive rate (`survivalConfig`, §11's tunable-parameters convention), no resupply object involved; `repairStructure(amount): void` (resupply-point objects only).
+- **Events:** Phaser's built-in `EventEmitter` — `onStructureDepleted` (triggers a full level restart — see §11.11 `LevelObjectiveTracker`), `onResourceChanged` (HUD binding only). No `onEnergyDepleted`-triggers-failure event — energy running low has no failure-side effect for the initial build (§5 notes this as a reserved space for future non-fail effects).
+- **Hard rule (TS-enforced):** `currentEnergy`/`currentStructure` are `private`. No puzzle element, hazard, or ability may reference them directly. **Regression to watch for specifically:** since energy and structure used to be symmetric fail resources, don't let any code path treat energy depletion as a failure condition — that behavior was deliberately removed (§5).
+
+### 11.2 `CheckpointManager` — **DEFERRED, not built for the initial 5-week scope**
+*Would remember where you last made real progress, so a failure sends you back there instead of to the very start of the level — not needed while maps are small and secondary progression (§7's endurance track) doesn't exist yet.*
+
+For the initial build, a hard fail (`ShipSurvivalComponent.onStructureDepleted`) triggers a full level restart instead — see §11.11 `LevelObjectiveTracker`. This section is retained as a design reference for when checkpoints are reintroduced (expected once maps and secondary progression grow, per §5's Appendix rationale), not as current scope:
+- **State (reserved):** `lastCheckpointLocation`, `lastCheckpointResourceSnapshot`, `puzzleSitesSolvedSinceLevelStart`.
+- **Functions (reserved):** `registerCheckpoint(source, data): void`, `restartFromCheckpoint(): void` — repositions player, restores resources to a checkpoint snapshot and solved-puzzle state; would not restore in-progress-unsolved puzzle state.
 
 ### 11.3 `PuzzleElementBase` (abstract) and hazard/puzzle element mapping
 
 *This is every puzzle piece and hazard the player actually encounters — scan targets, sequences, moving-object hazards, push/pull objects — plus the rule that most hazards are variations on the same underlying thing.*
 
-**Puzzle-site elements** (derived from `PuzzleElementBase`; cost-neutral by default per §5's "hazard contact" clause, mapped to §9's reference table):
-- `SequenceSpotElement` — Relay Beacon
+**Puzzle-site elements** (derived from `PuzzleElementBase`; optional/additive per §6 — not required to complete a level, §3; cost-neutral by default per §5's "hazard contact" clause; mapped to §9's reference table). **None of these ship in Phase 1** — all five are Phase 2a core-track work (§12):
+- `SequenceSpotElement` — Signal Array (renamed from "Relay Beacon" — that name now belongs to the mandatory core-loop waypoint, §11.13)
 - `ScanInteractElement` — Scan Target / Marker (the base interact case; may not need a distinct subclass beyond `PuzzleElementBase` itself)
 - `MovingSpotDurationElement` — Comet (tracking)
 - `PushPullObjectElement` — Cargo Pod / Wreckage; queries `AbilityComponent.isUnlocked(TractorBeam)` before allowing interaction (§7's ability-gating link)
 - `TrailDrawElement` — Beacon Cluster
 
-**Open-world hazards — one parameterized class, not five:** all four "zone" hazards from §9's table (Debris Field, Solar Flare, Ion Storm, Nebula Field) differ only in authored parameters, not in code. Recommend a single `HazardZoneElement` taking: `shape`, `movementPattern: 'static' | 'linear' | 'patrol'`, `speed`, `activation: 'continuous' | 'pulsed'`, `pulseIntervalSeconds`, `resourceCost: { energy, structure }`. Meteoroid also fits this class (`movementPattern: 'linear'`, structure cost) rather than needing a separate moving-hazard-object type, since Arcade's overlap callbacks handle "zone overlap" and "moving hazard contact" identically at the interface level — a moving `HazardZoneElement` and a stationary one differ only in whether `speed` is nonzero. **This collapses what could have been five hazard classes into one class + five content configs — confirmed as the approach going into Phase 1, since it changes what counts as "core" vs. "content" in §12 below.**
+**Open-world hazards — one parameterized class, not five:** all four "zone" hazards from §9's table (Debris Field, Solar Flare, Ion Storm, Nebula Field) differ only in authored parameters, not in code. Recommend a single `HazardZoneElement` taking: `shape`, `movementPattern: 'static' | 'linear' | 'patrol'`, `speed`, `activation: 'continuous' | 'pulsed'`, `pulseIntervalSeconds`, `resourceCost: { energy, structure }`. Meteoroid also fits this class (`movementPattern: 'linear'`, structure cost) rather than needing a separate moving-hazard-object type, since Arcade's overlap callbacks handle "zone overlap" and "moving hazard contact" identically at the interface level — a moving `HazardZoneElement` and a stationary one differ only in whether `speed` is nonzero. **This collapses what could have been five hazard classes into one class + five content configs — confirmed as the approach going into Phase 1, since it changes what counts as "core" vs. "content" in §12 below.** Reserved, not yet designed: an optional rate-modifier field so a zone can slow/speed energy regen instead of (or in addition to) draining it directly (§5).
 - **Hard rule:** `onHazardContact()` calls `ShipSurvivalComponent.consumeEnergy/consumeStructure` — never modifies resource values itself; enforce via the same private-field discipline as 11.1.
-- `PuzzleSite` groups elements under one completion condition; `onSiteSolved()` fires `CheckpointManager.registerCheckpoint(PuzzleCompletion, snapshot)`.
+- `PuzzleSite` groups elements under one completion condition; `onSiteSolved()` marks solved state for HUD/telegraphing purposes (no checkpoint side effect — `CheckpointManager` is deferred, §11.2).
 
 ### 11.4 `AbilityComponent` (composed onto the player Ship object)
 *Tracks which special abilities you've unlocked, and whether you're currently allowed to use them.*
@@ -186,16 +196,18 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 - Owns `unlockedAbilities`. Endurance multipliers deferred for the initial build (§7) — interface reserves the hooks without implementing them.
 - **Hard rule:** never modifies fixed per-hazard costs, fixed per-puzzle costs, or the level-authored checkpoint floor (§5, §7).
 
-### 11.6 `ResupplyPoint` (Star | AsteroidField)
-*The stars and asteroids you visit to refill energy or repair structure — and a checkpoint gets banked the moment you reach one.*
-- An Arcade-physics-enabled `Phaser.GameObjects.Container`. `onPlayerArrival()` wired via Arcade overlap callback (not a manual per-frame distance check) → `rechargeEnergy`/`repairStructure`, then `CheckpointManager.registerCheckpoint(Resupply, snapshot)`.
+### 11.6 `ResupplyPoint` (AsteroidField)
+*The asteroids you visit to repair structure.* No longer covers energy — energy regenerates passively (§5, §11.1); the Star variant is retired as a resupply object (see `HomeMarker`, §11.14).
+- An Arcade-physics-enabled `Phaser.GameObjects.Container`. `onPlayerArrival()` wired via Arcade overlap callback (not a manual per-frame distance check) → `repairStructure`.
 
 ### 11.7 Authored data
-*The numbers and settings a level designer sets by hand — hazard costs, how forgiving a level's checkpoint floor is, ability costs, and what order the levels play in.*
+*The numbers and settings a level designer sets by hand — hazard costs, ability costs, per-level object placement, and what order the levels play in.*
 - Per-hazard `CostData { energyCost, structureCost }` plus the `HazardZoneElement` parameters above — authored as typed TS/JSON level-config objects (one file per level, preserving low agent-collision), not via an external editor.
-- Per-level `levelFloorEnergy`/`levelFloorStructure`, authored as a percentage of that level's capacity (§5).
+- Per-level checkpoint-floor values (`levelFloorEnergy`/`levelFloorStructure`) are **removed for the initial build** — tied to the now-deferred checkpoint system (§11.2); revisit if/when checkpoints return.
 - Per-ability `AbilityCostData { energyCost, cooldownSeconds }` — either field may be 0.
+- Per-level object placement: `probeLocation`, `relayBeaconLocation`, `homeMarkerLocation` (§11.12–11.14) — required in every level config, unlike the optional puzzle-site/hazard placements.
 - Level sequence: an ordered array of level-config identifiers (`levelOrder: string[]`), owned by whichever module resolves "next level" on completion (11.8). Linear progression (§8: no level-select) means this ordering is the only place "what comes next" is decided — content agents adding a level append to this array, they don't hardcode a "next level" pointer inside the level they're authoring.
+- Tunable gameplay parameters (ship movement, energy regen rate, structure repair rate) — see §11's "Tunable parameters" convention above; these live in per-subsystem config modules, not per-level config, since they're global defaults rather than per-level content.
 
 ### 11.8 Scene flow
 
@@ -204,18 +216,18 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 Four Scenes, no level-select — progression is linear, the next level loads automatically on completion:
 - **`BootScene`** — loads assets/asset-pack manifests, then starts `TitleScene`.
 - **`TitleScene`** — "Start" and "Continue" buttons. `Continue` is only shown/enabled if `SaveManager.hasSaveData()` (11.9) returns true. `Start` always begins at `levelOrder[0]` with default (full) resources, and **overwrites** any existing save the first time progress is made (not on button press — see 11.9's hard rule) so an old save can't linger and desync from a fresh run.
-- **`GameScene`** — parameterized by which level config to load (`levelId`) and, optionally, a `CheckpointData` to resume from (present when arriving via Continue or a mid-level restart; absent when arriving fresh from `TitleScene` or advancing from a prior level). On reaching that level's exfil/probe condition, resolves the next `levelId` from `levelOrder` (11.7) and either restarts `GameScene` with the next level, or — if `levelOrder` is exhausted — transitions to `WinScene`.
+- **`GameScene`** — parameterized by which level config to load (`levelId`) only; always starts at that level's beginning (Home Marker, full resources) — no mid-level resume for the initial build, since `CheckpointManager` is deferred (§11.2). A hard fail (`onStructureDepleted`) restarts the current `GameScene` the same way. On completing the level's find-probe → find-beacon → return sequence (§11.11 `LevelObjectiveTracker`), resolves the next `levelId` from `levelOrder` (11.7) and either restarts `GameScene` with the next level, or — if `levelOrder` is exhausted — transitions to `WinScene`.
 - **`WinScene`** — reached when `levelOrder` is exhausted. No decided content beyond "the game is won" at this point (a message, maybe a return-to-title option) — fine to keep minimal, since nothing else in the contract depends on what it shows, only on the fact that something distinct from looping back into `GameScene` exists for this case.
-- **`PauseScene`** — launched as an overlay on top of a paused `GameScene` (Phaser's scene-stacking, not a scene swap, so `GameScene`'s state isn't torn down). One option: return to `TitleScene`. This is a hard cut, not a save point — whatever progress exists is only as current as the last checkpoint/level-completion save (11.9); there's no separate "save on pause" behavior, so pausing and returning to title never loses more than a checkpoint restart already would.
+- **`PauseScene`** — launched as an overlay on top of a paused `GameScene` (Phaser's scene-stacking, not a scene swap, so `GameScene`'s state isn't torn down). One option: return to `TitleScene`. This is a hard cut, not a save point — whatever progress exists is only as current as the last level-completion save (11.9, no mid-level checkpoint exists to fall back on for this scope, §11.2); there's no separate "save on pause" behavior, so pausing and returning to title never loses more than a hard-fail reset already would.
 
 ### 11.9 `SaveManager` (persistence for Continue)
 
 *Remembers your progress between play sessions, so "Continue" on the title screen picks up where you left off.*
 
 - **State:** none held in memory beyond what's needed per call — this is a thin wrapper around `localStorage`, not a live game-state cache.
-- **Storage shape:** a single `localStorage` key holding `{ levelId: string, checkpointSnapshot: CheckpointData | null }`. `checkpointSnapshot: null` means "resume at the start of `levelId` with default resources" (a level-completion save); a populated snapshot means "resume mid-level from this checkpoint" (a mid-level checkpoint save) — same distinction §5 already draws between a level-start reset and a checkpoint restart, just persisted across page reloads instead of only within a session.
-- **Functions:** `saveProgress(levelId, checkpointSnapshot: CheckpointData | null): void`, `loadProgress(): SaveData | null`, `hasSaveData(): boolean`.
-- **Hard rule (TS-enforced via module encapsulation, not a class-private field, since this is a singleton-style module rather than an instance):** `SaveManager` is the only code that touches `localStorage` directly. Two call sites, both already-existing triggers, not a new one: `CheckpointManager.registerCheckpoint()` calls `saveProgress(currentLevelId, snapshot)` after registering a mid-level checkpoint, and `GameScene`'s level-completion handler (11.8) calls `saveProgress(nextLevelId, null)` when advancing. No other code should reach for `localStorage` — if a future feature seems to need to, that's a sign it should go through `SaveManager`, not around it.
+- **Storage shape:** a single `localStorage` key holding `{ levelId: string }`. Simpler than originally designed — with `CheckpointManager` deferred (§11.2), there's no mid-level snapshot to persist; "Continue" always resumes at the start of `levelId`.
+- **Functions:** `saveProgress(levelId): void`, `loadProgress(): SaveData | null`, `hasSaveData(): boolean`.
+- **Hard rule (TS-enforced via module encapsulation, not a class-private field, since this is a singleton-style module rather than an instance):** `SaveManager` is the only code that touches `localStorage` directly. One call site: `GameScene`'s level-completion handler (11.8) calls `saveProgress(nextLevelId)` when advancing. No other code should reach for `localStorage` — if a future feature seems to need to, that's a sign it should go through `SaveManager`, not around it.
 
 ### 11.10 `HudOverlay`
 
@@ -223,8 +235,27 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 - Bound to `ShipSurvivalComponent.onResourceChanged` for energy/structure bars — display-only, per 11.1's existing event contract; no gameplay logic lives here.
 - Ability icons reflect `AbilityComponent.isUnlocked()`/cooldown state (11.4) — again read-only from the HUD's side; it queries, it doesn't gate.
-- A minimal "puzzle site active" indicator (even just a highlight or icon) so §5's telegraphing has an in-the-moment on-screen signal, not just a design-doc guarantee.
+- A minimal "puzzle site active" indicator (even just a highlight or icon) so §5's telegraphing has an in-the-moment on-screen signal, not just a design-doc guarantee — relevant once Phase 2a's puzzle-site elements exist; nothing to show in Phase 1.
 - Not Scene-specific: instantiated once per `GameScene` session, torn down on Scene transition, not persisted across levels (there's nothing in it that needs to persist — `SaveManager` already owns everything that does).
+
+### 11.11 `LevelObjectiveTracker` (per-level, replaces `CheckpointManager`'s role for the initial build)
+
+*Remembers whether you've found the probe and reached the relay beacon yet this attempt — much thinner than the deferred `CheckpointManager`, since a hard fail wipes this state entirely rather than partially preserving it.*
+- **State:** `probeFound: boolean`, `beaconReached: boolean` — reset to `false` on level start and on every hard-fail restart (§11.1's `onStructureDepleted`); no partial memory across a fail, by design (§5).
+- **Functions:** `onProbeFound(): void` (called by `ProbeObject`, §11.12), `onBeaconReached(): void` (called by `RelayBeaconObject`, §11.13; no-ops if `probeFound` is false), `canReturn(): boolean` — `true` only once both flags are set; queried by `HomeMarker` (§11.14) before it will trigger level completion.
+- **Rationale for a dedicated class instead of `GameScene`-local flags:** keeps this sequencing logic out of `GameScene`'s `create()`/update loop — consistent with §11's `SystemRegistry` engineering principle that shared wiring files shouldn't accumulate one-off state.
+
+### 11.12 `ProbeObject`
+*The probe you're recovering this level.*
+- Arcade-overlap-triggered pickup. `onPlayerArrival()` → `LevelObjectiveTracker.onProbeFound()`, plus a one-time recovery-data/cargo effect (§7's progression hook; narrative framing per GDD §1.1).
+
+### 11.13 `RelayBeaconObject`
+*The mandatory waypoint you reach after the probe, before you're allowed to return. Not a puzzle — plain navigation.*
+- Arcade-overlap-triggered waypoint. `onPlayerArrival()` → `LevelObjectiveTracker.onBeaconReached()`. Distinct from the Signal Array puzzle element (§6/§9/§11.3) — same "beacon" flavor, different behavior, hence the naming split (Appendix).
+
+### 11.14 `HomeMarker`
+*The level's launch position and required return destination.*
+- Arcade-overlap-triggered object, currently reusing the Star asset as a placeholder (eventually a distinct object, e.g. a wormhole; §9's Core-loop objects table). `onPlayerArrival()` checks `LevelObjectiveTracker.canReturn()` — if `true`, fires level completion (advances `levelOrder` or transitions to `WinScene`, §11.8); otherwise a no-op (arriving early, before the probe/beacon are done, doesn't do anything).
 
 ---
 
@@ -236,27 +267,28 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 **Phase 1 — Weeks 1–2, sequential, single agent session at a time, each step gated on your review before the next starts.**
 1. `ExplorationController` (click-to-move, non-Newtonian, §4) + one small test scene.
-2. `ShipSurvivalComponent` wired to one hazard (`HazardZoneElement` configured as Debris Field — the simplest case: static, continuous, structure-cost) and one `ResupplyPoint` (Star).
-3. `SequenceSpotElement` (Relay Beacon) + one `PuzzleSite` wired to `CheckpointManager`.
-4. `CheckpointManager` with both triggers active (resupply + puzzle-completion) and the hard-fail/restart flow working end-to-end. Decide explicitly here whether "restart from checkpoint" means `scene.restart()` (simpler, re-runs `create()`, risk of clobbering state you meant to persist) or in-place state reset within a live Scene (more control, more code) — this is a real fork Unreal's version never had to resolve.
+2. `ShipSurvivalComponent` wired to one hazard (`HazardZoneElement` configured as Debris Field — the simplest case: static, continuous, structure-cost) and one `ResupplyPoint` (AsteroidField). Passive energy regen active from this step on (§5, §11.1).
+3. `ProbeObject`, `RelayBeaconObject`, `HomeMarker`, and `LevelObjectiveTracker` (§11.11–11.14) wired together end-to-end: find probe → reach beacon → return to Home Marker triggers level completion. **No puzzle-site element in Phase 1** — Signal Array and the rest of §6's taxonomy are Phase 2a work (see below); the mandatory loop doesn't require solving one.
+4. Hard-fail flow: `ShipSurvivalComponent.onStructureDepleted` triggers a full level restart (`scene.restart()` or equivalent — position, structure, and energy back to level-start values). No `CheckpointManager` this scope (§11.2, deferred).
 5. A bare-minimum `HudOverlay` (11.10) — energy/structure bars only, no ability icons or puzzle-site indicator yet. You need *some* way to see the resource state to playtest steps 2–4 at all; full HUD polish is Phase 2a, not Phase 1.
-6. **Result:** the same playable loop §3 describes — explore, risk a hazard, solve one puzzle, checkpoint twice, fail and restart at least once, reach the probe, return home.
+6. **Result:** the same playable loop §3 describes — explore, risk a hazard, find the probe, reach the relay beacon, return to the Home Marker, fail and hard-reset at least once along the way.
 
 **Gate — end of week 2, non-negotiable given the timeline.** Before touching Phase 2:
-- Does §5's checkpoint/floor/hazard interaction hold up in practice, or does something need rework? If rework, that's more Phase 1, not a reason to start parallelizing on a shaky base.
+- Does the hard-reset fail state feel fair rather than punishing, given there's no mid-level checkpoint? If it feels too punishing even with hazards telegraphed well, that's worth flagging rather than pushing into Phase 2 as-is.
+- Does the passive energy-regen rate feel right as a pure ability-gating resource (not a fail resource) — is it tunable enough via the §11 config-module/dev-console convention to iterate quickly on?
 - Validate the `SystemRegistry` pattern itself — if two systems are already fighting over the Scene file at this small scale, find that out now.
 - Prototype the tractor/repulsor push/pull mechanic in Arcade specifically — this is the one confirmed decision with an agreed exit ramp: if it doesn't feel clean, de-emphasize or cut that ability rather than revisit the physics choice. Better to find this out in the week-2 gate than mid-Phase-2 content work.
-- Confirm the `HazardZoneElement` parameterization actually produces four visually distinct-enough hazards using Arcade's overlap model, alongside resolving §9's Ion Storm/Nebula art-differentiation item with an actual placeholder asset.
+- Confirm the `HazardZoneElement` parameterization actually produces four visually distinct-enough hazards using Arcade's overlap model, alongside resolving §9's Ion Storm/Nebula art-differentiation item and the new structure-vs-energy stakes-legibility item (§9), both with actual placeholder assets.
 
 **Phase 2 — Weeks 3–5, core-contract-vs-content split.**
 
-*Phase 2a (early week 3, still sequential-ish, still core work):* close out the remaining puzzle element **types** Phase 1 didn't build — `MovingSpotDurationElement` (Comet), `PushPullObjectElement` (Cargo Pod), `TrailDrawElement` (Beacon Cluster). These are new classes, not content, and belong on the core track regardless of how close to "week 3" they land. If the `HazardZoneElement` parameterization from §11.3 holds, no new hazard *classes* are needed here — Solar Flare, Ion Storm, Nebula Field, and Meteoroid become content-only work once their shared class exists, which is the main thing this split buys you. Also on this track, because it's system work rather than content: `BootScene`/`TitleScene`/`PauseScene`/`WinScene` (§11.8), `SaveManager` (§11.9), and completing the `HudOverlay` (ability icons, puzzle-site indicator). None of this blocks Phase 1's slice from being playable, which is why it's here rather than in Phase 1 — but it does need to close before Phase 2b, since Continue/save behavior and Scene transitions are exactly the kind of shared-file risk the core-vs-content split exists to keep out of the parallel track.
+*Phase 2a (early week 3, still sequential-ish, still core work):* close out **all five** of §6's puzzle element types — `SequenceSpotElement` (Signal Array), `ScanInteractElement` (Scan Target), `MovingSpotDurationElement` (Comet), `PushPullObjectElement` (Cargo Pod), `TrailDrawElement` (Beacon Cluster). Phase 1 shipped none of these (§12 above), so this list is larger than originally planned — these are new classes, not content, and belong on the core track regardless. If the `HazardZoneElement` parameterization from §11.3 holds, no new hazard *classes* are needed here — Solar Flare, Ion Storm, Nebula Field, and Meteoroid become content-only work once their shared class exists, which is the main thing this split buys you. Also on this track, because it's system work rather than content: `BootScene`/`TitleScene`/`PauseScene`/`WinScene` (§11.8), the now-simplified `SaveManager` (§11.9, level-completion saves only), and completing the `HudOverlay` (ability icons, puzzle-site indicator). None of this blocks Phase 1's slice from being playable, which is why it's here rather than in Phase 1 — but it does need to close before Phase 2b, since Continue/save behavior and Scene transitions are exactly the kind of shared-file risk the core-vs-content split exists to keep out of the parallel track.
 
-*Phase 2b (bulk of weeks 3–5, genuinely parallel):* content production against the now-closed contract — levels, hazard placements (config only, per 2a), puzzle-site instances, one hand-authored TS/JSON config file per level. Content agents don't touch core files; the boundary is enforceable by what directory/context you hand them, not just convention. This is also where §6's "additive, not all-or-nothing" scope note becomes your lever if week 4 gets tight: fewer levels, or drop the execution/timing taxonomy rows first (§6 already frames those as minority seasoning) — cut content, not anything from Phase 1 or 2a.
+*Phase 2b (bulk of weeks 3–5, genuinely parallel):* content production against the now-closed contract — levels, hazard placements (config only, per 2a), per-level `probeLocation`/`relayBeaconLocation`/`homeMarkerLocation` placement (§11.7 — required in every level, unlike the rest of this list), and optional puzzle-site instances, one hand-authored TS/JSON config file per level. Content agents don't touch core files; the boundary is enforceable by what directory/context you hand them, not just convention. This is also where §6's "additive, not all-or-nothing" scope note becomes your lever if week 4 gets tight: fewer levels, or drop the execution/timing taxonomy rows first (§6 already frames those as minority seasoning) — cut content, not anything from Phase 1 or 2a, and not the required probe/beacon/home-marker placements.
 
 **Phase 3 — Final integration (last 2–3 days of week 5, carved out of Phase 2b's time, not additional time).** Every gate up to this point checks a component in isolation — one hazard, one puzzle type, one Scene transition. Nothing checks the assembled game, and content agents working in parallel per level don't automatically produce a coherent whole once strung together. This phase is scoped narrowly on purpose — no new content, no new systems — and closes out:
 - Play every level in the real `levelOrder` sequence, start to finish, not each level in isolation the way earlier gates did.
-- Confirm `Continue` resumes correctly from a save made at each kind of trigger (mid-level checkpoint, level-completion) — not just one of them, since they exercise different `SaveManager` call sites (§11.9).
+- Confirm `Continue` resumes correctly at the right next level — simpler than originally planned, since `SaveManager` only has one save trigger now (level-completion, §11.9) with `CheckpointManager` deferred (§11.2).
 - Confirm `WinScene` actually triggers after the true last level in `levelOrder`, not just in a shortened test sequence.
 - Confirm the built/packaged game runs from wherever you're actually submitting it (a fresh browser profile or the actual host, not just your dev server) — "works in dev" and "works submitted" are different claims, and this is the only place in the plan that checks the second one.
 - Fold in the outputs of the supporting roles below (§12.1) rather than treating their findings as new discoveries this late — if the Compliance Reviewer or Accessibility Reviewer have been running throughout, this phase is confirmation, not first-time triage.
@@ -265,17 +297,17 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 Every agent role in the plan, named in one place — build roles first (the sequential core track, then parallel content), then the supporting roles that fill gaps a pure build plan doesn't cover.
 
-**Core-Contract Agent (Phase 1 & Phase 2a).** Builds and owns everything in §11 — `ShipSurvivalComponent`, `CheckpointManager`, `PuzzleElementBase` and its subtypes, `AbilityComponent`, `HazardZoneElement`, Scene flow, `SaveManager`, `HudOverlay`. One contiguous track across Phase 1's sequential vertical slice and Phase 2a's remaining core work, not two separate roles — splitting "core" across simultaneous sessions is exactly the risk this plan's sequential-then-fan-out shape was chosen to avoid. Runs weeks 1 through early week 3, sequentially, each step gated on your review before the next starts. Rough cost: see §12.2's Phase 1 and Phase 2a rows.
+**Core-Contract Agent (Phase 1 & Phase 2a).** Builds and owns everything in §11 — `ShipSurvivalComponent`, `LevelObjectiveTracker`, `ProbeObject`, `RelayBeaconObject`, `HomeMarker`/`ResupplyPoint`, `PuzzleElementBase` and its subtypes (all five now land in Phase 2a, §12 above), `AbilityComponent`, `HazardZoneElement`, Scene flow, `SaveManager`, `HudOverlay`. `CheckpointManager` is explicitly out of scope — deferred, §11.2. Also owns setting up the per-subsystem tunable-config-module convention and the dev-mode `window`-exposed tuning hook (§11) from the start of Phase 1, since most of Phase 1 is feel-tuning (ship movement, energy regen). One contiguous track across Phase 1's sequential vertical slice and Phase 2a's remaining core work, not two separate roles — splitting "core" across simultaneous sessions is exactly the risk this plan's sequential-then-fan-out shape was chosen to avoid. Runs weeks 1 through early week 3, sequentially, each step gated on your review before the next starts. Rough cost: see §12.2's Phase 1 and Phase 2a rows.
 
-**Content Agents (Phase 2b).** Produce game content against the closed core contract — level configs, hazard placements (config only, against Phase 2a's `HazardZoneElement`), puzzle-site instances. Multiple agents can genuinely run in parallel here, one per level or content batch, since each works in its own config file and never touches core files — the boundary enforced by what directory/context you hand each one, not just convention. Runs the bulk of weeks 3–5. Rough cost: see §12.2's Phase 2b rows; total spend here is a scoping lever (§6's additive scope note) if time gets tight.
+**Content Agents (Phase 2b).** Produce game content against the closed core contract — level configs, required per-level probe/relay-beacon/home-marker placement, hazard placements (config only, against Phase 2a's `HazardZoneElement`), and optional puzzle-site instances. Multiple agents can genuinely run in parallel here, one per level or content batch, since each works in its own config file and never touches core files — the boundary enforced by what directory/context you hand each one, not just convention. Runs the bulk of weeks 3–5. Rough cost: see §12.2's Phase 2b rows; total spend here is a scoping lever (§6's additive scope note) for the optional puzzle-site content specifically, not for the required probe/beacon/home-marker placements, if time gets tight.
 
-**Contract/Config Validation.** Checks Phase 2b's level-config files against §11's schemas — valid `movementPattern` values, required fields present on `HazardZoneElement`/`CostData` configs, every `levelOrder` entry resolving to a real level file. Runs continuously as content lands, cheapest to run often. Honest note: most of this is deterministic and could be a plain validation script with no LLM involved — framing it as an "agent role" matters more for demonstrating the workflow than for the checking itself, worth keeping in mind if the course wants agent roles demonstrated specifically. Rough cost: ~10K–30K tokens to build the validator once; near-zero marginal cost per run after that.
+**Contract/Config Validation.** Checks Phase 2b's level-config files against §11's schemas — valid `movementPattern` values, required fields present on `HazardZoneElement`/`CostData` configs, every level config has a `probeLocation`/`relayBeaconLocation`/`homeMarkerLocation` (§11.7 — these are required, unlike optional puzzle-site content), every `levelOrder` entry resolving to a real level file. Runs continuously as content lands, cheapest to run often. Honest note: most of this is deterministic and could be a plain validation script with no LLM involved — framing it as an "agent role" matters more for demonstrating the workflow than for the checking itself, worth keeping in mind if the course wants agent roles demonstrated specifically. Rough cost: ~10K–30K tokens to build the validator once; near-zero marginal cost per run after that.
 
-**Contract Compliance Reviewer.** Reviews diffs against §11's hard rules before merge — anything reaching for `localStorage` outside `SaveManager` (§11.9), anything writing to `currentEnergy`/`currentStructure` from outside `ShipSurvivalComponent` (§11.1), any content-track edit touching a core file instead of registering through `SystemRegistry`. This formalizes the review habit already used throughout this plan; worth a named role specifically because it's the thing most likely to erode under time pressure in week 4–5. Runs on every merge from Phase 1 onward. Rough cost: ~5K–15K tokens per review pass, scaling with how many diffs land per week.
+**Contract Compliance Reviewer.** Reviews diffs against §11's hard rules before merge — anything reaching for `localStorage` outside `SaveManager` (§11.9), anything writing to `currentEnergy`/`currentStructure` from outside `ShipSurvivalComponent` (§11.1), any content-track edit touching a core file instead of registering through `SystemRegistry`, and — new for this scope — any code path that treats energy depletion as a fail/restart condition (§11.1's flagged regression risk, since energy and structure used to be symmetric fail resources and old habits could reintroduce that). This formalizes the review habit already used throughout this plan; worth a named role specifically because it's the thing most likely to erode under time pressure in week 4–5. Runs on every merge from Phase 1 onward. Rough cost: ~5K–15K tokens per review pass, scaling with how many diffs land per week.
 
-**Accessibility/Telegraphing Reviewer.** Narrow scope, tied directly to §9's still-open item: does Ion Storm actually read as distinct from Nebula Field in motion at normal play speed, is any hazard signaled by color alone. Runs once at the week-2 gate (already specified there) and again during Phase 3 across the full level set, once all hazard placements exist. Rough cost: ~10K–25K tokens total across both passes.
+**Accessibility/Telegraphing Reviewer.** Tied directly to §9's still-open items: does Ion Storm actually read as distinct from Nebula Field in motion at normal play speed; is any hazard signaled by color alone; and — new for this scope — does a structure-draining hazard read as visibly higher-stakes than an energy-draining hazard, given only structure can end the level (§5, §9). Runs once at the week-2 gate (already specified there) and again during Phase 3 across the full level set, once all hazard placements exist. Rough cost: ~10K–25K tokens total across both passes.
 
-**Asset Integration.** A track of its own, not folded into Phase 2b's content work, because it has different failure modes than puzzle-site/hazard placement — broken file paths, mismatched resolution/palette across sourced packs, license terms worth a quick check per pack. Runs in parallel with Phase 2a/2b, feeding normalized assets into the loading manifest as content agents need them. Rough cost: ~20K–50K tokens, mostly front-loaded before Phase 2b content production ramps up.
+**Asset Integration.** A track of its own, not folded into Phase 2b's content work, because it has different failure modes than puzzle-site/hazard placement — broken file paths, mismatched resolution/palette across sourced packs, license terms worth a quick check per pack, and enforcing §11's asset/gameplay-size decoupling principle (sprites scaled to fit authored gameplay dimensions, never the reverse) so a later art pass — including resolution changes — never requires re-tuning collision/gameplay feel. Runs in parallel with Phase 2a/2b, feeding normalized assets into the loading manifest as content agents need them. Rough cost: ~20K–50K tokens, mostly front-loaded before Phase 2b content production ramps up.
 
 **Deliberately not adding:** a PM/orchestrator role tracking what's next (adds meta-complexity on top of a schedule already tracked in this plan); a true automated-playtesting agent driving the game via browser automation (high setup effort for a timing-sensitive 2D game, weaker signal than playing it yourself at Phase 3); a git-hygiene role (low payoff for a solo project on this timeline).
 
@@ -285,8 +317,8 @@ Every agent role in the plan, named in one place — build roles first (the sequ
 
 | Track | Scope | Rough token range | Main source of variance |
 |---|---|---|---|
-| **Phase 1 — full vertical slice** (`ExplorationController`, `ShipSurvivalComponent`, one `HazardZoneElement` config, one `ResupplyPoint`, `SequenceSpotElement` + `PuzzleSite`, `CheckpointManager`, minimal `HudOverlay`, end-to-end integration) | ~220K–520K | Integration debugging across 5+ new systems dominates; the Scene-restart-vs-in-place-reset decision (§12, Phase 1 step 4) is a concrete place this can blow past the low end if the first approach tried turns out wrong |
-| **Phase 2a — remaining puzzle element types** (`MovingSpotDurationElement`, `PushPullObjectElement`, `TrailDrawElement`) | ~80K–200K total (~25–70K each) | Cheaper than Phase 1's components since the `PuzzleElementBase` pattern and wiring convention already exist; `PushPullObjectElement` carries the most variance since it's the one place the confirmed Arcade-over-Matter tradeoff (tweening vs. force) could need a few extra passes to feel right |
+| **Phase 1 — full vertical slice** (`ExplorationController`, `ShipSurvivalComponent`, one `HazardZoneElement` config, `ResupplyPoint`/AsteroidField, `ProbeObject`/`RelayBeaconObject`/`HomeMarker`/`LevelObjectiveTracker`, minimal `HudOverlay`, end-to-end integration) | ~180K–450K | Lower than originally estimated — dropping `CheckpointManager` and energy's fail-state wiring removes real integration complexity, partially offset by the new (small) Probe/Beacon/ObjectiveTracker objects; the hard-reset-vs-in-place-reset decision (§12, Phase 1 step 4) is still a concrete place this can blow past the low end if the first approach tried turns out wrong |
+| **Phase 2a — puzzle element types** (all five: `SequenceSpotElement`, `ScanInteractElement`, `MovingSpotDurationElement`, `PushPullObjectElement`, `TrailDrawElement`) | ~130K–320K total (~25–70K each) | Larger total than originally estimated since Phase 1 no longer proves out any puzzle element first — all five now land here instead of two; `PushPullObjectElement` carries the most variance since it's the one place the confirmed Arcade-over-Matter tradeoff (tweening vs. force) could need a few extra passes to feel right |
 | **Phase 2a — scene flow, save/continue, full HUD** (`BootScene`, `TitleScene`, `PauseScene`, `WinScene`, `SaveManager`, completed `HudOverlay`) | ~100K–250K | `SaveManager`'s two call sites (mid-level checkpoint vs. level-completion save) are simple individually, but wiring them into both `CheckpointManager` and `GameScene`'s completion handler without violating the "single writer to localStorage" hard rule is the one place this could take longer than it looks; Scene-stacking for `PauseScene` (overlay vs. swap) is a smaller, Phaser-specific wrinkle worth budgeting a little slack for if you haven't done it before |
 | **Phase 2b — hazard content** (Solar Flare, Ion Storm, Nebula Field, Meteoroid configs against the existing `HazardZoneElement`) | ~15K–50K total (~4–15K each) | Should be genuinely cheap if the parameterization confirmed in §11.3 holds as designed — config, not code; a blown-up number here is itself a signal the collapse didn't hold and one of these needed real new code |
 | **Phase 2b — level content** (per additional level: puzzle-site placement, hazard placement, tuning) | ~30K–80K per level | Scales close to linearly per §6's additive scope note; total spend is a scoping choice (how many levels you build), which is exactly the lever to pull if week 4–5 gets tight |
@@ -311,24 +343,33 @@ Deliberately left unresolved (not required for this frame to work, can be decide
 
 ### From §3 — Core Loop
 
-Energy/structure reset when a level is first entered. Chosen as the cleanest model for player understanding. Note: this is distinct from a mid-level hard-fail restart, which resumes from the last checkpoint (§5) rather than re-triggering this level-start reset. This does mean stakes are level-scoped rather than campaign-scoped — a deliberate departure, not an oversight.
+Energy/structure reset when a level is first entered. Chosen as the cleanest model for player understanding. **Revised:** a mid-level hard fail now fully re-triggers this same level-start reset rather than resuming from a checkpoint — checkpoints are deferred for the initial build (§5, §11.2). Stakes remain level-scoped rather than campaign-scoped — a deliberate departure, not an oversight.
 
-### From §5 — Survival Systems: Energy & Structure
+**Loop restructure (probe → beacon → return):** the core loop now requires finding the probe, then reaching a new mandatory "Relay Beacon" waypoint, before return is possible (previously: solve puzzle site(s) → find probe → return, with no intermediate beacon step). This surfaced a naming collision — "Relay Beacon" already named the sequence-puzzle element (§6/§9) — resolved by renaming that puzzle element to **Signal Array**, freeing "Relay Beacon" for the new mandatory waypoint, consistent with §9's existing "one phenomenon name = one behavior" rule (previously used to resolve Comet vs. Meteoroid). The new waypoint is deliberately not a puzzle — a plain navigate-to trigger — since the map's puzzle-solving identity is meant to come from the combinatorial placement/movement of elements in open space, not discrete scripted puzzle sites (a bigger reframing of §6/§11.3 flagged as a future item, out of scope for this pass).
+
+### From §5 — Survival Systems: Structure & Energy
+
+**Current model for the initial build (structure/energy asymmetry, hard reset, passive energy regen):**
+
+**Why energy stopped being a fail resource:** with `CheckpointManager` deferred (see below) and no secondary/endurance progression in this scope (§7), having two independent resources both able to end a level added failure-mode complexity without a proportional design payoff. Splitting them — structure as the sole fail resource, energy as a pure ability-gating resource — keeps the survival pillar legible with less to build. This is explicitly revisitable once maps grow and secondary progression (§7's endurance track) returns, at which point a symmetric or partially-symmetric model may earn its complexity back.
+
+**Why no dedicated energy-resupply object:** passive regen at a fixed rate removes an entire object type (and its placement/pacing design burden) for no loss of design intent, since energy no longer needs "banking before a risky stretch" the way a fail resource would. Room is deliberately left (not built) for hazards/map objects to modify the regen rate itself, since that's a cheap way to reintroduce some of the pacing texture a resupply object would have provided, if playtesting shows it's wanted.
+
+**Why hard reset instead of checkpoints:** checkpoints (detailed below) solve a real problem — losing a lot of progress to one late mistake — but that problem scales with map size and mid-level content density, neither of which is large in this 5-week, largely-exploration-driven scope (§1). A hard reset is simpler to build and to reason about, and is explicitly a temporary trade — expected to be revisited once bigger maps and secondary progression make losing a full attempt to one mistake feel bad again.
+
+---
+
+**Superseded for the initial build — retained as reference for when checkpoints return:**
 
 **Ability cost model pointer:** ability cost model is a per-ability dual gate rather than a single system-wide choice; see §7 for the full model.
 
-**Hazard damage during puzzle-solving:** Real macro-resource cost. Design intent: survival resources function as a shared buffer/margin-for-error across both travel and puzzle execution — running out means you didn't manage risk well enough, across either layer. This is a legitimate design model (comparable to FTL's hull/oxygen as shared risk currency), not an accidental collision — provided the two conditions below hold.
+**Hazard damage during puzzle-solving:** Real macro-resource cost (now: structure only). Design intent: survival resources function as a shared buffer/margin-for-error across both travel and puzzle execution — running out means you didn't manage risk well enough, across either layer. This is a legitimate design model (comparable to FTL's hull/oxygen as shared risk currency), not an accidental collision.
 
-**Hazard telegraphing:** Hazard costs are telegraphed by design — danger is collision-based (discrete objects or clearly dangerous areas), which is inherently visible to the player before contact. No further systems-design work needed here; this becomes a visual/level-art legibility requirement during production (hazards must read as dangerous at a glance).
+**Hazard telegraphing:** Hazard costs are telegraphed by design — danger is collision-based (discrete objects or clearly dangerous areas), which is inherently visible to the player before contact. This becomes a visual/level-art legibility requirement during production (hazards must read as dangerous at a glance) — and, per §9's new open item, must also distinguish structure-stakes from energy-stakes hazards.
 
-**Failure state & checkpoint model:** Hard fail — zero energy or zero structure triggers a restart from the last checkpoint (not a full level restart; superseded by the checkpoint model below). Checkpoints trigger on both puzzle-site completion and resupply-point (star/asteroid) visit, whichever comes first. This resolves the earlier risk of losing several solved puzzles to one late mistake, since puzzle completion now banks that work independently of resupply spacing. Remaining implication for level design (not an open question, just a thing to keep in mind): checkpoint density is now the union of two independently-placed systems, so the case that still needs deliberate spacing attention is a long puzzle-free exploration/travel stretch, which is still bounded only by resupply-point placement.
+**Failure state & checkpoint model (deferred, §11.2):** Hard fail — zero structure — triggered a restart from the last checkpoint rather than a full level restart. Checkpoints triggered on both puzzle-site completion and resupply-point (star/asteroid) visit, whichever came first, so one late mistake didn't cost several solved puzzles' worth of progress.
 
-**Resource state on resume:** Guaranteed minimum floor, set as a fixed, level-authored value (not a player-progression stat — removed for complexity reasons). Two things still apply from before:
-
-  1. Floor must be a lower bound, not a reset value — resume at *max(actual resources at last checkpoint, floor)*, never a flat reset. This is what prevents the strict-dominance exploit (intentionally failing to "refund" resources) regardless of how the floor's value is set.
-  2. Authoring note: since endurance upgrades (unchanged, still a separate progression track) grow max capacity over the campaign, floor should be authored as a percentage of that level's expected capacity rather than one flat constant reused everywhere — otherwise an early-authored floor becomes negligible by late-game. This is a content-authoring reminder, not a system to design.
-
-Removing floor-from-progression also fully resolves the difficulty-curve-coordination concern raised previously — that dependency only existed because a player-upgradeable floor needed tuning against level-authored density across the whole campaign. With floor fixed per level, there's no longer a moving player-side variable to coordinate against.
+**Resource state on resume (deferred, §11.2):** Guaranteed minimum floor, set as a fixed, level-authored value. Floor was a lower bound, not a reset value — resume at *max(actual resources at last checkpoint, floor)* — to prevent a strict-dominance exploit (intentionally failing to "refund" resources). Authored as a percentage of level capacity so it would stay meaningful once endurance upgrades grew max capacity over a campaign.
 
 ### From §6 — Puzzle Interaction Taxonomy
 
@@ -356,15 +397,23 @@ Resolves §9's former open item 1 (concrete obstacle/phenomenon-to-taxonomy mapp
 | Nebula Field | Avoid particular areas — Deduction | Static | Energy | |
 | Meteoroid | Avoid particular areas — Execution | Dynamic (moving hazard, collision) | Structure | Originally drafted as "Rogue Comet"; renamed to remove the name collision with the puzzle-element Comet below. |
 
-**Puzzle-site elements**
+**Puzzle-site elements** (optional/additive content, §6 — not required to complete a level, §3)
 
 | Phenomenon | §6 Category | Static/Dynamic | Resource Drained | Note |
 |---|---|---|---|---|
-| Relay Beacon (sequence) | Move to spots in order — Deduction | Static | None by default | Maps to `SequenceSpotElement`. |
+| Signal Array (sequence) | Move to spots in order — Deduction | Static | None by default | Maps to `SequenceSpotElement`. Renamed from "Relay Beacon" — that name was reassigned to the mandatory core-loop waypoint below to avoid a collision (§3). |
 | Scan Target / Marker | Object interact / scan — Deduction | Static | None by default | Base interact case. |
 | Comet (tracking) | Stay in a moving spot for duration — Execution | Dynamic | None by default | Name now belongs solely to this puzzle element, not to any hazard. |
 | Cargo Pod / Wreckage (push/pull) | Move objects — Deduction | Static until moved | None by default | Gated behind Tractor/Repulsor per §7. |
 | Beacon Cluster (trail/encircle) | Trail/draw or encircle — Deduction (Execution if timed) | Static | None by default; timer only for execution variant | |
+
+**Core-loop objects** (required every level, §3 — distinct from both the hazards above and the optional puzzle-site elements above; not part of the additive taxonomy)
+
+| Object | Role | Note |
+|---|---|---|
+| Probe | Find/recover — triggers the level's next required step | Maps to `ProbeObject`, §11.12. |
+| Relay Beacon | Navigate-to waypoint, required after the probe, before return | Maps to `RelayBeaconObject`, §11.13. No puzzle-solving attached — plain arrival trigger. Not the same thing as Signal Array above. |
+| Home Marker | Launch position and required return destination | Maps to `HomeMarker`, §11.14. Currently reuses the Star asset as a placeholder (eventually a distinct object, e.g. a wormhole). |
 
 ---
 

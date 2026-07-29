@@ -2,6 +2,11 @@
 
 *Draft v0.1 — derived from Design Document v0.2. Core = fixed regardless of level count; Content = scales with number of levels built (initial scope: 3–4 additional levels per §12.2).*
 
+**Updated 2026-07-29** for a GDD revision that changed Phase 1's scope, split
+"Relay Beacon" into two different things (§1.3a below), and removed Star as
+a resupply object. See `STATUS.md`'s "Design update" section for the full
+asset-sourcing-side explanation of what moved/reassigned where.
+
 ---
 
 ## 1. Core Assets
@@ -31,24 +36,33 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 
 **Flag:** Ion Storm / Nebula Field stays open per your note — plan to source 2–3 candidate cloud treatments (varying color, particle density, and a border/outline option) rather than committing to one asset up front. Resolve at the week-2 accessibility gate (§12) rather than before.
 
-**Flag:** New from this pass — Debris Field (hazard) and the Resource Field asteroids (§1.4, resupply) are both asteroid/rubble phenomena that need to read as opposite in intent — one is avoided, one is approached. This pairing isn't called out as a risk anywhere in the GDD's own open-questions log (§9) and should probably be added to it.
+**Flag:** New from this pass — Debris Field (hazard) and the AsteroidField resupply asteroids (§1.4, resupply) are both asteroid/rubble phenomena that need to read as opposite in intent — one is avoided, one is approached. This pairing isn't called out as a risk anywhere in the GDD's own open-questions log (§9) and should probably be added to it.
 
-### 1.3 Puzzle-Site Elements (§9 reference table, §11.3)
+**Flag (added 2026-07-29):** since only structure-draining hazards (Debris Field, Meteoroid) can end a level — energy is now a non-fail, ability-gating resource, §5 — the energy-draining family (Solar Flare, Ion Storm, Nebula Field) is lower-stakes and should probably read as visibly less dangerous than the structure family, not just differently colored. New open item, GDD §9.
+
+### 1.3 Puzzle-Site Elements (§9 reference table, §11.3) — optional/additive content, not required to complete a level
 
 | Phenomenon | Element class | Asset note |
 |---|---|---|
-| Relay Beacon (sequence) | `SequenceSpotElement` | Needs a solved/unsolved visual state and a way to read sequence order (numbering, light-up order, etc.). |
+| Signal Array (sequence) — **renamed from "Relay Beacon" 2026-07-29**, see §1.3a below | `SequenceSpotElement` | Needs a solved/unsolved visual state and a way to read sequence order (numbering, light-up order, etc.). Unsourced as of 2026-07-29 — its previously-sourced satellite asset was reassigned to the new Relay Beacon waypoint instead (`STATUS.md`). |
 | Scan Target / Marker | `ScanInteractElement` | Base interact marker — likely the cheapest asset on this list. |
 | Comet (tracking) | `MovingSpotDurationElement` | Must read as distinct from Meteoroid despite both being small moving objects — the GDD renamed Meteoroid specifically to avoid a name collision (§9); the visual distinction needs equal attention, not just the name. |
 | Cargo Pod / Wreckage (push/pull) | `PushPullObjectElement` | Static object sprite; gated behind Tractor/Repulsor ability. |
 | Beacon Cluster (trail/encircle) | `TrailDrawElement` | Set of beacon objects plus a trail-draw effect. |
 
+### 1.3a Core-Loop Objects (§9 reference table, §11.11–11.14) — new 2026-07-29, required every level, distinct from the optional puzzle-site elements above
+
+| Object | Asset note |
+|---|---|
+| Probe | **Not sourced at all** — never listed as a requirement anywhere before this revision (a pre-existing gap this revision exposed). Needs a full sourcing pass; likely similar cost to Scan Target/Marker above. |
+| Relay Beacon (mandatory waypoint — **not** the same thing as Signal Array above) | Sourced, via reassignment: the satellite sprite originally sourced for the old Relay Beacon puzzle (now Signal Array) was reassigned here 2026-07-29, since it fits "a marker in space" well and the puzzle's per-spot solved/unsolved requirement doesn't apply to a single simple waypoint. |
+| Home Marker | Sourced, via reassignment: the Star sprite (§1.4's old "recharge point" entry) is reused here as a placeholder — no longer a resupply object, since energy regenerates passively now. Same asset as the pre-existing "Home base / launch point visual" line in §2.1 below — that content-list entry is now confirmed fulfilled by this reused sprite. |
+
 ### 1.4 Resupply Points (§11.6)
 
 | Asset | Notes |
 |---|---|
-| Star | Recharge point (energy). |
-| Resource field — asteroids | Structure-material resupply. Per your note: likely fewer, larger asteroids, distinct in composition (not just count/density) from the smaller, more plentiful Debris Field hazard — see flag in §1.2. This is a scope change from the original "AsteroidField" framing and should probably be reflected in §11.6's naming if the code-level distinction matters, though that's a separate question from the asset itself. |
+| AsteroidField (Resource field — asteroids) | Structure-material resupply — the **only** resupply object as of 2026-07-29 (energy regenerates passively, no dedicated object; Star is retired as a resupply object, see §1.3a). Likely fewer, larger asteroids, distinct in composition (not just count/density) from the smaller, more plentiful Debris Field hazard — see flag in §1.2. |
 
 ### 1.5 In-World Ability VFX
 
@@ -87,7 +101,7 @@ Scales with level count. Initial scope per §12.2 is a vertical slice plus rough
 
 ### 2.1 Environment
 
-- Home base / launch point visual — one asset, used across all levels
+- Home base / launch point visual — one asset, used across all levels. **Fulfilled** by the reused Star sprite (now `HomeMarker`, §1.3a) as a placeholder — no new sourcing needed here.
 - Per-level backgrounds / starfields — one distinct treatment per level
 - Per-level cargo/data reward representation — §1.1 (Appendix) frames each level's recovered data as also carrying narrative payoff (that system's habitability verdict); confirm whether this needs a unique per-level visual or can reuse one generic "recovered data" asset with text/UI doing the narrative work
 
@@ -109,7 +123,9 @@ Stated to avoid over-sourcing against systems the GDD deliberately excludes (§1
 
 ## 4. Open Items Carried Into Sourcing
 
-- Ion Storm / Nebula Field — resolve via multiple candidate assets at the week 1–2 vertical-slice gate (§9, §12), not before
-- Debris Field vs. Resource Field asteroids — confirm the visual distinction is legible at a glance, not just a difference in asteroid count/size on paper
+- Ion Storm / Nebula Field — resolve via multiple candidate assets at the week 1–2 vertical-slice gate (§9, §12), not before; now also needs to read as lower-stakes than the structure-draining family (§1.2 flag, added 2026-07-29)
+- Debris Field vs. AsteroidField resupply asteroids — confirm the visual distinction is legible at a glance, not just a difference in asteroid count/size on paper
 - Player ship damage-state implementation — sprite swap vs. overlay VFX vs. material change; affects what to look for in licensed packs
 - Ability activation VFX — not currently named as a requirement anywhere in §7/§11; needs to be added explicitly or it risks being discovered late, during Phase 2a's ability-gating work rather than during asset sourcing
+- **Probe (added 2026-07-29)** — not sourced at all; a new, required Phase 1 core asset with no prior candidate. See §1.3a.
+- **Signal Array (added 2026-07-29)** — unsourced again after its satellite asset was reassigned to the new Relay Beacon waypoint; Phase 2a scope, not urgent. See §1.3.

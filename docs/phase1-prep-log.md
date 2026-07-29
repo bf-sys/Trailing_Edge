@@ -5,6 +5,13 @@ requirement. Covers everything converted, placeholder-flagged, or kicked
 back so far. `STATUS.md` summarizes from this; this file is the source
 record.
 
+**Note (2026-07-29):** this log is left as-written — an accurate historical
+record of what was sourced and why at the time. A GDD revision on this date
+renamed/reassigned some of what's described below (Star → Home Marker, the
+old Relay Beacon puzzle → Signal Array, its satellite asset reassigned to a
+new Relay Beacon waypoint). See `STATUS.md`'s "Design update" section for
+the current mapping before treating any naming below as current.
+
 ## Ship
 
 - **Converted:** `ship/ship_base_PLACEHOLDER.png` — copied directly from

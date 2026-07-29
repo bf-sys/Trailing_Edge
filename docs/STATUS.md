@@ -29,10 +29,12 @@ sourced and why — it just predates this rename. Current mapping:
   Phase 1 resupply object** (structure repair only). These were sourced
   incidentally alongside Debris Field before this was official scope, filed
   under `hazards/` — moved to `assets/resupply/` to match.
-- **The Probe has no sourced asset at all.** It was never listed as a
-  requirement anywhere (a pre-existing gap this revision exposed) and is now
-  a required Phase 1 object. This is a real open gap, not just a renaming —
-  see "What's NOT done" below.
+- **The Probe had no sourced asset at all** when this revision landed — it
+  was never listed as a requirement anywhere (a pre-existing gap this
+  revision exposed). **Resolved same day:** the project owner added an
+  original greyscale placeholder, `objectives/probe_PLACEHOLDER.png` — not
+  sourced from a licensed pack, so no `ATTRIBUTION.md` entry needed, just
+  the usual `_PLACEHOLDER` stand-in flag.
 
 File moves made as part of this update (`git mv`, so history is preserved):
 
@@ -126,24 +128,26 @@ again) — left in place rather than deleted, since Phase 2a will need it.
   was kept (retitled to Cargo Pod/Wreckage) since it's still that item's
   intended Phase 2a source — unaffected by any of the above.
 
-Phase 1 is **not** currently file-complete — the Probe has no sourced asset
-(see "What's NOT done"). Everything else required for the current Phase 1
-scope (Debris Field, AsteroidField, Relay Beacon waypoint, Home Marker,
-ship, HUD) is sourced and extracted.
+Phase 1 is now **file-complete again** — every required object (Debris
+Field, AsteroidField, Probe, Relay Beacon waypoint, Home Marker, ship, HUD)
+has at least a placeholder in `assets/`. The Probe placeholder
+(`objectives/probe_PLACEHOLDER.png`) is an owner-original greyscale image,
+not sourced from a licensed pack — see the design-update note above.
 
 ## What's NOT done
 
-1. **Probe** — no asset sourced at all. Never listed as a requirement
-   anywhere before this revision; now a required Phase 1 object (find it,
-   recover it, before the Relay Beacon step). Needs a full sourcing pass —
-   nothing to reuse from the existing Phase-1 pull.
-2. **Signal Array** (the renamed sequence-puzzle element, formerly named
+1. **Signal Array** (the renamed sequence-puzzle element, formerly named
    Relay Beacon) — unsourced. Its previously-sourced satellite asset moved
    to the new Relay Beacon waypoint instead (see design update above). Phase
    2a scope, not urgent, but don't assume it's already covered.
-3. **Cargo Pod/Wreckage prep** — sourced already (same sheet originally
+2. **Cargo Pod/Wreckage prep** — sourced already (same sheet originally
    eyed for the old Relay Beacon puzzle), but out of Phase 1 scope; crop
    when Phase 2a starts.
+3. **Probe placeholder is greyscale/programmer-art**, not a licensed-pack
+   sourced sprite like the rest of Phase 1's assets — fine as a stand-in,
+   but worth a real sourcing pass (or a proper owner-authored replacement)
+   before treating Phase 1 art as final, same caveat as the other
+   `_PLACEHOLDER` assets.
 
 ## Explicitly out of scope right now (Phase 2a/2b — don't start early)
 

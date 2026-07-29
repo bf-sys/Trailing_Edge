@@ -26,9 +26,14 @@ regardless:** list them anyway in a game-credits screen or README, since it
 costs nothing and is normal courtesy in this community — but it is not a
 compliance requirement for this project.
 
-**Not yet in this ledger:** the Probe (no asset sourced at all yet) and
-Signal Array (unsourced as of 2026-07-29, see above) — both add rows here
-once sourced.
+**Not yet in this ledger:** Signal Array (unsourced as of 2026-07-29, see
+above) — add a row here once sourced.
+
+## Owner-created placeholder assets (no third-party source — not a licensing matter)
+
+| Asset | Note |
+|---|---|
+| Probe sprite (`objectives/probe_PLACEHOLDER.png`) | Greyscale, owner-authored directly (2026-07-29), not pulled from any pack. No attribution obligation — nothing third-party involved. Listed here only so it isn't mistaken for a missed licensing entry. |
 
 ## Assets NOT included in this Phase-1 pull (deferred, license flagged for later)
 

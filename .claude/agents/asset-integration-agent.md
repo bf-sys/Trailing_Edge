@@ -25,8 +25,10 @@ sequence per new asset need, don't invent a new sourcing method here.
 - `docs/ATTRIBUTION.md` — license ledger; append to it, don't regenerate.
 
 ## Immediate open items (as of the last sync — check `docs/STATUS.md` for current state)
-- **Probe** — not sourced at all. No prior candidate exists anywhere; run
-  the full Sourcing → Evaluation → Prep pipeline fresh.
+- **Probe** — has an owner-original greyscale placeholder
+  (`objectives/probe_PLACEHOLDER.png`), not sourced from a licensed pack.
+  Fine as a Phase 1 stand-in; still worth a real Sourcing → Evaluation →
+  Prep pass before treating it as final art.
 - **Signal Array** (the renamed sequence-puzzle element) — unsourced again;
   its previously-sourced satellite asset was reassigned to the Relay Beacon
   waypoint instead.

@@ -54,7 +54,7 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 
 | Object | Asset note |
 |---|---|
-| Probe | **Not sourced at all** — never listed as a requirement anywhere before this revision (a pre-existing gap this revision exposed). Needs a full sourcing pass; likely similar cost to Scan Target/Marker above. |
+| Probe | **Sourced, as an owner-original placeholder** (`objectives/probe_PLACEHOLDER.png`, greyscale, added 2026-07-29 directly by the project owner — not from a licensed pack, no attribution needed). Never listed as a requirement anywhere before this revision (a pre-existing gap this revision exposed); resolved as a placeholder same day. Still worth a real sourcing pass before final art. |
 | Relay Beacon (mandatory waypoint — **not** the same thing as Signal Array above) | Sourced, via reassignment: the satellite sprite originally sourced for the old Relay Beacon puzzle (now Signal Array) was reassigned here 2026-07-29, since it fits "a marker in space" well and the puzzle's per-spot solved/unsolved requirement doesn't apply to a single simple waypoint. |
 | Home Marker | Sourced, via reassignment: the Star sprite (§1.4's old "recharge point" entry) is reused here as a placeholder — no longer a resupply object, since energy regenerates passively now. Same asset as the pre-existing "Home base / launch point visual" line in §2.1 below — that content-list entry is now confirmed fulfilled by this reused sprite. |
 
@@ -127,5 +127,5 @@ Stated to avoid over-sourcing against systems the GDD deliberately excludes (§1
 - Debris Field vs. AsteroidField resupply asteroids — confirm the visual distinction is legible at a glance, not just a difference in asteroid count/size on paper
 - Player ship damage-state implementation — sprite swap vs. overlay VFX vs. material change; affects what to look for in licensed packs
 - Ability activation VFX — not currently named as a requirement anywhere in §7/§11; needs to be added explicitly or it risks being discovered late, during Phase 2a's ability-gating work rather than during asset sourcing
-- **Probe (added 2026-07-29)** — not sourced at all; a new, required Phase 1 core asset with no prior candidate. See §1.3a.
 - **Signal Array (added 2026-07-29)** — unsourced again after its satellite asset was reassigned to the new Relay Beacon waypoint; Phase 2a scope, not urgent. See §1.3.
+- **Probe placeholder is greyscale/programmer-art** (owner-original, added 2026-07-29), not a licensed sprite — fine as a Phase 1 stand-in, but a real sourcing pass is still worth doing before final art. See §1.3a.

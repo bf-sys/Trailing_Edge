@@ -44,7 +44,8 @@ assets/
       (was puzzle/relay_beacon_*.png — reassigned from the old Relay Beacon
       puzzle element, now renamed Signal Array, to the new mandatory
       waypoint of the same name; see STATUS.md)
-    probe_* — NOT YET SOURCED, see task list below
+    probe_PLACEHOLDER.png   (owner-original greyscale placeholder, not
+      sourced from a licensed pack — no ATTRIBUTION.md entry needed)
   puzzle/
     (currently empty — Signal Array is unsourced again as of 2026-07-29;
     left in place for Phase 2a rather than deleted)
@@ -107,19 +108,21 @@ already reference the placeholder filename by then.
      reason not to reuse it as arrival feedback (e.g. flash on overlap).
      Not a blocking decision; revisit if it looks wrong in practice.
 
-5. **Probe — NOT SOURCED. New Phase 1 requirement, needs a full sourcing
-   pass.**
-   - No candidate identified yet in any prior run — this was never listed
-     as an asset requirement anywhere before the 2026-07-29 GDD revision (a
-     pre-existing gap the revision exposed, not a new invention).
-   - Needs: a single static sprite (find/recover on overlap, per GDD
-     §11.12 `ProbeObject`) — likely the cheapest new item on this list,
-     similar scope to Scan Target/Marker (§1.3 of the asset list). Narrative
-     framing per GDD §1.1: an inactive probe, older tech relative to the
-     player's ship but still distinctly "advanced probe" silhouette, not a
-     generic crate/box.
-   - Run Agents 1+2 targeting this specifically before Phase 1 code work
-     needs a real (non-programmer-art) placeholder.
+5. **Probe — done, via owner-original placeholder (2026-07-29), not the
+   Agent 1/2/3 pipeline.**
+   - The project owner added `objectives/probe_PLACEHOLDER.png` directly —
+     a greyscale, owner-authored image, not sourced from a licensed pack.
+     No `ATTRIBUTION.md` entry needed (nothing third-party involved).
+   - This was never listed as an asset requirement anywhere before the
+     2026-07-29 GDD revision (a pre-existing gap the revision exposed, not
+     a new invention) — now resolved as a placeholder, same day.
+   - Still open: this is programmer-art/greyscale, not a licensed sprite
+     like the rest of Phase 1's assets. Fine as a stand-in; a real sourcing
+     pass (Agents 1+2, targeting this specifically) or a proper
+     owner-authored replacement is still worth doing before treating Phase
+     1 art as final. Narrative framing per GDD §1.1: an inactive probe,
+     older tech relative to the player's ship but still distinctly
+     "advanced probe" silhouette, not a generic crate/box.
 
 6. **HUD (UI Pack - Sci-Fi.zip)** — done, unaffected by the 2026-07-29
    scope change.
@@ -150,5 +153,6 @@ already reference the placeholder filename by then.
 - Home Marker vs. ship style-mismatch (item 3 above) — the one unresolved
   judgment call carried over from the original Phase 1 set. Resolve before
   calling Phase 1 asset prep done.
-- Probe (item 5 above) — genuinely new, unsourced, blocks Phase 1 from
-  being file-complete.
+- Probe placeholder (item 5 above) is greyscale/programmer-art, not a
+  licensed-pack sprite — fine as a stand-in, worth a real sourcing pass or
+  owner-authored replacement before final art.

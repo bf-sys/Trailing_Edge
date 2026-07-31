@@ -1,14 +1,15 @@
 # STATUS — Trailing Edge Asset Sourcing (as of 2026-07-29)
 
-One-page entry point. Read this first; go to `run-log-2026-07-24.md` for
-search-by-search detail, or `phase1-prep-log.md` for the full per-item prep
-record (conversions, placeholder flags, kickbacks) behind the summary below.
+One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
+for search-by-search detail, or `history/phase1-prep-log.md` for the full
+per-item prep record (conversions, placeholder flags, kickbacks) behind the
+summary below.
 
 ## Design update (2026-07-29) — read this before trusting anything below
 
 A GDD revision on this date changed Phase 1's scope and renamed/reassigned
 several already-sourced assets. The prep narrative further down (and all of
-`phase1-prep-log.md`) is an accurate *historical* record of what was
+`history/phase1-prep-log.md`) is an accurate *historical* record of what was
 sourced and why — it just predates this rename. Current mapping:
 
 - **"Relay Beacon" now means a new, mandatory, non-puzzle per-level
@@ -108,8 +109,8 @@ again) — left in place rather than deleted, since Phase 2a will need it.
   `warped_top_down_tech_lab_extension.png`, OGA-listed as "Beacon
   (animated)") never panned out: manual tile-grid measurement found three
   repeated icon candidates (glass pod, ring/torch marker, shield), none of
-  which convincingly matched an animated beacon — see `phase1-prep-log.md`
-  for the full trail. Owner authorized broadening the visual concept to "a
+  which convincingly matched an animated beacon — see
+  `history/phase1-prep-log.md` for the full trail. Owner authorized broadening the visual concept to "a
   standard orbital satellite," which turned this back into a sourcing
   problem. Re-ran sourcing + evaluation targeting CC0 2D satellite sprites;
   found Kenney's **Space Shooter Extension** pack (OpenGameArt mirror,

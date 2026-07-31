@@ -46,9 +46,20 @@ unresolved). Other reference docs live in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
 - `docs/phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
 - `docs/ATTRIBUTION.md` — license/credit ledger for sourced assets
-- `docs/run-log-2026-07-24.md` — search-by-search detail behind the asset-sourcing pass
 - `docs/asset-procurement-agent-flow.md` — mermaid diagram of the three-agent sourcing pipeline
 - `assets/` — populated per the directory convention in `docs/phase1-manifest-and-tasks.md` (`ship/`, `hazards/`, `resupply/`, `puzzle/`, `ui/`)
+
+Dated, point-in-time process logs (not kept up to date, referenced by
+`STATUS.md` for detail it deliberately doesn't repeat) live in
+`docs/history/`:
+- `docs/history/run-log-2026-07-24.md` — search-by-search detail behind the first asset-sourcing pass
+- `docs/history/phase1-prep-log.md` — full per-item prep record (conversions, placeholder flags, kickbacks)
+
+Living reference guides (for the human, kept accurate over time — distinct
+from the process/state docs above) live in `docs/reference/`:
+- `docs/reference/console-tuning-reference.md` — `window.tuning` fields exposed for live console tuning while playtesting
+- `docs/reference/art-production-guidelines.md` — format/resolution/style/naming parameters for producing new art
+- `docs/reference/phaser-vfx-notes.md` — how Phaser handles VFX (particles/tweens/postFX/flipbooks), mapped to planned effects (thrusters, scanner, damage)
 
 ## Tech stack (confirmed, GDD §11)
 
@@ -250,3 +261,12 @@ structure-draining hazards (Debris Field, Meteoroid) carry real fail stakes
 while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't
 — whether the current visual language communicates that difference is
 untested. Same validation timing as the item above.
+
+Also newly open (2026-07-30): off-screen objective visibility. §8's levels
+are "bounded," not "screen-sized" — the vertical-slice test map is now
+larger than the viewport with a camera that follows the ship, and once a
+level exceeds one screen the Probe/Relay Beacon/Home Marker (`ProbeObject`/
+`RelayBeaconObject`/`HomeMarker`) can all be off-screen at once with no way
+to tell which direction to go. Needs a minimap or a simpler per-objective
+off-screen directional indicator (or both, at different times) — not
+decided; validate once real levels are authored bigger than one screen.

@@ -57,6 +57,17 @@ assets/
     Phase 2a needs specific icons)
 ```
 
+**Build-time caveat (found 2026-07-29, scaffolding pass):** Vite's
+`publicDir` (set to `assets/` in `vite.config.ts`) copies its entire tree
+into every build verbatim — it does not honor `.gitignore`, so
+`assets/ui/_source/` (~3MB of raw, uncropped source-pack files) ships inside
+`dist/` even though it's gitignored and nothing references it at runtime.
+Harmless for now (no real deploy yet), but move `_source/` out of `assets/`
+(or add an explicit build-exclude step) before treating any build as
+shippable. Same fix should also address `assets/warped_top_down_tech_lab_extension.png`
+sitting loose at `assets/` root, unused until Phase 2a's Cargo Pod/Wreckage
+crop.
+
 `_PLACEHOLDER` suffix marks anything Agent 2 scored "Partial" and the owner
 accepted as a stand-in (ship base, home marker). Drop the suffix only when a
 closer match replaces it — don't rename in place, since level configs will
@@ -156,3 +167,8 @@ already reference the placeholder filename by then.
 - Probe placeholder (item 5 above) is greyscale/programmer-art, not a
   licensed-pack sprite — fine as a stand-in, worth a real sourcing pass or
   owner-authored replacement before final art.
+- `assets/ui/_source/` (and the loose `warped_top_down_tech_lab_extension.png`
+  at `assets/` root) need to move out of the `publicDir`-served tree before a
+  real production build — see the build-time caveat above. Found during code
+  scaffolding, not an asset-prep task, but flagged here since this doc owns
+  the directory convention.

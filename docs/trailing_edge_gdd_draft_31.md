@@ -133,6 +133,8 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 
 2. Structure-vs-energy stakes legibility — since only structure can end a level (energy is a non-fail, ability-gating resource, §5), structure-draining hazards (Debris Field, Meteoroid) carry real fail stakes while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't. Whether the current visual language communicates that difference (not just each hazard's individual identity) is untested — worth checking during the week 1–2 vertical slice and again once more hazard types exist in Phase 2b.
 
+3. Off-screen objective visibility — §8 says levels are "bounded," not "screen-sized," and the week 1–2 vertical slice now includes a camera-follow test map larger than the viewport to check that reading. Once a level exceeds one screen, the Probe, Relay Beacon, and Home Marker (§11.12–11.14) can all be off-screen simultaneously with no way to tell which direction to travel. Needs either a minimap or a simpler per-objective off-screen directional indicator (e.g. a Sinistar-style edge-of-screen arrow) — which one (or whether both end up warranted at different times: directional early, minimap once multiple objectives/hazards coexist) is unresolved. Validate once real levels are authored larger than a single screen, not decided on paper now.
+
 ---
 
 ## 10. Explicit Non-Goals (restated for scope discipline)

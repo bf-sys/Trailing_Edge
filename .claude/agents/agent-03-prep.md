@@ -52,7 +52,7 @@ where coverage judgment calls get made or remade.
 - Populated asset directory matching the project's manifest convention
 - `docs/ATTRIBUTION.md` covering every CC-BY/CC-BY-SA item, with per-original-author
   credit where a pack bundles multiple sources
-- **A prep log, written as its own file** (e.g. `docs/phase1-prep-log.md`), not
+- **A prep log, written as its own file** (e.g. `docs/history/phase1-prep-log.md`), not
   folded into a general project-status doc — one entry per item covering:
   what was converted, what was left as placeholder, what got kicked back to
   Agent 2 (and why), and any assumed-vs-actual discrepancy caught by task 0

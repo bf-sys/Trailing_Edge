@@ -66,7 +66,7 @@ Coverage judgment calls surface to the project owner.
 
 ## Output
 - Updated `assets/` directory, `docs/ATTRIBUTION.md`, and a record of what
-  changed (following `docs/phase1-prep-log.md`'s existing per-item format)
+  changed (following `docs/history/phase1-prep-log.md`'s existing per-item format)
   for any newly sourced/integrated asset.
 - A flag to the Core-Contract Agent for any asset/gameplay-size-decoupling
   violation found during integration.

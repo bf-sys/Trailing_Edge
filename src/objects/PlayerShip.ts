@@ -15,7 +15,7 @@ export class PlayerShip {
     this.image.setMaxVelocity(shipConfig.maxSpeed);
     // World objects (hazards, resupply, objectives) are created after the
     // ship in GameScene.create(); without an explicit depth, later-created
-    // sprites at the same position (e.g. Home Marker, spawned right where
+    // sprites at the same position (e.g. EntryWormhole, spawned right where
     // the ship starts) would render on top and hide it.
     this.image.setDepth(10);
     this.survival = new ShipSurvivalComponent();

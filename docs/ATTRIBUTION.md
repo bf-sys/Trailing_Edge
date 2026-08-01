@@ -9,12 +9,18 @@ reassigned by a GDD revision on this date (source/pack/license facts are
 unchanged — only what the asset represents in-game). See `STATUS.md`'s
 "Design update" section for the full explanation.
 
+**2026-07-31 note:** the Home Marker row below was reassigned again —
+the single Home Marker object split into Entry Wormhole and Exit Wormhole
+(two distinct locations); the same sprite file now backs both instances,
+tinted differently at runtime. Source/pack/license facts are unchanged.
+See `STATUS.md`'s 2026-07-31 "Design update" section.
+
 ## Assets requiring no attribution (CC0 — credit optional/voluntary)
 
 | Asset | Source | Pack | License |
 |---|---|---|---|
 | Player ship, explosions/damage frames | Kenney | Space Shooter Remastered | CC0 1.0 |
-| Home Marker sprite (launch/return position; was: Star resupply-point sprite until 2026-07-29 — energy no longer has a dedicated resupply object) | Kenney | Simple Space | CC0 1.0 |
+| Entry Wormhole / Exit Wormhole sprite — one file, reused for both instances tinted differently (was: Home Marker sprite until 2026-07-31, before that a Star resupply-point sprite until 2026-07-29 — energy no longer has a dedicated resupply object) | Kenney | Simple Space | CC0 1.0 |
 | HUD bars, panel/slider frames | Kenney | UI Pack - Sci-Fi 2.0 | CC0 1.0 |
 | Debris Field hazard sprites, AsteroidField resupply sprites (same pack; AsteroidField became the official Phase 1 resupply object 2026-07-29) | OpenGameArt (author: The_Scientist___) | Asteroids/Debris Set | CC0 |
 | Relay Beacon waypoint sprite — satellite sprite + generated glow overlay (reassigned 2026-07-29 from the sequence-puzzle element, which is now renamed Signal Array and is unsourced again as a result) | Kenney (Kenney Vleugels), via OpenGameArt | Space Shooter Extension | CC0 1.0 |

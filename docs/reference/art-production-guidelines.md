@@ -19,7 +19,8 @@ is required, not a solid fill color.
 ## Resolution / canvas size
 
 There's no single fixed resolution — existing assets range from 32×32
-(`hazards/debris_small.png`) up to 288px tall (`objectives/relay_beacon_idle.png`),
+(`hazards/debris_small_PLACEHOLDER.png`) up to 288px tall
+(`objectives/relay_beacon_idle_PLACEHOLDER.png`),
 and non-square canvases exist (e.g. `ship/ship_damage_overlay_PLACEHOLDER.png`
 is a 320×41 frame strip). This is deliberate, not inconsistent: per
 `CLAUDE.md`'s asset/gameplay-size decoupling rule, on-screen display size is
@@ -42,14 +43,14 @@ Practical guidance in place of a fixed number:
 |---|---|
 | `ship/ship_base_PLACEHOLDER.png` | 99×75 |
 | `ship/ship_damage_overlay_PLACEHOLDER.png` (20-frame strip) | 320×41 |
-| `hazards/debris_large.png` | 128×128 |
-| `hazards/debris_medium.png` | 64×64 |
-| `hazards/debris_small.png` | 32×32 |
-| `resupply/asteroid_large.png` | 128×128 |
+| `hazards/debris_large_PLACEHOLDER.png` | 128×128 |
+| `hazards/debris_medium_PLACEHOLDER.png` | 64×64 |
+| `hazards/debris_small_PLACEHOLDER.png` | 32×32 |
+| `resupply/asteroid_large_PLACEHOLDER.png` | 128×128 |
 | `objectives/probe_PLACEHOLDER.png` | 98×97 |
-| `objectives/home_marker_PLACEHOLDER.png` | 48×48 |
-| `objectives/relay_beacon_idle.png` | 172×288 |
-| `objectives/relay_beacon_reached_overlay.png` | 172×288 |
+| `objectives/wormhole_PLACEHOLDER.png` | 48×48 |
+| `objectives/relay_beacon_idle_PLACEHOLDER.png` | 172×288 |
+| `objectives/relay_beacon_reached_overlay_PLACEHOLDER.png` | 172×288 |
 
 ## Orientation
 
@@ -63,16 +64,12 @@ currently a single ship-wide value, not per-sprite.
 
 ## Style consistency
 
-There's an existing, accepted-but-unresolved style mismatch: the flat,
-minimalist `Simple Space` look (Home Marker's star sprite) sits next to the
-shaded, rendered `Space Shooter Remastered`/`Space Shooter Extension` family
-(ship, hazards, resupply, objectives) — flagged in `docs/STATUS.md` and
-`phase1-manifest-and-tasks.md` as a known clash, kept as-is for now rather
-than fixed. **New art should match the shaded/rendered family** (the
-dominant style already used across most of the game), not the flat family —
-compounding the mismatch with more inconsistent styles makes it harder to
-resolve later, whereas matching the dominant look at least contains the
-problem to the one already-known case.
+The official art direction for Trailing Edge is **Gritty Dark Sci-Fi Pixel**. This is a survival-focused, grimy, industrial aesthetic emphasizing 16-bit/32-bit retro-futuristic arcade visuals.
+
+* **Vibe:** High contrast, muted industrial metallics, tactical precision, and stark lighting (e.g., bright thruster contrast against dark space).
+* **Execution:** All new assets should be produced as pixel art.
+
+There's an existing, accepted-but-unresolved style mismatch from early prototyping: the flat, minimalist `Simple Space` look (Home Marker's star sprite) sits next to the shaded, rendered `Space Shooter Remastered` family. Both of these styles are now considered **legacy placeholders**. Any final art replacing these placeholders must adhere to the Gritty Dark Sci-Fi Pixel style.
 
 ## Naming convention
 
@@ -126,11 +123,5 @@ frames) already follows this — 16px-wide frames in a single row.
 
 ## Not yet decided
 
-- No enforced color palette exists yet — the "shaded sci-fi" family reads
-  as broadly consistent by eye, but nothing formalizes an actual palette.
-  Worth revisiting if/when a real (non-placeholder) art pass starts.
-- No per-level background/starfield art has been sourced or specified yet
-  (`trailing_edge_art_asset_list.md` §2.1) — the current starfield is a
-  procedurally generated placeholder (`StarfieldBackground.ts`), not
-  produced art, so there's no precedent yet for what real background art
-  parameters should look like.
+- While the "Gritty Dark Sci-Fi Pixel" style is now the official direction, a formal color palette (specific hex codes for UI, metallics, and thruster glows) has not been strictly defined yet.
+- No per-level background/starfield art has been sourced or specified yet (`trailing_edge_art_asset_list.md` §2.1) — the current starfield is a procedurally generated placeholder (`StarfieldBackground.ts`). When produced, background art should match the dark, high-contrast pixel aesthetic.

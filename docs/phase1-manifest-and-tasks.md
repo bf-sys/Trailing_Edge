@@ -1,20 +1,23 @@
 # Phase 1 Asset Manifest & Prep Task List
 
 **Updated 2026-07-29** for a GDD revision that changed Phase 1's scope and
-reassigned two already-sourced assets. See `STATUS.md`'s "Design update"
-section for the full explanation; this file reflects the *current* correct
-scope and directory layout going forward.
+reassigned two already-sourced assets. **Updated again 2026-07-31** for a
+core-loop change splitting the Home Marker into Entry/Exit Wormhole (no new
+sourcing — see below). See `STATUS.md`'s "Design update" sections for the
+full explanation; this file reflects the *current* correct scope and
+directory layout going forward.
 
-Scope: the seven items Phase 1 (GDD §12) requires — ship, one Debris Field
+Scope: the eight items Phase 1 (GDD §12) requires — ship, one Debris Field
 hazard, one AsteroidField resupply point (structure repair only — energy
 regenerates passively, no dedicated object), the Probe, the Relay Beacon
-(a mandatory per-level waypoint, **not** a puzzle), the Home Marker
-(launch/return position), minimal HUD. **No puzzle-taxonomy element ships
-in Phase 1** — Signal Array (the renamed sequence puzzle, formerly named
-Relay Beacon) and the rest of the taxonomy are Phase 2a scope. Cargo
-Pod/Wreckage and the base Ansimuz tileset were incidentally found in an
-earlier pass but are Phase 2a/2b scope — listed at the bottom as "on deck,"
-not prepped now.
+(a mandatory per-level waypoint, **not** a puzzle), the Entry Wormhole and
+Exit Wormhole (launch position and required return destination — two
+distinct locations as of 2026-07-31, previously one shared Home Marker),
+minimal HUD. **No puzzle-taxonomy element ships in Phase 1** — Signal Array
+(the renamed sequence puzzle, formerly named Relay Beacon) and the rest of
+the taxonomy are Phase 2a scope. Cargo Pod/Wreckage and the base Ansimuz
+tileset were incidentally found in an earlier pass but are Phase 2a/2b
+scope — listed at the bottom as "on deck," not prepped now.
 
 ## Directory convention
 
@@ -28,19 +31,24 @@ assets/
     ship_base_PLACEHOLDER.png
     ship_damage_overlay_PLACEHOLDER.png   (per owner's overlay-VFX decision)
   hazards/
-    debris_large.png, debris_medium.png, debris_small.png
+    debris_large_PLACEHOLDER.png, debris_medium_PLACEHOLDER.png,
+    debris_small_PLACEHOLDER.png
   resupply/
-    asteroid_large.png, asteroid_medium.png, asteroid_small.png
+    asteroid_large_PLACEHOLDER.png, asteroid_medium_PLACEHOLDER.png,
+    asteroid_small_PLACEHOLDER.png
     (moved here 2026-07-29 — was filed under hazards/ before AsteroidField
     was official Phase 1 scope; these are the structure-repair resupply
     object now, distinct from the Debris Field hazard above even though
     both come from the same source pack)
   objectives/
-    (new 2026-07-29 — the three required-every-level core-loop objects;
-    none of these are puzzle-taxonomy content, §6)
-    home_marker_PLACEHOLDER.png   (was resupply/star_PLACEHOLDER.png —
-      Star is no longer a resupply object, reassigned to Home Marker)
-    relay_beacon_idle.png, relay_beacon_reached_overlay.png
+    (new 2026-07-29 — the required-every-level core-loop objects; none of
+    these are puzzle-taxonomy content, §6)
+    wormhole_PLACEHOLDER.png   (was resupply/star_PLACEHOLDER.png, then
+      objectives/home_marker_PLACEHOLDER.png — Star is no longer a resupply
+      object; renamed again 2026-07-31 when the single Home Marker split
+      into EntryWormhole/ExitWormhole, both of which reuse this one file,
+      tinted differently at runtime — no new sourcing needed)
+    relay_beacon_idle_PLACEHOLDER.png, relay_beacon_reached_overlay_PLACEHOLDER.png
       (was puzzle/relay_beacon_*.png — reassigned from the old Relay Beacon
       puzzle element, now renamed Signal Array, to the new mandatory
       waypoint of the same name; see STATUS.md)
@@ -50,12 +58,23 @@ assets/
     (currently empty — Signal Array is unsourced again as of 2026-07-29;
     left in place for Phase 2a rather than deleted)
   ui/
-    bar_energy.png
-    bar_structure.png
-    panel_frame.png
+    bar_energy_PLACEHOLDER.png
+    bar_structure_PLACEHOLDER.png
+    panel_frame_PLACEHOLDER.png
     (remaining UI Pack - Sci-Fi files held uncropped in ui/_source/ until
     Phase 2a needs specific icons)
 ```
+
+**2026-07-31 renaming pass:** every currently-sourced Phase 1 asset now
+carries `_PLACEHOLDER` in its filename, not just the ones Agent 2 originally
+scored "Partial" (see the redefined convention note below) — done so the
+project owner can tell at a glance, while generating real art, which files
+in `assets/` are still temporary stand-ins vs. finished. `assets/ui/_source/`
+(raw, uncropped pack files, never individually loaded by code) was
+deliberately left out of this pass — it isn't an in-use asset in the first
+place. `assets/warped_top_down_tech_lab_extension.png` (an uncropped Phase
+2a source sheet, same category as `ui/_source/`) was left alone for the
+same reason.
 
 **Build-time caveat (found 2026-07-29, scaffolding pass):** Vite's
 `publicDir` (set to `assets/` in `vite.config.ts`) copies its entire tree
@@ -68,10 +87,17 @@ shippable. Same fix should also address `assets/warped_top_down_tech_lab_extensi
 sitting loose at `assets/` root, unused until Phase 2a's Cargo Pod/Wreckage
 crop.
 
-`_PLACEHOLDER` suffix marks anything Agent 2 scored "Partial" and the owner
-accepted as a stand-in (ship base, home marker). Drop the suffix only when a
-closer match replaces it — don't rename in place, since level configs will
-already reference the placeholder filename by then.
+**Convention redefined 2026-07-31:** `_PLACEHOLDER` now marks *every*
+currently-sourced Phase 1 asset actually wired into the game (regardless of
+whether Agent 2 scored it "Partial" or a good match) — the point going
+forward is tracking temporary/prototype art vs. finished art while new art
+gets generated, not just flagging weak matches. Originally (through
+2026-07-29) the suffix meant specifically "Agent 2 scored this Partial and
+the owner accepted it as a stand-in" (ship base, home marker); that
+narrower history still explains why those two got the suffix first. Either
+way: drop the suffix only when a closer/final asset replaces a file — don't
+rename in place, since level configs and `BootScene.ts` will already
+reference the placeholder filename by then.
 
 ## Per-asset task list
 
@@ -92,17 +118,24 @@ already reference the placeholder filename by then.
      (AsteroidField, the structure-repair resupply object — moved here
      2026-07-29, now that it's official Phase 1 scope rather than
      incidental).
+   - Filenames carry `_PLACEHOLDER` as of 2026-07-31 (`debris_large_PLACEHOLDER.png`
+     etc., `asteroid_large_PLACEHOLDER.png` etc.) per the redefined
+     convention above — same sprites, no re-sourcing involved.
 
-3. **Home Marker (Simple Space.zip)** — done; role reassigned 2026-07-29
-   (was: Star resupply point).
-   - Extract the star/sparkle icon sprite → `objectives/home_marker_PLACEHOLDER.png`
-     (currently a placeholder for a future distinct object, e.g. a
-     wormhole — GDD §11.14).
+3. **Entry Wormhole / Exit Wormhole (Simple Space.zip)** — done; role
+   reassigned twice (was: Star resupply point → Home Marker, 2026-07-29;
+   Home Marker split into Entry/Exit Wormhole, 2026-07-31).
+   - Extract the star/sparkle icon sprite → `objectives/wormhole_PLACEHOLDER.png`
+     (GDD §11.14) — used for **both** `EntryWormhole` and `ExitWormhole`
+     instances, distinguished only by runtime tint
+     (`wormholeConfig.activeTint`/`inactiveTint`). One file, no new
+     sourcing needed for the split.
    - **Do not skip the style-mismatch check**: view this sprite next to
      `ship_base_PLACEHOLDER.png` before committing. *Simple Space* is flat
      minimalist line art; *Space Shooter Remastered* is shaded/rendered.
-     Already flagged once (as the Star resupply point) and accepted
-     as-is by the owner — same visual, same call now that it's Home Marker.
+     Already flagged once (as the Star resupply point, then as Home Marker)
+     and accepted as-is by the owner — same visual, same call now that it
+     backs the wormhole pair.
 
 4. **Relay Beacon (mandatory waypoint) — reassigned, not re-sourced,
    2026-07-29.** Previously sourced for the old Relay Beacon *puzzle*
@@ -110,10 +143,12 @@ already reference the placeholder filename by then.
    the same name per owner decision (satellite sprite fits a "marker in
    space" concept well; Signal Array gets fresh sourcing instead, see item
    6 below).
-   - Files already extracted: `objectives/relay_beacon_idle.png`
+   - Files already extracted: `objectives/relay_beacon_idle_PLACEHOLDER.png`
      (`spaceStation_021.png`, Kenney Space Shooter Extension, CC0,
-     unmodified) and `objectives/relay_beacon_reached_overlay.png` (a
-     procedurally generated glow, not sourced — no license implication).
+     unmodified) and `objectives/relay_beacon_reached_overlay_PLACEHOLDER.png`
+     (a procedurally generated glow, not sourced — no license implication).
+     Both renamed with the `_PLACEHOLDER` suffix 2026-07-31 per the
+     redefined convention above.
    - The waypoint doesn't strictly need a "reached" glow state the way the
      old puzzle needed a solved/unsolved state per spot — but there's no
      reason not to reuse it as arrival feedback (e.g. flash on overlap).
@@ -141,6 +176,9 @@ already reference the placeholder filename by then.
      §12 step 5: energy bar, structure bar. Ability icons and puzzle-site
      indicator are explicitly Phase 2a (§11.10) — don't extract them yet,
      to keep this pass scoped to what Phase 1 actually uses.
+   - Filenames (`bar_energy_PLACEHOLDER.png`, `bar_structure_PLACEHOLDER.png`,
+     `panel_frame_PLACEHOLDER.png`) carry `_PLACEHOLDER` as of 2026-07-31
+     per the redefined convention above.
 
 ## On deck (Phase 2a/2b — found or reassigned away, not prepped for Phase 1)
 
@@ -161,9 +199,9 @@ already reference the placeholder filename by then.
 
 ## Open items carried forward
 
-- Home Marker vs. ship style-mismatch (item 3 above) — the one unresolved
-  judgment call carried over from the original Phase 1 set. Resolve before
-  calling Phase 1 asset prep done.
+- Entry/Exit Wormhole vs. ship style-mismatch (item 3 above) — the one
+  unresolved judgment call carried over from the original Phase 1 set.
+  Resolve before calling Phase 1 asset prep done.
 - Probe placeholder (item 5 above) is greyscale/programmer-art, not a
   licensed-pack sprite — fine as a stand-in, worth a real sourcing pass or
   owner-authored replacement before final art.

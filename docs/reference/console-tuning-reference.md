@@ -70,6 +70,79 @@ window.tuning.survival.energyRegenPerSecond = 20      // faster passive energy r
 window.tuning.survival.maxStructure = 200             // bigger structure pool (won't heal existing run above the old max mid-level)
 ```
 
+## `window.tuning.wormhole` (`src/config/wormholeConfig.ts`)
+
+Entry/exit wormhole feel (GDD §11.14) — the tint states and how quickly the
+Entry Wormhole visually closes after the level starts.
+
+| Field | Default | What it does |
+|---|---|---|
+| `activeTint` | `0x88ffcc` | Tint applied while a wormhole is "open" (Entry at level start; Exit once the Relay Beacon is reached) |
+| `inactiveTint` | `0x445566` | Tint applied while a wormhole is "closed" (Entry after `entryCloseDelayMs`; Exit until the Relay Beacon is reached) |
+| `entryCloseDelayMs` | `400` | Delay (ms) after level start before the Entry Wormhole swaps from `activeTint` to `inactiveTint` |
+
+```js
+window.tuning.wormhole.entryCloseDelayMs = 1000  // Entry Wormhole stays open longer before closing
+window.tuning.wormhole.activeTint = 0xffffff     // brighter "open" tint
+```
+
+## `window.tuning.hud` (`src/config/hudConfig.ts`)
+
+Off-screen objective marker feel (resolves GDD §9's off-screen-objective-
+visibility open question) — a single edge-pinned arrow pointing at the
+current objective (Probe → Relay Beacon → Exit Wormhole) whenever it's
+outside the camera viewport.
+
+| Field | Default | What it does |
+|---|---|---|
+| `objectiveMarkerEdgeMargin` | `32` | Inset (px) from the viewport edge where the marker sits when clamped |
+| `objectiveMarkerSize` | `18` | Arrow size (px) |
+| `objectiveMarkerColor` | `0xffcc33` | Arrow fill color |
+
+```js
+window.tuning.hud.objectiveMarkerEdgeMargin = 60  // marker sits further in from the screen edge
+```
+
+**Note:** `objectiveMarkerSize`/`objectiveMarkerColor` are baked into a
+generated texture the first time `HudOverlay` constructs, and — same as
+`StarfieldBackground`'s procedural tiles — that texture lives in the global
+texture manager, not per-scene, so it's never regenerated once created, not
+even across a hard-fail restart. Changing these two values via the console
+has no visible effect until a full page reload; `objectiveMarkerEdgeMargin`
+(read fresh every frame in `HudOverlay.update()`) applies instantly like
+`ship`/`survival`/`wormhole`.
+
+## `window.tuning.backgroundSetPieces` (`src/config/backgroundSetPieceConfig.ts`)
+
+Decorative-only background dressing (no gameplay effect) — a handful of
+large, slow-parallax "set piece" images (a planet, a distant galaxy, ...)
+scattered across the level to break up the tiled starfield's
+(`StarfieldBackground.ts`) monotony. Placement is seeded per level + session
+(`BackgroundSetPieces.ts`), so it's stable across a hard-fail restart of the
+same level, varies between levels, and reshuffles on a fresh page load.
+
+| Field | Default | What it does |
+|---|---|---|
+| `count` | `3` | Set pieces placed per level |
+| `minSpacing` | `400` | Minimum distance (px) enforced between placed set pieces |
+| `scrollFactor` | `0.08` | Parallax speed — slower than the far starfield layer (`0.15`), reads as further away |
+| `depth` | `-110` | Render depth — behind the far starfield layer (`-100`) |
+| `minScale` / `maxScale` | `0.8` / `1.6` | Random per-instance scale range |
+| `minAlpha` / `maxAlpha` | `0.5` / `0.9` | Random per-instance alpha range |
+
+```js
+window.tuning.backgroundSetPieces.count = 6          // more set pieces per level (takes effect on next restart, not live)
+window.tuning.backgroundSetPieces.scrollFactor = 0.15 // move at the same speed as the far starfield layer
+```
+
+**Note:** unlike `ship`/`survival`/`wormhole`, these values are only read
+once per `GameScene.create()` (including hard-fail restarts), not every
+frame — a console edit takes effect on the *next* restart or level load, not
+instantly. The roster textures themselves (`bg_setpiece_planet`,
+`bg_setpiece_galaxy`) are placeholder procedural art, same caveat as
+`hud`'s marker texture: not reconfigurable from here at all, only replaceable
+by editing `BackgroundSetPieces.ts` or swapping in real sourced art.
+
 ## Not tunable from the console yet
 
 - **Hazard costs** (e.g. Debris Field's structure-drain rate) — currently a

@@ -4,7 +4,12 @@
 
 **Updated 2026-07-29** for a GDD revision that changed Phase 1's scope, split
 "Relay Beacon" into two different things (§1.3a below), and removed Star as
-a resupply object. See `STATUS.md`'s "Design update" section for the full
+a resupply object. **Updated again 2026-07-31** for a core-loop change that
+splits the single "Home Marker" object into two distinct locations, Entry
+Wormhole and Exit Wormhole (§1.3a, §2.1) — same reused Star sprite, no new
+sourcing — and separately for a new decorative background-set-piece layer
+(§2.1), currently procedural placeholder art with a real sourcing need
+recorded there. See `STATUS.md`'s "Design update" sections for the full
 asset-sourcing-side explanation of what moved/reassigned where.
 
 ---
@@ -56,7 +61,7 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 |---|---|
 | Probe | **Sourced, as an owner-original placeholder** (`objectives/probe_PLACEHOLDER.png`, greyscale, added 2026-07-29 directly by the project owner — not from a licensed pack, no attribution needed). Never listed as a requirement anywhere before this revision (a pre-existing gap this revision exposed); resolved as a placeholder same day. Still worth a real sourcing pass before final art. |
 | Relay Beacon (mandatory waypoint — **not** the same thing as Signal Array above) | Sourced, via reassignment: the satellite sprite originally sourced for the old Relay Beacon puzzle (now Signal Array) was reassigned here 2026-07-29, since it fits "a marker in space" well and the puzzle's per-spot solved/unsolved requirement doesn't apply to a single simple waypoint. |
-| Home Marker | Sourced, via reassignment: the Star sprite (§1.4's old "recharge point" entry) is reused here as a placeholder — no longer a resupply object, since energy regenerates passively now. Same asset as the pre-existing "Home base / launch point visual" line in §2.1 below — that content-list entry is now confirmed fulfilled by this reused sprite. |
+| Entry Wormhole / Exit Wormhole (launch position and required return destination — **two distinct locations** as of 2026-07-31, previously one shared "Home Marker" object) | Sourced, via reassignment: the Star sprite (§1.4's old "recharge point" entry) is reused for **both** instances as a placeholder, distinguished only by tint (active/inactive) — no new sourcing needed for the split. No longer a resupply object, since energy regenerates passively now. Same asset as the pre-existing "Home base / launch point visual" line in §2.1 below — that content-list entry is now confirmed fulfilled by this reused sprite. |
 
 ### 1.4 Resupply Points (§11.6)
 
@@ -101,8 +106,13 @@ Scales with level count. Initial scope per §12.2 is a vertical slice plus rough
 
 ### 2.1 Environment
 
-- Home base / launch point visual — one asset, used across all levels. **Fulfilled** by the reused Star sprite (now `HomeMarker`, §1.3a) as a placeholder — no new sourcing needed here.
-- Per-level backgrounds / starfields — one distinct treatment per level
+- Home base / launch point visual — one asset, used across all levels. **Fulfilled** by the reused Star sprite (now backing both `EntryWormhole` and `ExitWormhole`, §1.3a — two distinct locations as of 2026-07-31, tinted differently) as a placeholder — no new sourcing needed here.
+- **Per-level backgrounds / starfields** — one distinct treatment per level. **Current implementation (placeholder):** two procedurally generated tile textures (`STARFIELD_FAR_KEY`/`STARFIELD_NEAR_KEY`, 1024×1024, `StarfieldBackground.ts`), rendered as two `Phaser.GameObjects.TileSprite`s at different depths/scroll speeds for parallax (far: `scrollFactor 0.15`, depth `-100`; near: `scrollFactor 0.4`, depth `-90`), sized to `LEVEL_WIDTH/HEIGHT * 1.5` so panning never runs past the tiled texture (`GameScene.createParallaxBackground()`).
+  - **Replacing with real art — two paths, pick one before sourcing:**
+    1. **Keep the tiling approach (smaller code change).** Load two real PNGs under the existing `STARFIELD_FAR_KEY`/`STARFIELD_NEAR_KEY` texture keys in `BootScene` and drop the call to `createStarfieldTextures()` — no `GameScene` changes needed at all, since it only ever references the texture keys. **Hard constraint this puts on the art itself: it must tile seamlessly at every edge**, since `TileSprite` repeats it continuously — visible seams are an easy, common failure mode for hand-drawn or AI-generated tile art, and are worth explicitly checking for (tile the candidate 2×2 and look for a repeating seam) before accepting a sourced/generated image. Source resolution should stay reasonably high (at least the current 1024×1024, ideally 2048×2048) so tiles don't look soft when the level (and therefore the tiled area) grows larger than today's 2400×1350 test map.
+    2. **Move to one non-repeating backdrop per level (bigger code change).** Replace the `TileSprite` pair with a single `Image` scaled/positioned to cover the level bounds — sidesteps the seamless-tiling constraint entirely (much easier art to source or generate) and matches this bullet's own "one distinct treatment per level" framing better than a shared repeating tile does. Tradeoffs: needs a real code change in `GameScene.createParallaxBackground()` (no more one-texture-fits-every-level reuse), and file size scales with level size rather than staying fixed at one small repeating tile — worth a quick sanity check against build size once real levels are bigger than the current test map.
+  - Not urgent to decide until real starfield art is actually being sourced/generated; this note exists so that decision happens deliberately rather than by default when that time comes.
+- **Background set pieces (added 2026-07-31)** — decorative-only images (a planet, a distant galaxy/nebula, ...) scattered a few at a time across a level to break up the tiled starfield's monotony; no gameplay effect, placement is randomized (seeded per level, see `BackgroundSetPieces.ts`). **Currently procedural placeholder art** (two Graphics-drawn textures — a shaded circle for "planet," a colored dot-cloud for "galaxy" — same throwaway-art approach as the starfield tiles themselves). Real sourcing need: a small roster (3–5+) of varied deep-space backdrop images — planets, nebulae, distant galaxies, derelict structures, etc. — sized to read clearly at large scale/low alpha against the starfield. Not urgent; swap in as real art becomes available, one roster entry at a time, following the `_PLACEHOLDER` naming convention (`docs/phase1-manifest-and-tasks.md`) once sourced.
 - Per-level cargo/data reward representation — §1.1 (Appendix) frames each level's recovered data as also carrying narrative payoff (that system's habitability verdict); confirm whether this needs a unique per-level visual or can reuse one generic "recovered data" asset with text/UI doing the narrative work
 
 ### 2.2 Per-Level Hazard & Puzzle Placement

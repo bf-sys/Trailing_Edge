@@ -23,12 +23,15 @@ incidental (GDD §2):
 | Meso | Exploration | Where you go, routing decisions |
 | Micro | Puzzle-solving | Discrete, deterministic challenge sites |
 
-Core loop (GDD §3): launch from the level's Home Marker → explore/scan
+Core loop (GDD §3): launch from the level's Entry Wormhole → explore/scan
 asteroids, encounter hazards along the way (levels typically mix multiple
 hazard types; only structure-draining hazards can end the level, energy is
 an ability-gating resource, not a fail resource) → find and recover the
 probe → find and reach the Relay Beacon (a mandatory per-level waypoint,
-*not* a puzzle) → return to the Home Marker → spend unlocks → next level.
+*not* a puzzle) → return via the level's Exit Wormhole (a distinct location
+from the Entry Wormhole, closed until the Relay Beacon is reached — GDD §3
+revision, 2026-07-31; previously one shared Home Marker) → spend unlocks →
+next level.
 Puzzle-site elements (§6) are optional/additive content encountered along
 the way, not a required step.
 
@@ -109,17 +112,25 @@ module load. Agents append imports; **nobody hand-edits `create()`.**
 - **`LevelObjectiveTracker`** (per-level, replaces `CheckpointManager`'s role
   for now) — tracks `probeFound`/`beaconReached` booleans, reset on level
   start and on every hard-fail restart (no partial memory across a fail).
-  `HomeMarker` queries `canReturn()` before completing the level.
+  `ExitWormhole` queries `canReturn()` before completing the level.
 - **`ProbeObject`** — arrival trigger; `onPlayerArrival()` →
   `LevelObjectiveTracker.onProbeFound()`.
 - **`RelayBeaconObject`** — mandatory per-level waypoint required after the
   probe, before return. **Not a puzzle** — plain navigate-to/arrival
   trigger. Distinct from the Signal Array puzzle element below (naming was
   split to avoid a collision — "Relay Beacon" used to name that puzzle).
-- **`HomeMarker`** — launch position and required return destination.
-  Currently reuses the Star asset as a placeholder (eventually a distinct
-  object, e.g. a wormhole). `onPlayerArrival()` checks
-  `LevelObjectiveTracker.canReturn()` before completing the level.
+- **`EntryWormhole`** / **`ExitWormhole`** — launch position and required
+  return destination, **two distinct locations** (2026-07-31 revision;
+  previously one shared `HomeMarker`, now superseded/removed). Both reuse
+  the same placeholder sprite (formerly the Star asset), distinguished only
+  by tint — no new art needed. `EntryWormhole` is visual-only (no Arcade
+  overlap; starts tinted "active", swaps to "inactive" shortly after level
+  start). `ExitWormhole` starts tinted "inactive", opens ("active") once
+  `LevelObjectiveTracker`'s beacon-reached event fires, and its
+  `onPlayerArrival()` checks `LevelObjectiveTracker.canReturn()` before
+  completing the level. `LevelObjectiveTracker` also exposes
+  `getCurrentObjectiveTarget()`, used by `HudOverlay`'s off-screen marker
+  (see Open design questions below).
 - **`PuzzleElementBase`** (abstract) and subtypes — **optional/additive
   content, not required to complete a level; none of these ship in Phase 1**
   (see Phase 1 content scope below):
@@ -152,10 +163,11 @@ module load. Agents append imports; **nobody hand-edits `create()`.**
 - **`ResupplyPoint`** (AsteroidField only) — Arcade overlap → repair
   structure. No longer covers energy (passive regen instead) and no longer
   registers a checkpoint (deferred). The Star variant is retired as a
-  resupply object — see `HomeMarker` above.
+  resupply object — see `EntryWormhole`/`ExitWormhole` above.
 - **Authored data** — per-hazard `CostData`, per-ability `AbilityCostData`,
   required per-level object placement (`probeLocation`,
-  `relayBeaconLocation`, `homeMarkerLocation`), and `levelOrder: string[]`
+  `relayBeaconLocation`, `entryWormholeLocation`, `exitWormholeLocation`),
+  and `levelOrder: string[]`
   (linear progression — no level-select; content agents append to this
   array, never hardcode a "next level" pointer). Per-level checkpoint-floor
   values are removed for the initial build (tied to the deferred
@@ -185,7 +197,7 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
    each step: `ExplorationController` → `ShipSurvivalComponent` + one
    `HazardZoneElement` (Debris Field) + one `ResupplyPoint` (AsteroidField,
    passive energy regen active) → `ProbeObject`/`RelayBeaconObject`/
-   `HomeMarker`/`LevelObjectiveTracker` wired end-to-end → hard-fail flow
+   `EntryWormhole`/`ExitWormhole`/`LevelObjectiveTracker` wired end-to-end → hard-fail flow
    (full level restart, no `CheckpointManager`) → bare-minimum `HudOverlay`
    (bars only). **No puzzle-site element in Phase 1** — the mandatory loop
    doesn't require solving one. Gate at week 2 before touching Phase 2:
@@ -231,15 +243,18 @@ Cluster (trail/encircle).
 taxonomy): Probe, Relay Beacon (mandatory navigate-to waypoint, required
 after the probe and before return — **not** the same thing as Signal Array
 above; the name was reassigned to this waypoint, causing the puzzle
-element's rename), Home Marker (launch/return position, currently the
-reused Star asset as a placeholder).
+element's rename), Entry Wormhole and Exit Wormhole (launch position and
+required return destination — two distinct locations as of 2026-07-31,
+both reusing the same placeholder sprite, formerly the Star asset, tinted
+differently; previously one shared Home Marker object).
 
 ## Phase 1 content scope (exactly these, nothing else)
 
 One hazard (Debris Field), one resupply point (AsteroidField — structure
 repair only; energy regenerates passively, no dedicated object), the Probe,
-the Relay Beacon (mandatory waypoint, not a puzzle), the Home Marker
-(placeholder: reused Star asset), the ship, minimal HUD. **No
+the Relay Beacon (mandatory waypoint, not a puzzle), the Entry Wormhole and
+Exit Wormhole (two distinct locations, placeholder: reused Star asset
+tinted per-state), the ship, minimal HUD. **No
 puzzle-taxonomy element ships in Phase 1** — Signal Array and the rest of
 the taxonomy above move to Phase 2a. See `docs/STATUS.md` for what's
 currently sourced-but-not-yet-scoped (Cargo Pod, base tileset) vs.
@@ -262,11 +277,13 @@ while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't
 — whether the current visual language communicates that difference is
 untested. Same validation timing as the item above.
 
-Also newly open (2026-07-30): off-screen objective visibility. §8's levels
-are "bounded," not "screen-sized" — the vertical-slice test map is now
-larger than the viewport with a camera that follows the ship, and once a
-level exceeds one screen the Probe/Relay Beacon/Home Marker (`ProbeObject`/
-`RelayBeaconObject`/`HomeMarker`) can all be off-screen at once with no way
-to tell which direction to go. Needs a minimap or a simpler per-objective
-off-screen directional indicator (or both, at different times) — not
-decided; validate once real levels are authored bigger than one screen.
+**Resolved (2026-07-31):** off-screen objective visibility (raised
+2026-07-30, §8's levels are "bounded," not "screen-sized," so the
+vertical-slice test map's Probe/Relay Beacon/Exit Wormhole can all be
+off-screen at once). Resolved as a single edge-pinned directional arrow
+(Sinistar-style), not a minimap — `LevelObjectiveTracker` already sequences
+the loop strictly linearly, so there's only ever one current objective to
+point at. Implemented in `HudOverlay` via
+`LevelObjectiveTracker.getCurrentObjectiveTarget()`. Revisit if a future
+level needs multiple simultaneous objective/hazard markers at once — a
+minimap may become warranted then.

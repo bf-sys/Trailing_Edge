@@ -8,9 +8,11 @@ import { SHIP_SURVIVAL_EVENTS } from '../objects/ShipSurvivalComponent';
 import { LevelObjectiveTracker, LEVEL_OBJECTIVE_EVENTS } from '../objects/LevelObjectiveTracker';
 import { ProbeObject } from '../objects/ProbeObject';
 import { RelayBeaconObject } from '../objects/RelayBeaconObject';
-import { HomeMarker } from '../objects/HomeMarker';
+import { EntryWormhole } from '../objects/EntryWormhole';
+import { ExitWormhole } from '../objects/ExitWormhole';
 import { HudOverlay } from '../objects/HudOverlay';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
+import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -25,13 +27,20 @@ interface GameSceneData {
 // used so far.
 const LEVEL_WIDTH = 2400;
 const LEVEL_HEIGHT = 1350;
-const HOME_MARKER_X = LEVEL_WIDTH / 2;
-const HOME_MARKER_Y = LEVEL_HEIGHT / 2;
+
+// Core-loop object placements (§11.11-11.14): find probe -> reach beacon ->
+// reach the (separate) exit wormhole. Named consts, not inline literals, so
+// each placed object and LevelObjectiveTracker's waypoints share one source
+// of truth rather than duplicating coordinates.
+const ENTRY_WORMHOLE_POSITION = { x: LEVEL_WIDTH / 2, y: LEVEL_HEIGHT / 2 };
+const EXIT_WORMHOLE_POSITION = { x: 500, y: 1000 };
+const PROBE_POSITION = { x: 2200, y: 200 };
+const RELAY_BEACON_POSITION = { x: 200, y: 1150 };
 
 // Parameterized by levelId only — always starts at the level's beginning,
 // no mid-level resume (CheckpointManager is deferred). Doubles as Phase 1's
 // "small test scene" — every placement below (hazard, resupply, probe,
-// beacon, home marker) is hardcoded test-scene content, not real
+// beacon, entry/exit wormhole) is hardcoded test-scene content, not real
 // level-config authoring (that's Phase 2b's per-level authored-data work).
 //
 // A hard fail (onStructureDepleted) calls scene.restart(), which re-runs
@@ -43,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private levelId!: string;
   private hazards: HazardZoneElement[] = [];
   private resupplyPoints: ResupplyPoint[] = [];
+  private hudOverlay!: HudOverlay;
 
   constructor() {
     super(GAME_SCENE_KEY);
@@ -58,6 +68,7 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
     this.createParallaxBackground();
+    placeBackgroundSetPieces(this, this.levelId, LEVEL_WIDTH, LEVEL_HEIGHT);
 
     this.add
       .text(8, 88, `levelId: ${this.levelId}\nClick to move`, { fontSize: '14px', color: '#ffffff' })
@@ -67,13 +78,13 @@ export class GameScene extends Phaser.Scene {
     // Nobody hand-edits this loop per-system — systems register themselves
     // via SystemRegistry from their own module (see src/systems/index.ts).
     // ExplorationController spawns the ship at a placeholder default (it has
-    // no way to know this level's real Home Marker position); reposition it
-    // to the real spawn point immediately after.
+    // no way to know this level's real Entry Wormhole position); reposition
+    // it to the real spawn point immediately after.
     SystemRegistry.all().forEach((system) => system.init?.(this));
 
     const ship = getPlayerShip();
     if (ship) {
-      ship.image.setPosition(HOME_MARKER_X, HOME_MARKER_Y);
+      ship.image.setPosition(ENTRY_WORMHOLE_POSITION.x, ENTRY_WORMHOLE_POSITION.y);
       ship.image.setCollideWorldBounds(true);
       this.cameras.main.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
       this.cameras.main.startFollow(ship.image, true, 0.1, 0.1);
@@ -99,19 +110,22 @@ export class GameScene extends Phaser.Scene {
       new ResupplyPoint(this, { x: 650, y: 300, textureKey: 'asteroid_large', radius: 60 }),
     );
 
-    // Core-loop objects (§11.11-11.14): find probe -> reach beacon -> return
-    // to Home Marker. Spread across the level on purpose now that it's
-    // bigger than the viewport — see GDD §9's new off-screen-objective
-    // open question triggered by exactly this test map.
-    const tracker = new LevelObjectiveTracker();
+    // Core-loop objects (§11.11-11.14): find probe -> reach beacon -> reach
+    // the exit wormhole. Spread across the level on purpose now that it's
+    // bigger than the viewport — see GDD §9's off-screen-objective marker,
+    // resolved via HudOverlay's edge-pinned arrow below.
+    const tracker = new LevelObjectiveTracker({
+      probe: PROBE_POSITION,
+      relayBeacon: RELAY_BEACON_POSITION,
+      exitWormhole: EXIT_WORMHOLE_POSITION,
+    });
 
-    new ProbeObject(this, { x: 2200, y: 200, textureKey: 'probe', radius: 40 }, tracker);
+    new ProbeObject(this, { ...PROBE_POSITION, textureKey: 'probe', radius: 40 }, tracker);
 
     new RelayBeaconObject(
       this,
       {
-        x: 200,
-        y: 1150,
+        ...RELAY_BEACON_POSITION,
         idleTextureKey: 'relay_beacon_idle',
         reachedOverlayTextureKey: 'relay_beacon_reached_overlay',
         radius: 40,
@@ -119,14 +133,16 @@ export class GameScene extends Phaser.Scene {
       tracker,
     );
 
-    new HomeMarker(
+    new EntryWormhole(this, { ...ENTRY_WORMHOLE_POSITION, textureKey: 'wormhole', radius: 40 });
+
+    new ExitWormhole(
       this,
-      { x: HOME_MARKER_X, y: HOME_MARKER_Y, textureKey: 'home_marker', radius: 40 },
+      { ...EXIT_WORMHOLE_POSITION, textureKey: 'wormhole', radius: 40 },
       tracker,
       () => this.handleLevelComplete(),
     );
 
-    new HudOverlay(this);
+    this.hudOverlay = new HudOverlay(this, tracker);
 
     this.wireHardFailRestart();
     this.setUpObjectiveDebugReadout(tracker);
@@ -141,6 +157,7 @@ export class GameScene extends Phaser.Scene {
     SystemRegistry.all().forEach((system) => system.update?.(time, delta));
     this.hazards.forEach((hazard) => hazard.update(time, delta));
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
+    this.hudOverlay.update();
   }
 
   // Deliberately minimal: real levelOrder resolution + SaveManager.saveProgress()
@@ -170,6 +187,9 @@ export class GameScene extends Phaser.Scene {
   // generated star tiles at different scrollFactors give a sense of motion
   // and depth on a level bigger than the viewport. Sized well past the
   // level bounds so panning near an edge never runs out of tiled texture.
+  // placeBackgroundSetPieces() (called from create(), above) adds a further
+  // decorative layer on top of this — a few random planet/galaxy set pieces,
+  // purely visual, to break up the tiled starfield's monotony.
   private createParallaxBackground(): void {
     const width = LEVEL_WIDTH * 1.5;
     const height = LEVEL_HEIGHT * 1.5;

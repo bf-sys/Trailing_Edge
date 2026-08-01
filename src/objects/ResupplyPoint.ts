@@ -11,7 +11,8 @@ export interface ResupplyPointConfig {
 
 // The asteroids you visit to repair structure (AsteroidField). No longer
 // covers energy — energy regenerates passively (GDD §5/§11.1); the Star
-// variant is retired as a resupply object (see HomeMarker, §11.14).
+// variant is retired as a resupply object (see EntryWormhole/ExitWormhole,
+// §11.14).
 export class ResupplyPoint {
   private readonly zone: Phaser.Physics.Arcade.Image;
   private overlapping = false;

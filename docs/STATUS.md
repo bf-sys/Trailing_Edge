@@ -1,9 +1,80 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-07-29)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-07-31)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Design update (2026-07-31) — core loop split, no new sourcing needed
+
+A core-loop change split the single `HomeMarker` object (launch position
+**and** required return destination) into two distinct locations:
+**`EntryWormhole`** (launch — starts tinted "active," closes shortly after
+level start) and **`ExitWormhole`** (required return destination, a
+separate spot on the map — starts tinted "inactive," opens once the Relay
+Beacon is reached). See `docs/trailing_edge_gdd_draft_31.md` §11.14 and
+`CLAUDE.md` for the full contract.
+
+**No new asset sourcing required** — both objects reuse the same
+placeholder sprite (the reassigned Star sprite from the 2026-07-29 update
+below), distinguished purely by runtime tint (`wormholeConfig.activeTint` /
+`inactiveTint`), same placeholder-reuse pattern as everything else in this
+ledger.
+
+File move made as part of this update (`git mv`, history preserved):
+
+```
+assets/objectives/home_marker_PLACEHOLDER.png → assets/objectives/wormhole_PLACEHOLDER.png
+```
+
+Also resolved this date: the off-screen-objective-visibility open question
+(GDD §9, raised 2026-07-30) — a single edge-pinned directional arrow
+(`HudOverlay`), not a minimap, since the core loop's objective sequence
+(Probe → Relay Beacon → Exit Wormhole) is strictly linear. The arrow is a
+**procedurally generated shape** (a Phaser-Graphics-drawn triangle baked to
+a texture at runtime, same pattern as `StarfieldBackground`'s procedural
+tiles) — no sourced art needed.
+
+### Addendum (same day) — `_PLACEHOLDER` naming convention broadened
+
+Separately, the project owner requested every currently-sourced Phase 1
+asset actually wired into the game carry `_PLACEHOLDER` in its filename —
+not just the two Agent 2 originally scored "Partial" (ship base, home
+marker/wormhole) — so temporary/prototype art stays easy to distinguish
+from finished art while new art gets generated. `phase1-manifest-and-tasks.md`
+now owns the full redefined-convention explanation; this note just records
+that the change happened and what moved (`git mv`, history preserved):
+
+```
+assets/hazards/debris_large.png              → assets/hazards/debris_large_PLACEHOLDER.png
+assets/hazards/debris_medium.png             → assets/hazards/debris_medium_PLACEHOLDER.png
+assets/hazards/debris_small.png              → assets/hazards/debris_small_PLACEHOLDER.png
+assets/resupply/asteroid_large.png           → assets/resupply/asteroid_large_PLACEHOLDER.png
+assets/resupply/asteroid_medium.png          → assets/resupply/asteroid_medium_PLACEHOLDER.png
+assets/resupply/asteroid_small.png           → assets/resupply/asteroid_small_PLACEHOLDER.png
+assets/objectives/relay_beacon_idle.png      → assets/objectives/relay_beacon_idle_PLACEHOLDER.png
+assets/objectives/relay_beacon_reached_overlay.png → assets/objectives/relay_beacon_reached_overlay_PLACEHOLDER.png
+assets/ui/panel_frame.png                    → assets/ui/panel_frame_PLACEHOLDER.png
+assets/ui/bar_energy.png                     → assets/ui/bar_energy_PLACEHOLDER.png
+assets/ui/bar_structure.png                  → assets/ui/bar_structure_PLACEHOLDER.png
+```
+
+`assets/ui/_source/` (raw, uncropped pack files) and the loose
+`assets/warped_top_down_tech_lab_extension.png` (an uncropped Phase 2a
+source sheet) were deliberately excluded — neither is an individually
+loaded, in-use asset, so neither is "a placeholder" in this sense yet.
+
+### Addendum (same day) — decorative background set pieces added
+
+A new purely-decorative layer (no gameplay effect): a handful of large,
+slow-parallax "set piece" images (a planet, a distant galaxy, ...) scattered
+across each level to break up the tiled starfield's monotony, placement
+seeded per level + session (`BackgroundSetPieces.ts`). **Completely
+placeholder/procedural for now** — two Graphics-drawn textures (a shaded
+circle, a colored dot-cloud), same throwaway-art approach as the starfield
+tiles. No sourcing done yet; see `trailing_edge_art_asset_list.md` §2.1 for
+the real-art requirement (a small roster of varied deep-space backdrops)
+once ready to source.
 
 ## Design update (2026-07-29) — read this before trusting anything below
 

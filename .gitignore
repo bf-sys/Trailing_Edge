@@ -2,3 +2,4 @@ assets/**/_source/
 art-staging/
 node_modules/
 dist/
+.env

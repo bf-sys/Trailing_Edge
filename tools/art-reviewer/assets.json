@@ -1,0 +1,62 @@
+[
+    {
+        "id": "ship_base",
+        "name": "Player Ship",
+        "path": "/assets/ship_base.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art spaceship, gritty dark sci-fi aesthetic, muted industrial metallics, 32-bit pixel art style, retro-futuristic, high contrast lighting from thrusters, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "debris_large",
+        "name": "Debris Hazard",
+        "path": "/assets/debris_large.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art floating space wreckage, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "asteroid_large",
+        "name": "Asteroid",
+        "path": "/assets/asteroid_large.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art space asteroid, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "wormhole",
+        "name": "Wormhole",
+        "path": "/assets/wormhole.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art glowing wormhole anomaly, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "relay_beacon_idle",
+        "name": "Relay Beacon",
+        "path": "/assets/relay_beacon_idle.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art space satellite relay beacon, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "probe",
+        "name": "Probe",
+        "path": "/assets/probe.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art inactive scientific deep space probe, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "bar_energy",
+        "name": "Energy Bar UI",
+        "path": "/assets/bar_energy.jpg",
+        "prompt": "Isolated single sprite of a Pixel art sci-fi UI energy bar, glowing cyan, gritty dark sci-fi, scanlines, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "bar_structure",
+        "name": "Structure Bar UI",
+        "path": "/assets/bar_structure.jpg",
+        "prompt": "Isolated single sprite of a Pixel art sci-fi UI structure health bar, glowing orange, gritty dark sci-fi, scanlines, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "bg_stars_far",
+        "name": "Far Background Stars",
+        "path": "/assets/bg_stars_far.jpg",
+        "prompt": "Seamless tileable pixel art starfield, far distant dim stars, pure black background, 32-bit retro sci-fi."
+    },
+    {
+        "id": "bg_stars_near",
+        "name": "Near Background Stars",
+        "path": "/assets/bg_stars_near.jpg",
+        "prompt": "Seamless tileable pixel art starfield, simulate near stars my making the equivalent of far plane stars (all small size) but slightly brighter in color under 60 stars total, sparse, pure black background, 32-bit retro sci-fi.  1024 x 1024 pixels in size."
+    }
+]

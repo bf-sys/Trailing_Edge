@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trailing Edge Art Reviewer</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: rgba(20, 20, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --primary: #00ffcc;
+            --danger: #ff4444;
+            --text: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 255, 204, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(255, 0, 128, 0.05), transparent 25%);
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button.control-btn {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        button.control-btn:hover {
+            background: rgba(0, 255, 204, 0.2);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .img-container {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .img-container.composite {
+            background-color: #000;
+            background-image: 
+                url('/assets/bg_stars_near.jpg'),
+                url('/assets/bg_stars_far.jpg');
+            background-size: 200px 200px, 100px 100px;
+            background-repeat: repeat;
+        }
+
+        .img-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+        
+        .placeholder-text {
+            color: rgba(255,255,255,0.3);
+            position: absolute;
+            font-style: italic;
+        }
+
+        .card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .status {
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .status.pending { background: rgba(255,255,255,0.1); }
+        .status.accepted { background: rgba(0, 255, 204, 0.2); color: var(--primary); }
+        .status.needs_revision { background: rgba(255, 68, 68, 0.2); color: var(--danger); }
+
+        textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 60px;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-accept {
+            background: rgba(0, 255, 204, 0.2);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .btn-accept:hover {
+            background: rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-update {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid var(--border);
+        }
+        .btn-update:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: #000;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,255,204,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Trailing Edge // Art Reviewer</h1>
+        <div class="header-controls">
+            <button class="control-btn" id="toggleCompositeBtn" onclick="toggleComposite()">Enable Composite View</button>
+            <button class="control-btn" onclick="toggleHelp()">? Workflow Guide</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="toggleHelp()">×</button>
+            <h2 style="margin-top:0;">How to use this tool</h2>
+            <ol style="line-height: 1.6;">
+                <li><strong>Review the assets</strong> generated by the AI in the grid below.</li>
+                <li><strong>Toggle Composite View</strong> to see the assets keyed out over the parallax starfields.</li>
+                <li><strong>If an asset looks perfect</strong>, click <span style="color:var(--primary)">Accept</span>.</li>
+                <li><strong>If it needs changes</strong>, type your feedback in the text box (e.g., "Make it more red") and click <strong>Generate & Apply</strong>.</li>
+                <li>The tool will directly contact the Gemini API and overwrite the asset seamlessly in a few seconds!</li>
+                <li><strong>Pro Tip:</strong> If an asset is being stubborn and won't follow your constraints, open <code>server.js</code> and change the model string from <code>gemini-3.1-flash-image</code> to <code>gemini-3-pro-image</code> for that run!</li>
+            </ol>
+            <button class="btn-update" style="width:100%" onclick="toggleHelp()">Got it</button>
+        </div>
+    </div>
+
+    <div class="grid" id="grid">
+        <!-- Cards generated by JS -->
+    </div>
+
+    <div class="toast" id="toast">Feedback saved! Tell the AI in chat to update.</div>
+
+    <script>
+        let isCompositeMode = false;
+        let globalAssets = [];
+
+        function toggleHelp() {
+            document.getElementById('helpModal').classList.toggle('active');
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function toggleComposite() {
+            isCompositeMode = !isCompositeMode;
+            const btn = document.getElementById('toggleCompositeBtn');
+            btn.innerText = isCompositeMode ? 'Disable Composite View' : 'Enable Composite View';
+            
+            document.querySelectorAll('.img-container').forEach(el => {
+                // Don't apply parallax to the background tiles themselves
+                if (!el.dataset.assetId.startsWith('bg_stars')) {
+                    if (isCompositeMode) {
+                        el.classList.add('composite');
+                    } else {
+                        el.classList.remove('composite');
+                    }
+                }
+            });
+            
+            // Re-render canvas layers
+            renderAllCanvases();
+        }
+
+        async function init() {
+            const [assetsRes, feedbackRes] = await Promise.all([
+                fetch('/api/assets'),
+                fetch('/api/feedback')
+            ]);
+            
+            globalAssets = await assetsRes.json();
+            const feedbackData = await feedbackRes.json();
+            
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            globalAssets.forEach(asset => {
+                const fData = feedbackData[asset.id] || {};
+                const status = fData.status || 'pending';
+                const fText = fData.feedback || '';
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h3>${asset.name}</h3>
+                    <div class="status ${status}">${status.replace('_', ' ').toUpperCase()}</div>
+                    <div class="img-container ${isCompositeMode && !asset.id.startsWith('bg_stars') ? 'composite' : ''}" data-asset-id="${asset.id}">
+                        <span class="placeholder-text" id="placeholder-${asset.id}">Loading...</span>
+                        <canvas id="canvas-${asset.id}"></canvas>
+                    </div>
+                    <textarea id="txt-${asset.id}" placeholder="Type feedback to change this image...">${fText}</textarea>
+                    <label style="font-size: 0.8rem; margin-bottom: 0.5rem; display: block; cursor: pointer;">
+                        <input type="checkbox" id="ref-${asset.id}"> Use current image as base reference
+                    </label>
+                    <div class="actions">
+                        <button class="btn-accept" onclick="submitFeedback('${asset.id}', 'accept')">Accept</button>
+                        <button class="btn-update" id="btn-gen-${asset.id}" onclick="generateImage('${asset.id}')">Generate & Apply</button>
+                    </div>
+                    <details style="margin-top: 1rem; text-align: left; background: #2a2a2a; padding: 0.5rem; border-radius: 4px; border: 1px solid #444;">
+                        <summary style="font-size: 0.75rem; color: #888; cursor: pointer; user-select: none;">Advanced: Edit Base Prompt</summary>
+                        <textarea id="base-prompt-${asset.id}" style="margin-top: 0.5rem; min-height: 80px; font-size: 0.75rem;">${asset.prompt}</textarea>
+                        <button class="btn-accept" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; width: 100%; margin-top: 0.5rem;" onclick="saveBasePrompt('${asset.id}')">Save Base Prompt</button>
+                    </details>
+                `;
+                grid.appendChild(card);
+            });
+
+            renderAllCanvases();
+        }
+
+        function renderAllCanvases() {
+            globalAssets.forEach(asset => {
+                const canvas = document.getElementById(`canvas-${asset.id}`);
+                const placeholder = document.getElementById(`placeholder-${asset.id}`);
+                const ctx = canvas.getContext('2d');
+                
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    placeholder.style.display = 'none';
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // If composite mode is ON, and it's NOT a background tile itself, key out green/magenta
+                    if (isCompositeMode && !asset.id.startsWith('bg_stars')) {
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imgData.data;
+                        
+                        // Advanced Chroma Key with Edge Blending and Despilling
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            
+                            // Measure how much greener this pixel is than its other channels
+                            const maxRB = Math.max(r, b);
+                            const greenDiff = g - maxRB;
+                            
+                            if (greenDiff > 10) {
+                                if (greenDiff > 40) {
+                                    // Solid background: make completely transparent
+                                    data[i + 3] = 0; 
+                                } else {
+                                    // Edge pixel (JPG artifact): Despill the green and fade it out
+                                    // Bring the green channel down to match the highest other channel
+                                    data[i + 1] = maxRB;
+                                    // Apply partial transparency based on how green it was
+                                    const alpha = 255 - ((greenDiff - 10) * (255 / 30));
+                                    data[i + 3] = Math.max(0, Math.min(255, alpha));
+                                }
+                            }
+                        }
+                        ctx.putImageData(imgData, 0, 0);
+                    }
+                };
+                img.onerror = () => {
+                    placeholder.innerText = 'Not generated yet';
+                };
+                img.src = `${asset.path}?t=${new Date().getTime()}`;
+            });
+        }
+
+        async function submitFeedback(assetId, action) {
+            const text = document.getElementById(`txt-${assetId}`).value;
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assetId, action, feedback: text })
+            });
+            const toast = document.getElementById('toast');
+            toast.innerText = "Status saved!";
+            showToast();
+            init(); // Refresh UI states
+        }
+
+        async function saveBasePrompt(assetId) {
+            const newPrompt = document.getElementById(`base-prompt-${assetId}`).value;
+            await fetch('/api/assets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assetId, newPrompt })
+            });
+            const toast = document.getElementById('toast');
+            toast.innerText = "Base prompt updated!";
+            showToast();
+            init();
+        }
+
+        async function generateImage(assetId) {
+            const text = document.getElementById(`txt-${assetId}`).value;
+            const useRef = document.getElementById(`ref-${assetId}`).checked;
+            const btn = document.getElementById(`btn-gen-${assetId}`);
+            const originalText = btn.innerText;
+            
+            btn.innerText = "Generating...";
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            try {
+                const res = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assetId, feedback: text, useReference: useRef })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    const toast = document.getElementById('toast');
+                    toast.innerText = "Image generated successfully!";
+                    showToast();
+                    
+                    // Immediately re-fetch and render without a full page reload
+                    init();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Request failed: ' + err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // Run on load
+        init();
+    </script>
+</body>
+</html>

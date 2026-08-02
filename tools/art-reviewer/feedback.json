@@ -1,0 +1,30 @@
+{
+  "ship_base": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "wormhole": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "asteroid_large": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "relay_beacon_idle": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "probe": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "bg_stars_far": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "bg_stars_near": {
+    "status": "accepted",
+    "feedback": ""
+  }
+}

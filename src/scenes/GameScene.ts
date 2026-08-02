@@ -108,7 +108,7 @@ export class GameScene extends Phaser.Scene {
 
     // AsteroidField resupply point (structure repair only).
     this.resupplyPoints.push(
-      new ResupplyPoint(this, { x: 650, y: 300, textureKey: 'asteroid_large', radius: 60 }),
+      new ResupplyPoint(this, { x: 650, y: 300, textureKey: 'asteroid_large', radius: 40 }),
     );
 
     // Core-loop objects (§11.11-11.14): find probe -> reach beacon -> reach
@@ -121,7 +121,7 @@ export class GameScene extends Phaser.Scene {
       exitWormhole: EXIT_WORMHOLE_POSITION,
     });
 
-    new ProbeObject(this, { ...PROBE_POSITION, textureKey: 'probe', radius: 40 }, tracker);
+    new ProbeObject(this, { ...PROBE_POSITION, textureKey: 'probe', radius: 27 }, tracker);
 
     new RelayBeaconObject(
       this,

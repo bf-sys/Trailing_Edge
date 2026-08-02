@@ -143,6 +143,35 @@ instantly. The roster textures themselves (`bg_setpiece_planet`,
 `hud`'s marker texture: not reconfigurable from here at all, only replaceable
 by editing `BackgroundSetPieces.ts` or swapping in real sourced art.
 
+## `window.tuning.destinationMarker` (`src/config/destinationMarkerConfig.ts`)
+
+Quick, purely-decorative "scanner ping" (`docs/reference/phaser-vfx-notes.md`)
+shown at the ship's click-to-move destination once it's committed — an
+expanding-ring tween fired on `pointerup`
+(`ExplorationController`'s `EXPLORATION_EVENTS.DestinationSet`), rendered by
+`DestinationMarker`. No gameplay effect.
+
+| Field | Default | What it does |
+|---|---|---|
+| `color` | `0x8fd3ff` | Ring color |
+| `strokeWidth` | `4` | Ring line thickness (px) |
+| `durationMs` | `350` | How long the expand-and-fade tween runs |
+| `startScale` / `endScale` | `0.4` / `1.2` | Scale the ring tweens between |
+| `startAlpha` | `0.85` | Starting opacity (tweens to `0`) |
+| `depth` | `5` | Render depth — above world content, below the ship (depth `10`) |
+
+```js
+window.tuning.destinationMarker.durationMs = 700   // slower, more lingering ping
+window.tuning.destinationMarker.color = 0xff6644   // orange ping instead of blue
+```
+
+**Note:** `color`/`strokeWidth` are baked into a generated ring texture the
+first time `BootScene` runs (same procedural-texture caveat as `hud` and
+`backgroundSetPieces` above) — changing either has no visible effect until a
+full page reload. `durationMs`/`startScale`/`endScale`/`startAlpha`/`depth`
+are read fresh each time a ping plays, so those apply to the very next click
+with no reload needed.
+
 ## Not tunable from the console yet
 
 - **Hazard costs** (e.g. Debris Field's structure-drain rate) — currently a

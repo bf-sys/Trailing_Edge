@@ -8,6 +8,10 @@ interface Target {
   y: number;
 }
 
+export const EXPLORATION_EVENTS = {
+  DestinationSet: 'onDestinationSet',
+} as const;
+
 function moveToward(current: number, desired: number, maxDelta: number): number {
   const delta = desired - current;
   if (Math.abs(delta) <= maxDelta) return desired;
@@ -52,6 +56,20 @@ export class ExplorationController implements GameSystem {
     // on the initial click.
     scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (pointer.isDown) setTargetFromPointer(pointer);
+    });
+
+    // Destination-ping VFX hook (DestinationMarker) — fires once per
+    // steering action, on release, rather than every pointermove tick
+    // while dragging (which would spam the effect). Emitted via
+    // this.playerShip.image (a GameObject, itself an EventEmitter) rather
+    // than `this` or a dedicated emitter on ExplorationController: this
+    // class is a SystemRegistry singleton that outlives any one GameScene
+    // attempt, but this.playerShip.image is recreated fresh every restart,
+    // so listeners subscribed to it each restart never accumulate.
+    scene.input.on('pointerup', () => {
+      if (this.target) {
+        this.playerShip?.image.emit(EXPLORATION_EVENTS.DestinationSet, { x: this.target.x, y: this.target.y });
+      }
     });
   }
 

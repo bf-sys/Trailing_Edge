@@ -13,6 +13,7 @@ import { ExitWormhole } from '../objects/ExitWormhole';
 import { HudOverlay } from '../objects/HudOverlay';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
+import { DestinationMarker } from '../objects/DestinationMarker';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -143,6 +144,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.hudOverlay = new HudOverlay(this, tracker);
+    new DestinationMarker(this);
 
     this.wireHardFailRestart();
     this.setUpObjectiveDebugReadout(tracker);

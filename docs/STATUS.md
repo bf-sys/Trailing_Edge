@@ -1,9 +1,29 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-07-31)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-01)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Design update (2026-08-01) — new art-prep workflow, build-time caveat resolved
+
+Added `art-staging/` — a top-level directory (sibling of `assets/`, not
+nested under it) where newly generated art lands before background
+removal/cropping/naming, ahead of moving into its real home under
+`assets/<category>/`. Gitignored, same as the existing `_source/`
+convention. Full explanation in `phase1-manifest-and-tasks.md`.
+
+While setting this up, resolved the long-standing build-time caveat (first
+found 2026-07-29): `assets/ui/_source/` and the loose
+`assets/warped_top_down_tech_lab_extension.png` both used to ship into
+`dist/` via Vite's `publicDir`, despite being unused at runtime. Both moved
+into `art-staging/` (`art-staging/ui-source/` and
+`art-staging/warped_top_down_tech_lab_extension.png`) — verified
+file-for-file identical before deleting the originals. The tech-lab sheet
+was previously git-tracked and now isn't (everything under `art-staging/`
+is gitignored); its `ATTRIBUTION.md` license record is unaffected, and the
+pack is easily re-sourced from OpenGameArt if the file itself is ever
+needed again.
 
 ## Design update (2026-07-31) — core loop split, no new sourcing needed
 

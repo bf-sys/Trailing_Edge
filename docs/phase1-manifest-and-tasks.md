@@ -61,8 +61,9 @@ assets/
     bar_energy_PLACEHOLDER.png
     bar_structure_PLACEHOLDER.png
     panel_frame_PLACEHOLDER.png
-    (remaining UI Pack - Sci-Fi files held uncropped in ui/_source/ until
-    Phase 2a needs specific icons)
+    (remaining UI Pack - Sci-Fi files held uncropped in
+    art-staging/ui-source/ until Phase 2a needs specific icons — moved out
+    of assets/ui/_source/ 2026-08-01, see below)
 ```
 
 **2026-07-31 renaming pass:** every currently-sourced Phase 1 asset now
@@ -76,16 +77,43 @@ place. `assets/warped_top_down_tech_lab_extension.png` (an uncropped Phase
 2a source sheet, same category as `ui/_source/`) was left alone for the
 same reason.
 
-**Build-time caveat (found 2026-07-29, scaffolding pass):** Vite's
+**Build-time caveat (found 2026-07-29, resolved 2026-08-01):** Vite's
 `publicDir` (set to `assets/` in `vite.config.ts`) copies its entire tree
-into every build verbatim — it does not honor `.gitignore`, so
-`assets/ui/_source/` (~3MB of raw, uncropped source-pack files) ships inside
-`dist/` even though it's gitignored and nothing references it at runtime.
-Harmless for now (no real deploy yet), but move `_source/` out of `assets/`
-(or add an explicit build-exclude step) before treating any build as
-shippable. Same fix should also address `assets/warped_top_down_tech_lab_extension.png`
-sitting loose at `assets/` root, unused until Phase 2a's Cargo Pod/Wreckage
-crop.
+into every build verbatim — it does not honor `.gitignore`. This used to
+mean `assets/ui/_source/` (~3MB of raw, uncropped source-pack files) and
+the loose `assets/warped_top_down_tech_lab_extension.png` both shipped
+inside `dist/` even though nothing references either at runtime. **Fixed**
+by moving both out of `assets/` entirely, into the new `art-staging/`
+workbench directory (see below) — `art-staging/ui-source/` and
+`art-staging/warped_top_down_tech_lab_extension.png` respectively. Since
+`art-staging/` is a sibling of `assets/`, not nested under it, Vite's
+`publicDir` never sees either file, so this class of problem can't recur
+for anything staged there going forward.
+
+**`art-staging/` (added 2026-08-01) — where new raw art goes before prep.**
+For newly generated art (background removal, cropping, etc. still needed
+before it's usable), drop raw files in the top-level `art-staging/`
+directory (a sibling of `assets/`, `src/`, `docs/` — not nested under
+`assets/`) rather than an `assets/<category>/_source/` folder. This is a
+deliberate departure from the `ui/_source/` precedent above, specifically
+*because* of the build-time caveat in this same section: anything under
+`assets/` ships into `dist/` verbatim regardless of `.gitignore`, and
+`art-staging/` living outside `assets/` sidesteps that entirely rather than
+adding to it. Gitignored the same way `_source/` already is (raw prep
+material was never meant to be version-tracked). The two existing offenders
+were moved here the same day this directory was created, resolving the
+build-time caveat rather than just avoiding it going forward:
+`assets/ui/_source/` → `art-staging/ui-source/` (already gitignored, pure
+filesystem move) and `assets/warped_top_down_tech_lab_extension.png` →
+`art-staging/warped_top_down_tech_lab_extension.png` (previously
+git-tracked — this one now drops out of version control going forward,
+same as everything else under `art-staging/`; still easily re-sourced from
+OpenGameArt if ever needed, and `ATTRIBUTION.md`'s license record for it is
+unaffected). Once a file is
+background-removed/cropped/named, move it into its real home under
+`assets/<category>/` (with `_PLACEHOLDER` in the name per the convention
+above, until it's final) — `art-staging/` is a workbench, not a permanent
+location for anything code will ever reference.
 
 **Convention redefined 2026-07-31:** `_PLACEHOLDER` now marks *every*
 currently-sourced Phase 1 asset actually wired into the game (regardless of
@@ -205,8 +233,7 @@ reference the placeholder filename by then.
 - Probe placeholder (item 5 above) is greyscale/programmer-art, not a
   licensed-pack sprite — fine as a stand-in, worth a real sourcing pass or
   owner-authored replacement before final art.
-- `assets/ui/_source/` (and the loose `warped_top_down_tech_lab_extension.png`
+- ~~`assets/ui/_source/` (and the loose `warped_top_down_tech_lab_extension.png`
   at `assets/` root) need to move out of the `publicDir`-served tree before a
-  real production build — see the build-time caveat above. Found during code
-  scaffolding, not an asset-prep task, but flagged here since this doc owns
-  the directory convention.
+  real production build~~ — **Resolved 2026-08-01**, both moved into
+  `art-staging/`. See the build-time caveat above.

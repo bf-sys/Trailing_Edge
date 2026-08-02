@@ -10,7 +10,7 @@ export class PlayerShip {
   readonly survival: ShipSurvivalComponent;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    this.image = scene.physics.add.image(x, y, 'ship_base').setScale(0.5);
+    this.image = scene.physics.add.image(x, y, 'ship_base').setDisplaySize(shipConfig.displayWidth, shipConfig.displayHeight);
     this.image.setDamping(false);
     this.image.setMaxVelocity(shipConfig.maxSpeed);
     // World objects (hazards, resupply, objectives) are created after the

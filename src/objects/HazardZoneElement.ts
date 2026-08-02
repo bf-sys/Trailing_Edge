@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getPlayerShip } from '../systems/ExplorationController';
+import { setCircleFromWorldRadius, setRectFromWorldSize } from './arcadeBodyHelpers';
 
 export type HazardShape =
   | { kind: 'circle'; radius: number }
@@ -66,10 +67,10 @@ export class HazardZoneElement {
 
     if (shape.kind === 'circle') {
       this.zone.setDisplaySize(shape.radius * 2, shape.radius * 2);
-      body.setCircle(shape.radius);
+      setCircleFromWorldRadius(body, this.zone, shape.radius);
     } else {
       this.zone.setDisplaySize(shape.width, shape.height);
-      body.setSize(shape.width, shape.height);
+      setRectFromWorldSize(body, this.zone, shape.width, shape.height);
     }
   }
 

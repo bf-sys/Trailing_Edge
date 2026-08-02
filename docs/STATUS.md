@@ -5,6 +5,138 @@ for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
 
+## Design update (2026-08-01, second playtest round) — Relay Beacon fixes + a real collision-radius bug
+
+A second playtest pass, after the ship-size/starfield-layering fixes below,
+surfaced two more Relay Beacon problems and, in tracking down the second
+one, a genuine gameplay bug affecting four objects, not just the beacon:
+
+1. **Relay Beacon looked squished.** Same root cause as the ship-size bug
+   below, applied to `setDisplaySize()`: `RelayBeaconObject` forced a square
+   display (`radius*2, radius*2`), but `relay_beacon.png` is 1124×656
+   (~1.71:1). **Fixed** by giving `RelayBeaconConfig` explicit
+   `displayWidth`/`displayHeight` (154×90 — also answers "a little bigger")
+   instead of deriving both dimensions from one `radius`; the physics
+   overlap radius stays independent (see bug below), so this was a
+   visual-only change.
+2. **Activating the beacon looked "oddly greenish."** `waypointTintConfig
+   .activeTint` was `0x88ffcc` — Phaser's `setTint()` is *multiplicative*
+   per channel, so a tint with a full green channel and reduced red/blue
+   reads as a subtle glow on a near-monochrome placeholder icon but
+   recolors a detailed, naturally-colored sprite's greys/silvers toward
+   green wholesale. **Fixed** by changing `activeTint` to `0xffffff` (a
+   no-op tint — the sprite's true colors); only `inactiveTint` actually
+   recolors now. Affects `EntryWormhole`/`ExitWormhole` too, since all
+   three share `waypointTintConfig` — improves them the same way, no
+   complaint needed first.
+3. **While debugging (2), found a real, unrelated bug:** reaching the Relay
+   Beacon required near-pixel-perfect clicks — its actual collision area
+   was only a few px across despite `radius: 45`. Root cause: Phaser's
+   `Body#setCircle()`/`#setSize()` take the sprite's **native/unscaled**
+   texture pixels, not display pixels, then multiply by the GameObject's
+   current scale each frame. Passing an authored gameplay radius straight
+   in (as every affected object did) only stays correct when native
+   resolution ≈ display size — exactly the assumption the new AI-generated
+   art (much higher native resolution than the old placeholders) broke.
+   **Affected `ProbeObject`, `ResupplyPoint`, `ExitWormhole`, and
+   `RelayBeaconObject`** (real collision radii of ~5-10px instead of the
+   authored 40-60px) — `HazardZoneElement` wasn't currently broken (debris
+   still uses old placeholder art at ~1:1 scale) but has the same latent
+   bug, fixed proactively so it doesn't silently recur when that art is
+   replaced too. **Fixed** with a new shared helper,
+   `src/objects/arcadeBodyHelpers.ts`
+   (`setCircleFromWorldRadius`/`setRectFromWorldSize`), applied at all five
+   call sites. Verified by reaching the Probe and Relay Beacon with rough,
+   imprecise clicks post-fix (previously needed many corrective micro-clicks
+   to land inside the real hitbox).
+
+## Design update (2026-08-01, playtest fixes) — two bugs only a real playtest caught
+
+A first live playtest of the new AI-generated art (see the "7 assets
+replaced" entry just below) surfaced two problems neither typecheck nor a
+static screenshot had caught:
+
+1. **Ship rendered far too large.** `PlayerShip` used `.setScale(0.5)`, a
+   multiplier on the sprite's *native* pixel size — exactly the anti-pattern
+   `CLAUDE.md`'s asset/gameplay-size decoupling rule warns against. The old
+   placeholder was 99×75px; the new AI-generated art is 442×542px (~4.5x),
+   so the same 0.5 scale produced a ship roughly 5x too big on screen.
+   **Fixed** by switching to `setDisplaySize()` with new authored
+   `shipConfig.displayWidth`/`displayHeight` fields (46×56, close to the old
+   effective on-screen size), same pattern every other placed object
+   already used.
+2. **Only one starfield layer was visible.** `bg_stars_far.jpg`/
+   `bg_stars_near.jpg` are fully opaque JPGs (no alpha channel), and
+   `GameScene` stacks them as two `TileSprite`s for parallax — the near
+   layer's solid black background completely hid the far layer beneath it.
+   This was invisible in isolated review (each image looks fine alone) and
+   only showed up once both were actually layered in a running scene.
+   **Fixed in code**, not by regenerating the art: the near layer now uses
+   `Phaser.BlendModes.ADD`, so its black pixels contribute nothing and only
+   its stars add on top of the far layer.
+
+See `art-production-guidelines.md` (File Format section) and
+`trailing_edge_art_asset_list.md` §2.1/§1.1 for the fuller explanation of
+each.
+
+## Design update (2026-08-01, later same day) — 7 assets replaced with final AI-generated art
+
+The project owner generated 7 new assets via the Art Director Agent/Gemini
+pipeline and dropped them in `art-staging/` (per the workflow from the
+"new art-prep workflow" entry just below): `ship_base`, `probe`,
+`asteroid_large`, `wormhole`, `relay_beacon_idle` (all on chroma-key green
+`#00FF00`, needing prep) and `bg_stars_far`/`bg_stars_near` (no green
+screen, direct starfield backgrounds, no prep needed).
+
+**New tool: `tools/asset-prep/chroma-key-trim.js`** — own `package.json`
+(dependency: `jimp`), same isolated-from-root pattern as
+`tools/art-reviewer/`. Chroma-keys on green dominance with a soft falloff
+plus spill suppression (needed since these are JPGs — JPEG's lossy
+compression blurs the green/subject edge, so a hard color cutoff left a
+visible fringe on the first pass; tightened the falloff thresholds and
+re-ran until clean), then auto-trims to content bounds plus a small padding
+margin. Visually inspected all 5 outputs before moving them into `assets/`.
+
+**Files replaced** (all final art, not more placeholders — dropped
+`_PLACEHOLDER`; old files deleted, not kept):
+- `ship/ship_base_PLACEHOLDER.png` → `ship/ship_base.png`
+- `objectives/probe_PLACEHOLDER.png` → `objectives/probe.png`
+- `objectives/wormhole_PLACEHOLDER.png` → `objectives/wormhole.png`
+- `resupply/asteroid_large_PLACEHOLDER.png` → `resupply/asteroid_large.png`
+  (medium/small variants unaffected, still OGA placeholders)
+- `objectives/relay_beacon_idle_PLACEHOLDER.png` +
+  `objectives/relay_beacon_reached_overlay_PLACEHOLDER.png` (both deleted)
+  → single `objectives/relay_beacon.png`
+- Procedurally generated starfield tiles (`StarfieldBackground.ts`) →
+  `assets/backgrounds/bg_stars_far.jpg`/`bg_stars_near.jpg` (new category
+  directory; kept as `.jpg`, no transparency needed for an opaque tile)
+
+**Code changes alongside the asset swap:**
+- `StarfieldBackground.ts` stripped to just its two exported texture-key
+  constants — the procedural-generation function is gone now that real
+  files exist. `BootScene.ts` loads the two new files directly instead.
+- `RelayBeaconObject` collapsed to single-texture-plus-tint, matching
+  `EntryWormhole`/`ExitWormhole`'s convention, since new Relay Beacon art
+  meant only one file was needed going forward anyway (this was flagged as
+  "under consideration" in `trailing_edge_art_asset_list.md` on 2026-08-01
+  earlier the same day — implemented now).
+- `wormholeConfig.ts` renamed to `waypointTintConfig.ts` (same rename
+  reflected in `console-tuning-reference.md`'s `window.tuning` section) —
+  motivated by `RelayBeaconObject` now sharing the same active/inactive
+  tint language as the wormhole pair.
+
+**Two carried-forward open items resolved as a side effect:** the Entry/
+Exit Wormhole-vs-ship style mismatch and the Probe placeholder's
+programmer-art quality (`phase1-manifest-and-tasks.md`) — both are gone now
+that ship, wormhole, Relay Beacon, Probe, AsteroidField (large), and the
+starfield all come from one consistent AI-generation pipeline instead of a
+mix of Kenney/OpenGameArt packs and an owner-original placeholder.
+
+`ATTRIBUTION.md` updated: these 6 assets moved out of the CC0-sourced table
+(they're no longer third-party sprites at all) into "Owner-created assets,"
+noting AI generation via Gemini — no new licensing concern, same as the
+existing Probe entry before it was replaced.
+
 ## Design update (2026-08-01) — new art-prep workflow, build-time caveat resolved
 
 Added `art-staging/` — a top-level directory (sibling of `assets/`, not

@@ -15,15 +15,21 @@ the single Home Marker object split into Entry Wormhole and Exit Wormhole
 tinted differently at runtime. Source/pack/license facts are unchanged.
 See `STATUS.md`'s 2026-07-31 "Design update" section.
 
+**2026-08-01 note:** five rows below were replaced entirely (not just
+reassigned) by new AI-generated final art — ship, wormhole pair, AsteroidField
+large resupply, Relay Beacon, plus the starfield backgrounds. Moved out of
+the CC0-sourced table below into "Owner-created assets" — these are no
+longer Kenney/OpenGameArt sprites at all, so their license facts changed,
+unlike the earlier reassignment-only notes above. See `STATUS.md`'s
+2026-08-01 "Design update" section.
+
 ## Assets requiring no attribution (CC0 — credit optional/voluntary)
 
 | Asset | Source | Pack | License |
 |---|---|---|---|
-| Player ship, explosions/damage frames | Kenney | Space Shooter Remastered | CC0 1.0 |
-| Entry Wormhole / Exit Wormhole sprite — one file, reused for both instances tinted differently (was: Home Marker sprite until 2026-07-31, before that a Star resupply-point sprite until 2026-07-29 — energy no longer has a dedicated resupply object) | Kenney | Simple Space | CC0 1.0 |
+| Ship damage overlay / explosion frames (`ship/ship_damage_overlay_PLACEHOLDER.png`) | Kenney | Space Shooter Remastered | CC0 1.0 |
 | HUD bars, panel/slider frames | Kenney | UI Pack - Sci-Fi 2.0 | CC0 1.0 |
-| Debris Field hazard sprites, AsteroidField resupply sprites (same pack; AsteroidField became the official Phase 1 resupply object 2026-07-29) | OpenGameArt (author: The_Scientist___) | Asteroids/Debris Set | CC0 |
-| Relay Beacon waypoint sprite — satellite sprite + generated glow overlay (reassigned 2026-07-29 from the sequence-puzzle element, which is now renamed Signal Array and is unsourced again as a result) | Kenney (Kenney Vleugels), via OpenGameArt | Space Shooter Extension | CC0 1.0 |
+| Debris Field hazard sprites, AsteroidField medium/small resupply sprites (large variant replaced 2026-08-01, see below) | OpenGameArt (author: The_Scientist___) | Asteroids/Debris Set | CC0 |
 | Cargo Pod/Wreckage tile (Phase 2a, not yet extracted) | OpenGameArt (author: knekko, extending ansimuz) | Warped Top-Down Tech Lab Extension | CC0 (public domain release) |
 
 No attribution is legally required for the above. Kenney and the two OGA
@@ -35,11 +41,16 @@ compliance requirement for this project.
 **Not yet in this ledger:** Signal Array (unsourced as of 2026-07-29, see
 above) — add a row here once sourced.
 
-## Owner-created placeholder assets (no third-party source — not a licensing matter)
+## Owner-created assets (no third-party source — not a licensing matter)
 
 | Asset | Note |
 |---|---|
-| Probe sprite (`objectives/probe_PLACEHOLDER.png`) | Greyscale, owner-authored directly (2026-07-29), not pulled from any pack. No attribution obligation — nothing third-party involved. Listed here only so it isn't mistaken for a missed licensing entry. |
+| Player ship sprite (`ship/ship_base.png`) | AI-generated (2026-08-01) via the Art Director Agent / Google Gemini (`gemini-3.1-flash-image`), replacing the Kenney Space Shooter Remastered placeholder. No third-party source, no attribution obligation. |
+| Probe sprite (`objectives/probe.png`) | AI-generated (2026-08-01) via the Art Director Agent / Gemini, replacing the owner's original greyscale placeholder (`probe_PLACEHOLDER.png`, added 2026-07-29). No third-party source. |
+| Entry Wormhole / Exit Wormhole sprite (`objectives/wormhole.png`) | AI-generated (2026-08-01) via the Art Director Agent / Gemini, replacing the Kenney Simple Space placeholder. One file, reused for both instances, tinted differently at runtime (`waypointTintConfig`). No third-party source. |
+| AsteroidField large resupply sprite (`resupply/asteroid_large.png`) | AI-generated (2026-08-01) via the Art Director Agent / Gemini, replacing the OpenGameArt Asteroids/Debris Set placeholder. Medium/small variants are unaffected — still the OGA-sourced placeholder, see the CC0 table above. No third-party source. |
+| Relay Beacon sprite (`objectives/relay_beacon.png`) | AI-generated (2026-08-01) via the Art Director Agent / Gemini, replacing the Kenney/OpenGameArt satellite sprite + generated glow overlay pair. Now a single asset, tinted per `waypointTintConfig` instead of a separate reached-overlay file (`RelayBeaconObject`). No third-party source. |
+| Starfield background tiles (`backgrounds/bg_stars_far.jpg`, `backgrounds/bg_stars_near.jpg`) | AI-generated (2026-08-01) via the Art Director Agent / Gemini, replacing the procedurally generated placeholder tiles (`StarfieldBackground.ts`). No third-party source. |
 
 ## Assets NOT included in this Phase-1 pull (deferred, license flagged for later)
 

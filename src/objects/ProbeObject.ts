@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getPlayerShip } from '../systems/ExplorationController';
+import { setCircleFromWorldRadius } from './arcadeBodyHelpers';
 import { LevelObjectiveTracker } from './LevelObjectiveTracker';
 
 export interface ProbeObjectConfig {
@@ -26,7 +27,7 @@ export class ProbeObject {
     this.zone.setDisplaySize(config.radius * 2, config.radius * 2);
 
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(config.radius);
+    setCircleFromWorldRadius(body, this.zone, config.radius);
 
     const ship = getPlayerShip();
     if (ship) {

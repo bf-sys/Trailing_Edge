@@ -11,10 +11,24 @@ what's already there plus guidance for staying consistent with it.
 
 ## File format
 
-**PNG, with alpha transparency.** Every asset checked in `assets/` (ship,
-hazards, resupply, objectives) is RGBA PNG — no exceptions found. Sprites
-composite over the scene/starfield background, so a transparent background
-is required, not a solid fill color.
+**PNG, with alpha transparency.** Every sprite checked in `assets/` (ship,
+hazards, resupply, objectives) is RGBA PNG. Sprites composite over the
+scene/starfield background, so a transparent background is required, not a
+solid fill color.
+
+**Exception: `assets/backgrounds/`** (added 2026-08-01) — the starfield
+tiles are opaque, full-bleed `.jpg` files, not PNG. This is fine for a
+*single* background layer, but **caught a real bug when stacking two**:
+`GameScene` layers a far and a near starfield tile for parallax, and since
+neither has transparency, the near layer's solid black areas completely
+hid the far layer beneath it (only found during an actual playtest — a
+static screenshot of either layer alone looks fine, the problem only shows
+up with both layered). Fixed in code, not by regenerating the art: the near
+layer uses `Phaser.BlendModes.ADD` (`GameScene.createParallaxBackground()`)
+so its black pixels contribute nothing and only its actual stars add on top
+of the far layer. **If you add a third stacked opaque layer later, it'll
+need the same blend-mode treatment** — this isn't a one-time fix, it's a
+standing consequence of using opaque backgrounds in a multi-layer parallax.
 
 ## Resolution / canvas size
 
@@ -41,16 +55,16 @@ Practical guidance in place of a fixed number:
 
 | Asset | Size (px) |
 |---|---|
-| `ship/ship_base_PLACEHOLDER.png` | 99×75 |
+| `ship/ship_base.png` (AI-generated, 2026-08-01) | 442×542 |
 | `ship/ship_damage_overlay_PLACEHOLDER.png` (20-frame strip) | 320×41 |
 | `hazards/debris_large_PLACEHOLDER.png` | 128×128 |
 | `hazards/debris_medium_PLACEHOLDER.png` | 64×64 |
 | `hazards/debris_small_PLACEHOLDER.png` | 32×32 |
-| `resupply/asteroid_large_PLACEHOLDER.png` | 128×128 |
-| `objectives/probe_PLACEHOLDER.png` | 98×97 |
-| `objectives/wormhole_PLACEHOLDER.png` | 48×48 |
-| `objectives/relay_beacon_idle_PLACEHOLDER.png` | 172×288 |
-| `objectives/relay_beacon_reached_overlay_PLACEHOLDER.png` | 172×288 |
+| `resupply/asteroid_large.png` (AI-generated, 2026-08-01) | 760×672 |
+| `objectives/probe.png` (AI-generated, 2026-08-01) | 564×504 |
+| `objectives/wormhole.png` (AI-generated, 2026-08-01) | 668×692 |
+| `objectives/relay_beacon.png` (AI-generated, 2026-08-01 — single asset, replaces the old idle/reached-overlay pair) | 1124×656 |
+| `backgrounds/bg_stars_far.jpg` / `bg_stars_near.jpg` (AI-generated, 2026-08-01) | 1024×1024 |
 
 ## Orientation
 
@@ -69,19 +83,33 @@ The official art direction for Trailing Edge is **Gritty Dark Sci-Fi Pixel**. Th
 * **Vibe:** High contrast, muted industrial metallics, tactical precision, and stark lighting (e.g., bright thruster contrast against dark space).
 * **Execution:** All new assets should be produced as pixel art.
 
-There's an existing, accepted-but-unresolved style mismatch from early prototyping: the flat, minimalist `Simple Space` look (Home Marker's star sprite) sits next to the shaded, rendered `Space Shooter Remastered` family. Both of these styles are now considered **legacy placeholders**. Any final art replacing these placeholders must adhere to the Gritty Dark Sci-Fi Pixel style.
+**Resolved 2026-08-01:** the style mismatch flagged here from early
+prototyping (the flat, minimalist `Simple Space` look vs. the shaded,
+rendered `Space Shooter Remastered` family) no longer applies — ship,
+wormhole, Relay Beacon, Probe, AsteroidField (large), and the starfield
+backgrounds are all now AI-generated via the Art Director Agent/Gemini
+against this same Gritty Dark Sci-Fi Pixel direction, so there's one
+consistent look across them rather than two clashing source packs.
+Remaining Kenney/OpenGameArt placeholders not yet replaced (debris,
+AsteroidField medium/small, ship damage overlay, HUD bars/panel) are still
+**legacy placeholders** — any final art replacing those must adhere to the
+Gritty Dark Sci-Fi Pixel style too.
 
 ## Naming convention
 
 - `_PLACEHOLDER` suffix marks a stand-in asset accepted as "good enough for
-  now, not final" — e.g. `ship_base_PLACEHOLDER.png`,
-  `probe_PLACEHOLDER.png`. Drop the suffix only when a closer/final asset
-  replaces it, and **don't rename in place** — level configs and code will
-  already reference the placeholder filename by then, so swap the file
-  content/replace the reference deliberately rather than renaming out from
-  under existing references.
+  now, not final" — e.g. `hazards/debris_large_PLACEHOLDER.png`,
+  `ship/ship_damage_overlay_PLACEHOLDER.png`. Drop the suffix only when a
+  closer/final asset replaces it, and **don't rename in place** — level
+  configs and code will already reference the placeholder filename by then,
+  so swap the file content/replace the reference deliberately rather than
+  renaming out from under existing references. `ship_base.png`,
+  `probe.png`, `wormhole.png`, `objectives/relay_beacon.png`, and
+  `resupply/asteroid_large.png` all dropped the suffix this way on
+  2026-08-01, once AI-generated final art replaced their placeholders.
 - Assets without a real final replacement path yet (e.g. procedurally
-  generated ones like the starfield tiles) don't need this suffix — it's
+  generated ones like `HudOverlay`'s objective-marker arrow or
+  `BackgroundSetPieces`' planet/galaxy roster) don't need this suffix — it's
   specifically for "art that should eventually be swapped for something
   better," not everything non-final.
 
@@ -97,6 +125,7 @@ assets/
   objectives/
   ui/
   puzzle/       (Phase 2a — Signal Array, currently empty)
+  backgrounds/  (added 2026-08-01 — full-bleed background tiles, .jpg not .png, see File format above)
 ```
 
 One file per asset, filed by category, not by level — per-level placement
@@ -124,4 +153,4 @@ frames) already follows this — 16px-wide frames in a single row.
 ## Not yet decided
 
 - While the "Gritty Dark Sci-Fi Pixel" style is now the official direction, a formal color palette (specific hex codes for UI, metallics, and thruster glows) has not been strictly defined yet.
-- No per-level background/starfield art has been sourced or specified yet (`trailing_edge_art_asset_list.md` §2.1) — the current starfield is a procedurally generated placeholder (`StarfieldBackground.ts`). When produced, background art should match the dark, high-contrast pixel aesthetic.
+- ~~No per-level background/starfield art has been sourced or specified yet~~ — **Resolved 2026-08-01**: `backgrounds/bg_stars_far.jpg`/`bg_stars_near.jpg`, AI-generated, in place (`trailing_edge_art_asset_list.md` §2.1).

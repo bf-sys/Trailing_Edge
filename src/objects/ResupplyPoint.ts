@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { getPlayerShip } from '../systems/ExplorationController';
 import { survivalConfig } from '../config/survivalConfig';
+import { setCircleFromWorldRadius } from './arcadeBodyHelpers';
 
 export interface ResupplyPointConfig {
   x: number;
@@ -22,7 +23,7 @@ export class ResupplyPoint {
     this.zone.setDisplaySize(config.radius * 2, config.radius * 2);
 
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(config.radius);
+    setCircleFromWorldRadius(body, this.zone, config.radius);
 
     const ship = getPlayerShip();
     if (ship) {

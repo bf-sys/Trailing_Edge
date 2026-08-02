@@ -1,0 +1,10 @@
+{
+  "name": "asset-prep",
+  "private": true,
+  "version": "0.0.0",
+  "type": "commonjs",
+  "description": "Chroma-key removal + auto-trim for new art dropped in art-staging/ before it moves into assets/.",
+  "dependencies": {
+    "jimp": "^0.22.12"
+  }
+}

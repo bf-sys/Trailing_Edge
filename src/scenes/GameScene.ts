@@ -125,12 +125,9 @@ export class GameScene extends Phaser.Scene {
 
     new RelayBeaconObject(
       this,
-      {
-        ...RELAY_BEACON_POSITION,
-        idleTextureKey: 'relay_beacon_idle',
-        reachedOverlayTextureKey: 'relay_beacon_reached_overlay',
-        radius: 40,
-      },
+      // relay_beacon.png is 1124x656 (~1.71:1) -- displayWidth/Height match
+      // that aspect ratio rather than forcing a square, per radius*2 elsewhere.
+      { ...RELAY_BEACON_POSITION, textureKey: 'relay_beacon', radius: 45, displayWidth: 154, displayHeight: 90 },
       tracker,
     );
 
@@ -199,7 +196,17 @@ export class GameScene extends Phaser.Scene {
     const centerY = LEVEL_HEIGHT / 2;
 
     this.add.tileSprite(centerX, centerY, width, height, STARFIELD_FAR_KEY).setScrollFactor(0.15).setDepth(-100);
-    this.add.tileSprite(centerX, centerY, width, height, STARFIELD_NEAR_KEY).setScrollFactor(0.4).setDepth(-90);
+    // ADD blend: bg_stars_near.jpg is a fully opaque (non-transparent) JPG,
+    // same as bg_stars_far.jpg -- stacked normally, its solid black
+    // background would completely occlude the far layer beneath it. ADD
+    // blending means black pixels (0,0,0) contribute nothing, so only the
+    // near layer's actual stars add their brightness on top of far's,
+    // letting both layers read instead of just whichever is on top.
+    this.add
+      .tileSprite(centerX, centerY, width, height, STARFIELD_NEAR_KEY)
+      .setScrollFactor(0.4)
+      .setDepth(-90)
+      .setBlendMode(Phaser.BlendModes.ADD);
   }
 
   // Objective flags have no HUD requirement in Phase 1 (only the

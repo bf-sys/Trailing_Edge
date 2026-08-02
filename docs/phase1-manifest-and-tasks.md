@@ -3,9 +3,12 @@
 **Updated 2026-07-29** for a GDD revision that changed Phase 1's scope and
 reassigned two already-sourced assets. **Updated again 2026-07-31** for a
 core-loop change splitting the Home Marker into Entry/Exit Wormhole (no new
-sourcing — see below). See `STATUS.md`'s "Design update" sections for the
-full explanation; this file reflects the *current* correct scope and
-directory layout going forward.
+sourcing — see below). **Updated again 2026-08-01**: five sprites plus the
+starfield backgrounds replaced with final AI-generated art (ship, wormhole
+pair, AsteroidField large, Relay Beacon, `backgrounds/`) — these drop the
+`_PLACEHOLDER` suffix, since they're no longer stand-ins. See `STATUS.md`'s
+"Design update" sections for the full explanation; this file reflects the
+*current* correct scope and directory layout going forward.
 
 Scope: the eight items Phase 1 (GDD §12) requires — ship, one Debris Field
 hazard, one AsteroidField resupply point (structure repair only — energy
@@ -28,32 +31,36 @@ once, not renamed later. Current structure (as of the 2026-07-29 update):
 ```
 assets/
   ship/
-    ship_base_PLACEHOLDER.png
-    ship_damage_overlay_PLACEHOLDER.png   (per owner's overlay-VFX decision)
+    ship_base.png   (AI-generated final art, 2026-08-01 — was ship_base_PLACEHOLDER.png)
+    ship_damage_overlay_PLACEHOLDER.png   (per owner's overlay-VFX decision;
+      unaffected by the 2026-08-01 batch, still the Kenney placeholder)
   hazards/
     debris_large_PLACEHOLDER.png, debris_medium_PLACEHOLDER.png,
     debris_small_PLACEHOLDER.png
   resupply/
-    asteroid_large_PLACEHOLDER.png, asteroid_medium_PLACEHOLDER.png,
-    asteroid_small_PLACEHOLDER.png
-    (moved here 2026-07-29 — was filed under hazards/ before AsteroidField
-    was official Phase 1 scope; these are the structure-repair resupply
-    object now, distinct from the Debris Field hazard above even though
-    both come from the same source pack)
+    asteroid_large.png   (AI-generated final art, 2026-08-01 — was
+      asteroid_large_PLACEHOLDER.png)
+    asteroid_medium_PLACEHOLDER.png, asteroid_small_PLACEHOLDER.png
+      (unaffected by the 2026-08-01 batch, still the OGA placeholder;
+      moved here 2026-07-29 — was filed under hazards/ before AsteroidField
+      was official Phase 1 scope; these are the structure-repair resupply
+      object now, distinct from the Debris Field hazard above even though
+      both come from the same source pack)
   objectives/
     (new 2026-07-29 — the required-every-level core-loop objects; none of
     these are puzzle-taxonomy content, §6)
-    wormhole_PLACEHOLDER.png   (was resupply/star_PLACEHOLDER.png, then
-      objectives/home_marker_PLACEHOLDER.png — Star is no longer a resupply
-      object; renamed again 2026-07-31 when the single Home Marker split
-      into EntryWormhole/ExitWormhole, both of which reuse this one file,
-      tinted differently at runtime — no new sourcing needed)
-    relay_beacon_idle_PLACEHOLDER.png, relay_beacon_reached_overlay_PLACEHOLDER.png
-      (was puzzle/relay_beacon_*.png — reassigned from the old Relay Beacon
-      puzzle element, now renamed Signal Array, to the new mandatory
-      waypoint of the same name; see STATUS.md)
-    probe_PLACEHOLDER.png   (owner-original greyscale placeholder, not
-      sourced from a licensed pack — no ATTRIBUTION.md entry needed)
+    wormhole.png   (AI-generated final art, 2026-08-01 — was
+      wormhole_PLACEHOLDER.png, before that resupply/star_PLACEHOLDER.png,
+      then objectives/home_marker_PLACEHOLDER.png; used for **both**
+      EntryWormhole and ExitWormhole instances, tinted differently at
+      runtime via waypointTintConfig)
+    relay_beacon.png   (AI-generated final art, 2026-08-01 — single asset,
+      replaces both relay_beacon_idle_PLACEHOLDER.png and
+      relay_beacon_reached_overlay_PLACEHOLDER.png; RelayBeaconObject now
+      tints it via waypointTintConfig instead of swapping to a separate
+      reached-overlay file, matching the wormhole pair's convention)
+    probe.png   (AI-generated final art, 2026-08-01 — was
+      probe_PLACEHOLDER.png, the owner's original greyscale placeholder)
   puzzle/
     (currently empty — Signal Array is unsourced again as of 2026-07-29;
     left in place for Phase 2a rather than deleted)
@@ -64,6 +71,12 @@ assets/
     (remaining UI Pack - Sci-Fi files held uncropped in
     art-staging/ui-source/ until Phase 2a needs specific icons — moved out
     of assets/ui/_source/ 2026-08-01, see below)
+  backgrounds/
+    (new 2026-08-01) bg_stars_far.jpg, bg_stars_near.jpg — AI-generated
+    final art, replacing StarfieldBackground.ts's procedurally generated
+    tiles. Kept as .jpg (no transparency needed for an opaque full-bleed
+    tile) rather than converted to .png, unlike every other category here —
+    see art-production-guidelines.md.
 ```
 
 **2026-07-31 renaming pass:** every currently-sourced Phase 1 asset now
@@ -129,16 +142,23 @@ reference the placeholder filename by then.
 
 ## Per-asset task list
 
-1. **Ship (Space Shooter Remastered.zip)** — done, unaffected by the
-   2026-07-29 scope change.
-   - Extract one ship sprite (any single-color variant — placeholder, not a
-     final art pick) → `ship/ship_base_PLACEHOLDER.png`
-   - Extract one explosion/impact frame sequence →
-     `ship/ship_damage_overlay_PLACEHOLDER.png`
-   - Owner decision already made: overlay VFX, not sprite-swap — so this is
-     a layer drawn on top of the base ship, not a second full ship sprite.
+1. **Ship — base sprite replaced with final AI-generated art 2026-08-01**
+   (was: Space Shooter Remastered.zip placeholder, unaffected by the
+   2026-07-29 scope change until now).
+   - `ship/ship_base.png` — generated via the Art Director Agent / Gemini,
+     prepped with `tools/asset-prep/chroma-key-trim.js` (chroma-key removal
+     + auto-trim on the generated green-screen source). Drops
+     `_PLACEHOLDER`; this is final art, resolving the style-mismatch open
+     item (see "Open items" below).
+   - `ship/ship_damage_overlay_PLACEHOLDER.png` (explosion/impact frame
+     sequence) is **unaffected** — no new art for it in this batch, still
+     the Kenney placeholder extracted per the original owner decision:
+     overlay VFX, not sprite-swap, so this is a layer drawn on top of the
+     base ship, not a second full ship sprite.
 
-2. **Debris Field + AsteroidField (Objects.zip)** — done.
+2. **Debris Field + AsteroidField (Objects.zip)** — done; **AsteroidField's
+   large variant replaced with final AI-generated art 2026-08-01**, the
+   rest unaffected.
    - Unzip; the pack's own README describes 9 asteroid + 9 debris sprites,
      3 sizes each — confirm the actual filenames match that description
      before building the level config's `HazardZoneElement` reference.
@@ -146,57 +166,64 @@ reference the placeholder filename by then.
      (AsteroidField, the structure-repair resupply object — moved here
      2026-07-29, now that it's official Phase 1 scope rather than
      incidental).
-   - Filenames carry `_PLACEHOLDER` as of 2026-07-31 (`debris_large_PLACEHOLDER.png`
-     etc., `asteroid_large_PLACEHOLDER.png` etc.) per the redefined
-     convention above — same sprites, no re-sourcing involved.
+   - `hazards/debris_{large,medium,small}_PLACEHOLDER.png` and
+     `resupply/asteroid_{medium,small}_PLACEHOLDER.png` are **unaffected** —
+     still the OGA-sourced placeholders, `_PLACEHOLDER` suffix from
+     2026-07-31 per the redefined convention below.
+   - `resupply/asteroid_large.png` — generated via the Art Director Agent /
+     Gemini, prepped with `tools/asset-prep/chroma-key-trim.js`, replacing
+     `asteroid_large_PLACEHOLDER.png`. Drops `_PLACEHOLDER`; final art. Only
+     the large (currently used) variant was replaced — medium/small stay
+     placeholder until/unless they're actually wired into a level.
 
-3. **Entry Wormhole / Exit Wormhole (Simple Space.zip)** — done; role
-   reassigned twice (was: Star resupply point → Home Marker, 2026-07-29;
-   Home Marker split into Entry/Exit Wormhole, 2026-07-31).
-   - Extract the star/sparkle icon sprite → `objectives/wormhole_PLACEHOLDER.png`
-     (GDD §11.14) — used for **both** `EntryWormhole` and `ExitWormhole`
-     instances, distinguished only by runtime tint
-     (`wormholeConfig.activeTint`/`inactiveTint`). One file, no new
-     sourcing needed for the split.
-   - **Do not skip the style-mismatch check**: view this sprite next to
-     `ship_base_PLACEHOLDER.png` before committing. *Simple Space* is flat
-     minimalist line art; *Space Shooter Remastered* is shaded/rendered.
-     Already flagged once (as the Star resupply point, then as Home Marker)
-     and accepted as-is by the owner — same visual, same call now that it
-     backs the wormhole pair.
+3. **Entry Wormhole / Exit Wormhole — replaced with final AI-generated art
+   2026-08-01** (was: Simple Space.zip placeholder; role reassigned twice
+   before that — Star resupply point → Home Marker, 2026-07-29; Home
+   Marker split into Entry/Exit Wormhole, 2026-07-31).
+   - `objectives/wormhole.png` — generated via the Art Director Agent /
+     Gemini, prepped with `tools/asset-prep/chroma-key-trim.js`, replacing
+     `wormhole_PLACEHOLDER.png`. Still used for **both** `EntryWormhole` and
+     `ExitWormhole` instances, distinguished only by runtime tint
+     (`waypointTintConfig.activeTint`/`inactiveTint`, renamed from
+     `wormholeConfig` 2026-08-01 — see item 4 below). One file, drops
+     `_PLACEHOLDER`; final art.
+   - **Style-mismatch item resolved**: this replaces the flat *Simple
+     Space* sprite that clashed with the shaded *Space Shooter Remastered*
+     ship — now both ship and wormhole come from the same AI-generation
+     pipeline, so the mismatch this item used to track no longer applies
+     (see "Open items" below).
 
-4. **Relay Beacon (mandatory waypoint) — reassigned, not re-sourced,
-   2026-07-29.** Previously sourced for the old Relay Beacon *puzzle*
-   element (now Signal Array); reassigned to the new mandatory waypoint of
-   the same name per owner decision (satellite sprite fits a "marker in
-   space" concept well; Signal Array gets fresh sourcing instead, see item
-   6 below).
-   - Files already extracted: `objectives/relay_beacon_idle_PLACEHOLDER.png`
-     (`spaceStation_021.png`, Kenney Space Shooter Extension, CC0,
-     unmodified) and `objectives/relay_beacon_reached_overlay_PLACEHOLDER.png`
-     (a procedurally generated glow, not sourced — no license implication).
-     Both renamed with the `_PLACEHOLDER` suffix 2026-07-31 per the
-     redefined convention above.
-   - The waypoint doesn't strictly need a "reached" glow state the way the
-     old puzzle needed a solved/unsolved state per spot — but there's no
-     reason not to reuse it as arrival feedback (e.g. flash on overlap).
-     Not a blocking decision; revisit if it looks wrong in practice.
+4. **Relay Beacon (mandatory waypoint) — replaced with final AI-generated
+   art 2026-08-01, and collapsed to a single asset** (was: reassigned,
+   not re-sourced, from the old Relay Beacon puzzle element on 2026-07-29 —
+   satellite sprite + generated glow overlay pair).
+   - `objectives/relay_beacon.png` — generated via the Art Director Agent /
+     Gemini, prepped with `tools/asset-prep/chroma-key-trim.js`. **Single
+     file**, replacing both the old idle sprite and the generated
+     reached-overlay — `RelayBeaconObject` now tints it via
+     `waypointTintConfig` (starts `inactiveTint`, swaps to `activeTint` on
+     `BeaconReached`) instead of swapping in a second overlay image,
+     matching the wormhole pair's convention. Drops `_PLACEHOLDER`; final
+     art.
+   - The two old files (`relay_beacon_idle_PLACEHOLDER.png`,
+     `relay_beacon_reached_overlay_PLACEHOLDER.png`) are deleted, not kept
+     around — fully superseded, not just reassigned this time.
 
-5. **Probe — done, via owner-original placeholder (2026-07-29), not the
-   Agent 1/2/3 pipeline.**
-   - The project owner added `objectives/probe_PLACEHOLDER.png` directly —
-     a greyscale, owner-authored image, not sourced from a licensed pack.
-     No `ATTRIBUTION.md` entry needed (nothing third-party involved).
+5. **Probe — replaced with final AI-generated art 2026-08-01** (was: an
+   owner-original greyscale placeholder added directly 2026-07-29, not the
+   Agent 1/2/3 pipeline).
+   - `objectives/probe.png` — generated via the Art Director Agent / Gemini,
+     prepped with `tools/asset-prep/chroma-key-trim.js`, replacing
+     `probe_PLACEHOLDER.png`. Drops `_PLACEHOLDER`; final art. Still no
+     `ATTRIBUTION.md` entry needed (AI-generated, not third-party sourced —
+     see `ATTRIBUTION.md`'s "Owner-created assets" section).
    - This was never listed as an asset requirement anywhere before the
      2026-07-29 GDD revision (a pre-existing gap the revision exposed, not
-     a new invention) — now resolved as a placeholder, same day.
-   - Still open: this is programmer-art/greyscale, not a licensed sprite
-     like the rest of Phase 1's assets. Fine as a stand-in; a real sourcing
-     pass (Agents 1+2, targeting this specifically) or a proper
-     owner-authored replacement is still worth doing before treating Phase
-     1 art as final. Narrative framing per GDD §1.1: an inactive probe,
-     older tech relative to the player's ship but still distinctly
-     "advanced probe" silhouette, not a generic crate/box.
+     a new invention); resolved as a placeholder same day, now resolved as
+     final art. Narrative framing per GDD §1.1: an inactive probe, older
+     tech relative to the player's ship but still distinctly "advanced
+     probe" silhouette, not a generic crate/box — the new art was generated
+     against this framing.
 
 6. **HUD (UI Pack - Sci-Fi.zip)** — done, unaffected by the 2026-07-29
    scope change.
@@ -227,12 +254,11 @@ reference the placeholder filename by then.
 
 ## Open items carried forward
 
-- Entry/Exit Wormhole vs. ship style-mismatch (item 3 above) — the one
-  unresolved judgment call carried over from the original Phase 1 set.
-  Resolve before calling Phase 1 asset prep done.
-- Probe placeholder (item 5 above) is greyscale/programmer-art, not a
-  licensed-pack sprite — fine as a stand-in, worth a real sourcing pass or
-  owner-authored replacement before final art.
+- ~~Entry/Exit Wormhole vs. ship style-mismatch (item 3 above)~~ —
+  **Resolved 2026-08-01**: both are now AI-generated art from the same
+  pipeline, so the flat-vs-shaded clash this item tracked no longer exists.
+- ~~Probe placeholder (item 5 above) is greyscale/programmer-art~~ —
+  **Resolved 2026-08-01**, replaced with final AI-generated art.
 - ~~`assets/ui/_source/` (and the loose `warped_top_down_tech_lab_extension.png`
   at `assets/` root) need to move out of the `publicDir`-served tree before a
   real production build~~ — **Resolved 2026-08-01**, both moved into

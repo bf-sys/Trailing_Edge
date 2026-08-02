@@ -10,7 +10,14 @@ export const shipConfig = {
   deceleration: 900, // px/s^2, ramping down while inside arrivalRadius
   arrivalRadius: 48, // px from target where slowing begins
   stopRadius: 4, // px from target at which the ship snaps to a full stop
-  spriteFacingOffsetRadians: Math.PI / 2, // ship_base_PLACEHOLDER art faces up, not right
+  spriteFacingOffsetRadians: Math.PI / 2, // ship_base art faces up, not right
+  // Authored on-screen size, set via setDisplaySize() rather than
+  // setScale() -- CLAUDE.md's asset/gameplay-size decoupling rule.
+  // ship_base.png's native resolution can change (it already has once,
+  // 2026-08-01's AI-generated art is ~4.5x the old placeholder's pixel
+  // size) without this needing to change to match.
+  displayWidth: 46,
+  displayHeight: 56,
 };
 
 registerTuning('ship', shipConfig);

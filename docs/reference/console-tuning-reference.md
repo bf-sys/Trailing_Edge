@@ -45,12 +45,20 @@ always ends up exactly on the clicked point).
 | `arrivalRadius` | `48` | Distance (px) from the target where slowing begins |
 | `stopRadius` | `4` | Distance (px) from the target at which the ship snaps to a full stop |
 | `spriteFacingOffsetRadians` | `Math.PI / 2` | Rotation offset so the ship sprite (which faces up, not right) points the direction it's actually traveling |
+| `displayWidth` / `displayHeight` | `46` / `56` | On-screen ship size (px), applied via `setDisplaySize()` (added 2026-08-01, after `ship_base.png`'s AI-generated art at ~4.5x the old placeholder's native resolution revealed the previous `setScale(0.5)` call was tying display size to native pixel size — exactly the anti-pattern `CLAUDE.md`'s asset/gameplay-size decoupling rule warns against) |
 
 ```js
 window.tuning.ship.maxSpeed = 400        // faster top speed
 window.tuning.ship.acceleration = 1500   // snappier ramp-up
 window.tuning.ship.arrivalRadius = 100   // starts slowing down earlier
 ```
+
+**Note:** unlike the movement fields above, `displayWidth`/`displayHeight`
+are only applied once, in `PlayerShip`'s constructor (`setDisplaySize()`) —
+not read every frame. A console edit has no visible effect until the next
+hard-fail restart or level load (same class of caveat as `hud`'s
+texture-baked marker size/color, and `backgroundSetPieces`' size/color
+fields).
 
 ## `window.tuning.survival` (`src/config/survivalConfig.ts`)
 
@@ -70,21 +78,33 @@ window.tuning.survival.energyRegenPerSecond = 20      // faster passive energy r
 window.tuning.survival.maxStructure = 200             // bigger structure pool (won't heal existing run above the old max mid-level)
 ```
 
-## `window.tuning.wormhole` (`src/config/wormholeConfig.ts`)
+## `window.tuning.waypointTint` (`src/config/waypointTintConfig.ts`)
 
-Entry/exit wormhole feel (GDD §11.14) — the tint states and how quickly the
-Entry Wormhole visually closes after the level starts.
+Shared active/inactive tint language (GDD §11.13/§11.14) for
+`EntryWormhole`/`ExitWormhole` and, as of 2026-08-01, `RelayBeaconObject`
+too (renamed from `wormholeConfig` when the Relay Beacon moved to this same
+single-texture-plus-tint convention instead of its old separate
+idle/reached-overlay files).
 
 | Field | Default | What it does |
 |---|---|---|
-| `activeTint` | `0x88ffcc` | Tint applied while a wormhole is "open" (Entry at level start; Exit once the Relay Beacon is reached) |
-| `inactiveTint` | `0x445566` | Tint applied while a wormhole is "closed" (Entry after `entryCloseDelayMs`; Exit until the Relay Beacon is reached) |
+| `activeTint` | `0xffffff` (changed from `0x88ffcc` 2026-08-01 — see below) | Tint applied while "open"/"reached" (Entry Wormhole at level start; Exit Wormhole and Relay Beacon once the Relay Beacon is reached) |
+| `inactiveTint` | `0x445566` | Tint applied while "closed"/"not yet reached" (Entry Wormhole after `entryCloseDelayMs`; Exit Wormhole and Relay Beacon until the Relay Beacon is reached) |
 | `entryCloseDelayMs` | `400` | Delay (ms) after level start before the Entry Wormhole swaps from `activeTint` to `inactiveTint` |
 
 ```js
-window.tuning.wormhole.entryCloseDelayMs = 1000  // Entry Wormhole stays open longer before closing
-window.tuning.wormhole.activeTint = 0xffffff     // brighter "open" tint
+window.tuning.waypointTint.entryCloseDelayMs = 1000  // Entry Wormhole stays open longer before closing
+window.tuning.waypointTint.activeTint = 0xffddaa     // warm-tinted "open"/"reached" glow instead of true colors
 ```
+
+**Note (2026-08-01):** `activeTint` defaults to `0xffffff` (a no-op
+multiplicative tint, i.e. true colors) rather than a colored tint —
+`setTint()` multiplies per channel, so a colored value like the original
+`0x88ffcc` reads as a subtle glow on a near-monochrome placeholder icon but
+recolors a detailed, naturally-colored sprite (like the AI-generated Relay
+Beacon) with a visible cast toward whichever channel the tint leaves
+un-reduced. If you set `activeTint` to a color again, check it against the
+actual sprite, not just in isolation.
 
 ## `window.tuning.hud` (`src/config/hudConfig.ts`)
 

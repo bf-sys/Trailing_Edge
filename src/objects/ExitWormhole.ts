@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { getPlayerShip } from '../systems/ExplorationController';
-import { wormholeConfig } from '../config/wormholeConfig';
+import { waypointTintConfig } from '../config/waypointTintConfig';
+import { setCircleFromWorldRadius } from './arcadeBodyHelpers';
 import { LevelObjectiveTracker, LEVEL_OBJECTIVE_EVENTS } from './LevelObjectiveTracker';
 
 export interface ExitWormholeConfig {
@@ -30,14 +31,14 @@ export class ExitWormhole {
   ) {
     this.zone = scene.physics.add.image(config.x, config.y, config.textureKey);
     this.zone.setDisplaySize(config.radius * 2, config.radius * 2);
-    this.zone.setTint(wormholeConfig.inactiveTint);
+    this.zone.setTint(waypointTintConfig.inactiveTint);
 
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(config.radius);
+    setCircleFromWorldRadius(body, this.zone, config.radius);
 
     tracker.once(LEVEL_OBJECTIVE_EVENTS.BeaconReached, () => {
       this.active = true;
-      this.zone.setTint(wormholeConfig.activeTint);
+      this.zone.setTint(waypointTintConfig.activeTint);
     });
 
     const ship = getPlayerShip();

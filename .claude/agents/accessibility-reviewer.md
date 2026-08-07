@@ -22,12 +22,14 @@ audit.
 2. **Color-only signaling:** is any hazard's danger communicated by color
    alone, with no shape/motion/border cue backing it up?
 3. **Structure-vs-energy stakes legibility (new for this build's survival
-   revision):** since only structure-draining hazards (Debris Field,
-   Meteoroid) can end the level — energy-draining hazards (Solar Flare, Ion
-   Storm, Nebula Field) are lower-stakes, ability-limiting pressure only —
-   does the visual language communicate that difference? A player
-   shouldn't need to already know the mechanic to sense that one hazard
-   family is more dangerous than the other.
+   revision):** Meteoroid is now the *sole* structure-draining hazard
+   (Debris Field was re-scoped 2026-08-07 to a movement-blocking obstacle
+   with zero resource drain — GDD §9) — energy-draining hazards (Solar
+   Flare, Ion Storm, Nebula Field) and the movement-blocking Debris Field
+   are lower-stakes, ability-limiting/routing pressure only — does the
+   visual language communicate that difference? A player shouldn't need to
+   already know the mechanic to sense that one hazard is more dangerous
+   than the rest.
 
 ## When this runs
 Once at the week-2 gate (Phase 1, §12) — the first real chance to look at

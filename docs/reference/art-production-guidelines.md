@@ -66,6 +66,67 @@ Practical guidance in place of a fixed number:
 | `objectives/relay_beacon.png` (AI-generated, 2026-08-01 — single asset, replaces the old idle/reached-overlay pair) | 1124×656 |
 | `backgrounds/bg_stars_far.jpg` / `bg_stars_near.jpg` (AI-generated, 2026-08-01) | 1024×1024 |
 
+## Field/area hazards — no tile grid, one sprite per authored footprint
+
+There's no tile-based map anywhere in this project (`CLAUDE.md`'s
+"hand-authored TS/JSON level configs, not Tiled" decision) — a level is a
+continuous pixel-space world, and every hazard is placed at an explicit
+`(x, y)` with an authored `shape` (`HazardZoneElement`'s `{ kind: 'circle',
+radius }` or `{ kind: 'rectangle', width, height }`). One sprite gets
+`setDisplaySize()`'d to exactly that footprint — same size-decoupling rule
+as everything else in this doc. The art never dictates how big a given
+placement is, and the same image can render small in one spot and large in
+another with zero art changes.
+
+Two practical consequences specifically for "field"/area-style hazards, as
+opposed to a single compact object like the ship or probe:
+
+- **Compose it as a cluster, not a single object.** Since one image gets
+  stretched to fill whatever footprint a level author picks, a single rock
+  stretched across a big area reads as one smeared blob, not "a field." A
+  loose composition of several small fragments in one image holds up much
+  better at larger authored sizes.
+- **If the natural composition comes out clearly non-square, say so** —
+  that placement should use the `rectangle` shape variant instead of
+  `circle`, rather than letting a wide/tall image get force-squished into a
+  square footprint. This is exactly what went wrong with the Relay Beacon's
+  first pass (see `console-tuning-reference.md`/`STATUS.md`'s 2026-08-01
+  playtest-fix notes) — flag it up front instead of discovering it in play.
+
+### Variable-size/irregular fields — composing from multiple instances (2026-08-07)
+
+`HazardZoneElement.shape` only supports `circle` or `rectangle` — there's no
+polygon/freeform footprint. A field that needs to read as larger or more
+irregularly shaped than either primitive (Debris Field is the motivating
+case, now that it's a movement-blocking obstacle rather than a single
+structure-drain zone — GDD §9) is authored as **several instances placed
+near/overlapping each other**, not as one oddly-shaped hazard. This is
+content authoring (Phase 2b, level-config data), not a code change — the
+same "union of primitives" approach most 2D games use for irregular
+collision areas.
+
+That raises a real art-asset need this doc didn't call out before: placing
+several copies of the *same* cluster texture next to each other at the same
+scale reads as an obvious stamp, more so than a repeated single rock would,
+because a cluster image already has its own internal arrangement of several
+rocks — repeat it and that whole arrangement repeats, not just one shape.
+To avoid that:
+
+- **Produce 2-3 distinct debris cluster textures**, same brief (a loose
+  cluster of small rock/ice fragments, per the section above) but a
+  different internal arrangement/density each — same tiering pattern
+  already used for `debris_{large,medium,small}`, just for compositional
+  variety instead of size. Cheap to generate given the existing AI-generation
+  pipeline (Art Director Agent/Gemini).
+- **Vary rotation per placed instance** on top of that (a straightforward
+  code addition to `HazardZoneElement` — `Phaser.GameObjects.Image` supports
+  `setRotation()` natively, it's just not wired into the config yet).
+  Rotation alone, from a single texture, isn't enough on its own — the same
+  cluster reoriented still has the same silhouette and rock density up
+  close — but combined with 2-3 real texture variants it stretches that
+  small set much further, same spirit as `BackgroundSetPieces`' existing
+  seeded random scale/alpha per instance.
+
 ## Orientation
 
 `ship_base` faces **up** by default, and the code compensates for exactly
@@ -94,6 +155,21 @@ Remaining Kenney/OpenGameArt placeholders not yet replaced (debris,
 AsteroidField medium/small, ship damage overlay, HUD bars/panel) are still
 **legacy placeholders** — any final art replacing those must adhere to the
 Gritty Dark Sci-Fi Pixel style too.
+
+**Debris Field vs. AsteroidField — deliberate visual differentiation
+(2026-08-07):** Debris Field's fiction was reframed from ship wreckage to
+naturally-occurring rock/ice debris — the setting doesn't establish enough
+prior space-faring civilization for wreckage fields to make sense. Same
+name (`CLAUDE.md`/GDD wording is unchanged), same asset slot, just a
+different in-fiction read. This makes it visually closer to AsteroidField
+(the resupply object) than before, so keep them deliberately distinct when
+producing new Debris Field art: **Debris Field reads as a field of many
+small, loose rock/ice fragments** (a cluster composition, per the
+Field/area hazards section above); **AsteroidField reads as one single
+large rock with visible metal ore** (`resupply/asteroid_large.png`'s
+existing look — for reference, not to be changed). Many-small vs.
+one-large is the differentiator to hold onto, not just color/palette —
+one is meant to be avoided, the other approached.
 
 ## Naming convention
 

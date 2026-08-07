@@ -144,15 +144,29 @@ module load. Agents append imports; **nobody hand-edits `create()`.**
   - **`HazardZoneElement`** — one parameterized class for *all four*
     open-world hazards (Debris Field, Solar Flare, Ion Storm, Nebula Field)
     plus Meteoroid, via `shape`, `movementPattern`, `speed`, `activation`,
-    `pulseIntervalSeconds`, `resourceCost`. **Don't build five hazard
-    classes — this collapse is a confirmed decision, not an open question.**
-    Only structure-draining hazards (Debris Field, Meteoroid) carry real
-    fail stakes; energy-draining hazards (Solar Flare, Ion Storm, Nebula
-    Field) are lower-stakes/ability-limiting — worth telegraphing that
-    difference visually, not just each hazard's identity.
+    `pulseIntervalSeconds`, `resourceCost`, and (added 2026-08-07)
+    `blocksMovement`. **Don't build five/six hazard classes — this collapse
+    is a confirmed decision, not an open question**; `blocksMovement` is one
+    more parameter on the same class, not a new one. Meteoroid is now the
+    *only* structure-draining hazard with real fail stakes — Debris Field no
+    longer drains anything (see below); energy-draining hazards (Solar
+    Flare, Ion Storm, Nebula Field) stay lower-stakes/ability-limiting —
+    worth telegraphing that difference visually, not just each hazard's
+    identity.
   - Hard rule: `onHazardContact()` only calls
     `ShipSurvivalComponent.consumeEnergy/consumeStructure` — never sets
-    resource values itself.
+    resource values itself. **Exception:** `blocksMovement: true` hazards
+    don't call `onHazardContact()` at all — a solid collider has no
+    "contact cost," it just physically blocks entry.
+  - **Debris Field re-scoped 2026-08-07 (GDD §9):** was a static,
+    structure-draining zone; now a solid, movement-blocking obstacle with
+    **no resource drain** — naturally-occurring rock/ice debris, not ship
+    wreckage (the lore never established prior space-faring civilizations
+    to leave wreckage). Name is unchanged — renaming to "Asteroid Field"
+    was considered and rejected, since it would collide with the
+    already-established `AsteroidField` resupply object below. **Not yet
+    implemented** — Phase 1's existing code still uses the old drain
+    behavior; this is a decided design direction, not a shipped change.
 - **`AbilityComponent`** — per-ability dual gate (`energyCost`,
   `cooldownSeconds`), either settable to 0. Puzzle elements query
   `isUnlocked()` before allowing gated interactions.
@@ -195,8 +209,12 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
    breaking a hard rule or hand-editing a shared wiring file.
 2. **Phase 1 (weeks 1–2)** — single sequential session, gated on review at
    each step: `ExplorationController` → `ShipSurvivalComponent` + one
-   `HazardZoneElement` (Debris Field) + one `ResupplyPoint` (AsteroidField,
-   passive energy regen active) → `ProbeObject`/`RelayBeaconObject`/
+   `HazardZoneElement` (Debris Field, structure-cost) + one `ResupplyPoint`
+   (AsteroidField, passive energy regen active) — **flagged drift:** this
+   describes what Phase 1 actually built; Debris Field's design has since
+   moved to a movement-blocking obstacle with `blocksMovement: true` and no
+   resource drain (see "Debris Field re-scoped" above), and the code hasn't
+   been updated to match yet → `ProbeObject`/`RelayBeaconObject`/
    `EntryWormhole`/`ExitWormhole`/`LevelObjectiveTracker` wired end-to-end → hard-fail flow
    (full level restart, no `CheckpointManager`) → bare-minimum `HudOverlay`
    (bars only). **No puzzle-site element in Phase 1** — the mandatory loop
@@ -225,13 +243,15 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
 
 ## Puzzle taxonomy vs. hazard taxonomy — don't conflate these two tables (GDD §9)
 
-**Open-world hazards** (drain resources, encountered while flying):
-Debris Field (static, structure), Solar Flare (dynamic/timed burst, energy),
-Ion Storm (dynamic/slow-drift, energy — visually same family as Nebula Field,
-motion is the *only* difference, **still an open art-differentiation
-question**), Nebula Field (static, energy), Meteoroid (dynamic/moving,
-structure — renamed from "Rogue Comet" to avoid colliding with the puzzle
-element below).
+**Open-world hazards** (drain resources, encountered while flying — except
+Debris Field, see below): Debris Field (static, **blocks movement, no
+resource drain — re-scoped 2026-08-07**), Solar Flare (dynamic/timed burst,
+energy), Ion Storm (dynamic/slow-drift, energy — visually same family as
+Nebula Field, motion is the *only* difference, **still an open art-
+differentiation question**), Nebula Field (static, energy), Meteoroid
+(dynamic/moving, structure — renamed from "Rogue Comet" to avoid colliding
+with the puzzle element below, and now the *only* structure-draining
+open-world hazard).
 
 **Puzzle-site elements** (optional/additive, cost-neutral by default):
 Signal Array (sequence — renamed from "Relay Beacon," see below), Scan
@@ -250,8 +270,10 @@ differently; previously one shared Home Marker object).
 
 ## Phase 1 content scope (exactly these, nothing else)
 
-One hazard (Debris Field), one resupply point (AsteroidField — structure
-repair only; energy regenerates passively, no dedicated object), the Probe,
+One hazard (Debris Field — **its code still implements the pre-2026-08-07
+structure-drain design, not the current movement-blocking one; this is a
+known, flagged drift, not an oversight**), one resupply point (AsteroidField
+— structure repair only; energy regenerates passively, no dedicated object), the Probe,
 the Relay Beacon (mandatory waypoint, not a puzzle), the Entry Wormhole and
 Exit Wormhole (two distinct locations, placeholder: reused Star asset
 tinted per-state), the ship, minimal HUD. **No
@@ -272,10 +294,13 @@ in reserve if color+animation doesn't read clearly.
 
 Also newly open: structure-vs-energy stakes legibility. Since only
 structure can end a level (energy is a non-fail, ability-gating resource),
-structure-draining hazards (Debris Field, Meteoroid) carry real fail stakes
-while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't
-— whether the current visual language communicates that difference is
-untested. Same validation timing as the item above.
+Meteoroid — now the sole structure-draining hazard, since Debris Field's
+2026-08-07 re-scope removed it from this list (see "Debris Field re-scoped"
+above) — carries real fail stakes while the energy-draining hazards (Solar
+Flare, Ion Storm, Nebula Field) and the movement-blocking Debris Field
+don't. Whether the current visual language communicates that difference is
+untested, and now a sharper question with only one hazard on the fail-stakes
+side. Same validation timing as the item above.
 
 **Resolved (2026-07-31):** off-screen objective visibility (raised
 2026-07-30, §8's levels are "bounded," not "screen-sized," so the
@@ -287,3 +312,19 @@ point at. Implemented in `HudOverlay` via
 `LevelObjectiveTracker.getCurrentObjectiveTarget()`. Revisit if a future
 level needs multiple simultaneous objective/hazard markers at once — a
 minimap may become warranted then.
+
+**Resolved (2026-08-07):** Debris Field re-scoped from a structure-draining
+zone to a movement-blocking obstacle — two problems prompted it: it felt
+mechanically redundant with Nebula Field (both static drain zones, just
+different resources) and its ship-wreckage fiction didn't fit a setting
+with no established prior space-faring civilizations. Fix: keep the name,
+change the fiction to naturally-occurring rock/ice debris, change the
+mechanic to a solid collider with zero resource drain — the first hazard
+tied to the Meso/Exploration pillar (routing) rather than only Macro/
+Survival. An "Asteroid Field" rename was considered and rejected — it would
+collide with the existing `AsteroidField` resupply object. Visual
+differentiation from that object (many small fragments vs. one large
+ore-rich rock) is locked in, `docs/reference/art-production-guidelines.md`.
+**Design-only so far** — `HazardZoneElement` needs a new `blocksMovement`
+parameter and a solid Arcade collider path; Phase 1's code hasn't been
+touched yet.

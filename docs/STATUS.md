@@ -1,9 +1,57 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-01)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-07)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Design update (2026-08-07) — Debris Field re-scoped: movement-blocking, not structure-draining; fiction changed
+
+**Design decision only — not yet implemented in code.** Two problems with
+Debris Field prompted this: (1) it felt mechanically redundant with the
+planned Nebula Field, since both read as "area that drains a resource" even
+though they drain different resources; (2) the game's fiction doesn't
+establish enough prior multi-civilization space travel to justify fields of
+ship wreckage, which is what "debris field" implied.
+
+**Decided:** keep the name "Debris Field" (no rename — avoids colliding with
+the existing `AsteroidField` resupply object). Change the mechanic from
+structure-drain to **movement-blocking, zero resource drain** — a new
+`HazardZoneElement.blocksMovement: boolean` param, still one parameterized
+hazard class per `CLAUDE.md`'s existing "don't build five hazard classes"
+rule. Change the fiction from ship wreckage to **naturally-occurring rock/ice
+debris**, which fits the setting and also gives Debris Field a legitimate
+reason to visually resemble small loose fragments rather than salvage.
+
+This makes Debris Field visually closer to the `AsteroidField` resupply
+object than before (both now read as "rocks in space"), so
+`docs/reference/art-production-guidelines.md`'s "Style consistency" section
+was updated first with explicit differentiation guidance: Debris Field as a
+**cluster of many small rock/ice fragments**, AsteroidField as **one single
+large rock with visible metal ore** — many-small-and-avoided vs.
+one-large-and-approached is the differentiator, not just color/palette.
+
+**Side effect:** Meteoroid is now the *sole* structure-draining hazard
+(previously Debris Field + Meteoroid), which sharpens rather than resolves
+the existing open question about whether structure-vs-energy hazard stakes
+read clearly in the current visual language (GDD §9).
+
+**Docs updated this pass:** `trailing_edge_gdd_draft_31.md` (source of
+truth — structure-resource description, §9 resolved/open items,
+§11.3 `HazardZoneElement` contract, appendix reference table, Phase 1
+dev-plan drift flag), `CLAUDE.md` (mirrors the GDD edits), this STATUS.md
+entry, `trailing_edge_art_asset_list.md` (§1.2 Debris Field row, the
+Debris-Field-vs-AsteroidField pairing-risk flag marked resolved via the art
+guidelines, the structure-draining-hazards flag corrected to name Meteoroid
+as sole member, and the §4 open-items list). `art-production-guidelines.md`
+was updated in the prior turn, ahead of this pass.
+
+**Not yet touched, and correctly so:** `GameScene.ts` still constructs the
+Debris Field `HazardZoneElement` with `movementPattern: 'static'` and
+`resourceCost: { energy: 0, structure: 18 }` — the pre-re-scope config. Every
+doc above flags this as known drift rather than silently describing
+not-yet-real behavior. Implementing `blocksMovement` and updating
+`GameScene.ts`'s hazard config is follow-up work, not done in this pass.
 
 ## Design update (2026-08-01, second playtest round) — Relay Beacon fixes + a real collision-radius bug
 
@@ -377,8 +425,10 @@ not sourced from a licensed pack — see the design-update note above.
 
 - Comet vs. Meteoroid visual distinction
 - Ion Storm / Nebula Field style choice (composite-yourself vs. pre-made) —
-  now also needs to read as lower-stakes than structure-draining hazards
-  (Debris Field, Meteoroid), per the 2026-07-29 GDD revision (§9)
+  now also needs to read as lower-stakes than the structure-draining hazard
+  family, per the 2026-07-29 GDD revision (§9) — Meteoroid is now the *sole*
+  member of that family as of the 2026-08-07 Debris Field re-scope, see
+  above
 - Beacon Cluster (still no named match anywhere)
 - Signal Array (sequence puzzle, formerly named Relay Beacon) — see "What's
   NOT done" above

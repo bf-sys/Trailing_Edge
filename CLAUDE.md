@@ -164,9 +164,9 @@ module load. Agents append imports; **nobody hand-edits `create()`.**
     wreckage (the lore never established prior space-faring civilizations
     to leave wreckage). Name is unchanged — renaming to "Asteroid Field"
     was considered and rejected, since it would collide with the
-    already-established `AsteroidField` resupply object below. **Not yet
-    implemented** — Phase 1's existing code still uses the old drain
-    behavior; this is a decided design direction, not a shipped change.
+    already-established `AsteroidField` resupply object below. **Implemented
+    2026-08-07** — Phase 1's `HazardZoneElement` config now sets
+    `blocksMovement: true` with zero resource cost.
 - **`AbilityComponent`** — per-ability dual gate (`energyCost`,
   `cooldownSeconds`), either settable to 0. Puzzle elements query
   `isUnlocked()` before allowing gated interactions.
@@ -270,9 +270,8 @@ differently; previously one shared Home Marker object).
 
 ## Phase 1 content scope (exactly these, nothing else)
 
-One hazard (Debris Field — **its code still implements the pre-2026-08-07
-structure-drain design, not the current movement-blocking one; this is a
-known, flagged drift, not an oversight**), one resupply point (AsteroidField
+One hazard (Debris Field — movement-blocking, zero resource cost, per the
+2026-08-07 re-scope), one resupply point (AsteroidField
 — structure repair only; energy regenerates passively, no dedicated object), the Probe,
 the Relay Beacon (mandatory waypoint, not a puzzle), the Entry Wormhole and
 Exit Wormhole (two distinct locations, placeholder: reused Star asset

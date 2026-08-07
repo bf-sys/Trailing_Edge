@@ -196,10 +196,9 @@ with no reload needed.
 
 - **Hazard costs** (e.g. Meteoroid's structure-drain rate) — currently a
   literal object inline in `GameScene.create()`, not its own config module.
-  (Note: `GameScene.create()`'s Debris Field config still reflects the
-  pre-2026-08-07 design — structure-drain, not movement-blocking — since
-  that re-scope is design-decided but not yet implemented in code; see
-  `STATUS.md`'s 2026-08-07 entry.)
+  Debris Field's `blocksMovement: true` obstacle config is likewise inline
+  there rather than tunable (2026-08-07 — see `STATUS.md`'s "Code update"
+  entry).
 - **Ability costs/cooldowns** — `AbilityComponent` doesn't exist yet.
 - **Camera/parallax settings** (scroll factors, level size) — level/scene
   setup, not treated as a tunable-feel config module.

@@ -22,15 +22,10 @@ project's sequential-then-fan-out shape (GDD §12) exists to avoid.
 1. `ExplorationController` (click-to-move, non-Newtonian, §4) + one small
    test scene.
 2. `ShipSurvivalComponent` wired to one hazard (`HazardZoneElement`
-   configured as Debris Field — static, continuous, structure-cost) and one
-   `ResupplyPoint` (AsteroidField). Passive energy regen active from this
-   step on. **Flagged drift (2026-08-07):** this describes what Phase 1
-   actually built. Debris Field's design has since moved to a
-   movement-blocking obstacle (`blocksMovement: true`, zero resource drain,
-   naturally-occurring rock/ice fragments rather than wreckage — GDD §9) but
-   the code hasn't been updated to match. If you're picking this contract
-   back up to do that follow-up work, build against the current GDD §11.3/§9
-   text, not this historical description.
+   configured as Debris Field — static, `blocksMovement: true`, zero
+   resource cost, naturally-occurring rock/ice fragments rather than
+   wreckage — GDD §9, implemented 2026-08-07) and one `ResupplyPoint`
+   (AsteroidField). Passive energy regen active from this step on.
 3. `ProbeObject`, `RelayBeaconObject`, `HomeMarker`, and
    `LevelObjectiveTracker` (§11.11–11.14) wired end-to-end: find probe →
    reach beacon → return to Home Marker triggers level completion. **No

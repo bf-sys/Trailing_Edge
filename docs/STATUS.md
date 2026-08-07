@@ -5,10 +5,25 @@ for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
 
+## Code update (2026-08-07) — Debris Field `blocksMovement` implemented
+
+Follow-up to the design update below, same day: `HazardZoneElement` gained a
+`blocksMovement?: boolean` param (`src/objects/HazardZoneElement.ts`). When
+set, the zone's Arcade body is made immovable and wired via
+`physics.add.collider()` instead of `physics.add.overlap()` — no resource-
+cost callback fires at all, matching the "no `onHazardContact()` call for a
+blocking hazard" hard rule in `CLAUDE.md`/GDD §11.3. `GameScene.ts`'s Debris
+Field placement now sets `blocksMovement: true` with zero resource cost,
+replacing the old `structure: 18` drain config. `docs/reference/
+console-tuning-reference.md` and `.claude/agents/core-contract-agent.md`
+updated to drop the now-stale "code hasn't caught up" notes. `tsc --noEmit`
+passes; not yet playtested in-browser.
+
 ## Design update (2026-08-07) — Debris Field re-scoped: movement-blocking, not structure-draining; fiction changed
 
-**Design decision only — not yet implemented in code.** Two problems with
-Debris Field prompted this: (1) it felt mechanically redundant with the
+**Design decision, implemented in code the same day (see entry above).** Two
+problems with Debris Field prompted this: (1) it felt mechanically redundant
+with the
 planned Nebula Field, since both read as "area that drains a resource" even
 though they drain different resources; (2) the game's fiction doesn't
 establish enough prior multi-civilization space travel to justify fields of
@@ -46,12 +61,10 @@ guidelines, the structure-draining-hazards flag corrected to name Meteoroid
 as sole member, and the §4 open-items list). `art-production-guidelines.md`
 was updated in the prior turn, ahead of this pass.
 
-**Not yet touched, and correctly so:** `GameScene.ts` still constructs the
-Debris Field `HazardZoneElement` with `movementPattern: 'static'` and
-`resourceCost: { energy: 0, structure: 18 }` — the pre-re-scope config. Every
-doc above flags this as known drift rather than silently describing
-not-yet-real behavior. Implementing `blocksMovement` and updating
-`GameScene.ts`'s hazard config is follow-up work, not done in this pass.
+**Implemented same day, see the "Code update" entry above.** This section
+originally flagged `GameScene.ts` as still using the pre-re-scope
+structure-drain config as known drift rather than silently-wrong behavior;
+that follow-up work landed later on 2026-08-07 and the drift is resolved.
 
 ## Design update (2026-08-01, second playtest round) — Relay Beacon fixes + a real collision-radius bug
 

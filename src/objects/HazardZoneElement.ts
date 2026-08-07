@@ -20,14 +20,19 @@ export interface HazardZoneConfig {
   activation: HazardActivation;
   pulseIntervalSeconds?: number; // required when activation is 'pulsed'
   resourceCost: { energy: number; structure: number };
+  // A solid, movement-blocking obstacle instead of an overlap-and-drain
+  // zone (Debris Field, re-scoped 2026-08-07 — GDD §9/§11.3). No
+  // onHazardContact()-equivalent call happens for these: a collider has no
+  // "contact cost" to report, it just physically prevents entry.
+  blocksMovement?: boolean;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
 // Field, Solar Flare, Ion Storm, Nebula Field) plus Meteoroid — GDD §11.3's
 // confirmed collapse of five hazard classes into one class + five content
 // configs. Phase 1 only exercises the Debris Field config (static,
-// continuous, structure-cost); the other branches exist so Phase 2b's
-// remaining hazards are config, not code.
+// movement-blocking, zero resource cost); the other branches exist so
+// Phase 2b's remaining hazards are config, not code.
 export class HazardZoneElement {
   private readonly config: HazardZoneConfig;
   private readonly zone: Phaser.Physics.Arcade.Image;
@@ -42,7 +47,13 @@ export class HazardZoneElement {
     this.applyMovement();
 
     const ship = getPlayerShip();
-    if (ship) {
+    if (config.blocksMovement) {
+      // Immovable so the ship's body is the one that gets pushed out on
+      // overlap, not this zone -- still allowed to have its own velocity
+      // via applyMovement() above for a future moving+blocking variant.
+      (this.zone.body as Phaser.Physics.Arcade.Body).setImmovable(true);
+      if (ship) scene.physics.add.collider(this.zone, ship.image);
+    } else if (ship) {
       scene.physics.add.overlap(this.zone, ship.image, () => {
         this.overlapping = true;
       });

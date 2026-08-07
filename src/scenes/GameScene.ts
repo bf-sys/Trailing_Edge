@@ -91,8 +91,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.startFollow(ship.image, true, 0.1, 0.1);
     }
 
-    // Debris Field — the simplest HazardZoneElement config (static,
-    // continuous, structure-cost only), per Phase 1 step 2 scope.
+    // Debris Field — static, movement-blocking obstacle, zero resource
+    // cost (re-scoped 2026-08-07, GDD §9/§11.3). activation/resourceCost
+    // are inert for a blocksMovement hazard but still required by the
+    // config type; left at 'continuous'/zero rather than made optional.
     this.hazards.push(
       new HazardZoneElement(this, {
         x: 1750,
@@ -102,7 +104,8 @@ export class GameScene extends Phaser.Scene {
         movementPattern: 'static',
         speed: 0,
         activation: 'continuous',
-        resourceCost: { energy: 0, structure: 18 },
+        resourceCost: { energy: 0, structure: 0 },
+        blocksMovement: true,
       }),
     );
 

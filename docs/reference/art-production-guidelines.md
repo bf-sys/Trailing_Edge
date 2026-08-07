@@ -57,7 +57,8 @@ Practical guidance in place of a fixed number:
 |---|---|
 | `ship/ship_base.png` (AI-generated, 2026-08-01) | 442×542 |
 | `ship/ship_damage_overlay_PLACEHOLDER.png` (20-frame strip) | 320×41 |
-| `hazards/debris_large_PLACEHOLDER.png` | 128×128 |
+| `hazards/debris_large.png` (AI-generated, 2026-08-07 — chroma-keyed + center-cropped square, see "Variable-size/irregular fields" below) | 656×656 |
+| `hazards/debris_large_alt2.png` / `debris_large_alt3.png` (AI-generated, 2026-08-07, same pipeline — reserved, not yet loaded by any code) | 768×768 / 834×834 |
 | `hazards/debris_medium_PLACEHOLDER.png` | 64×64 |
 | `hazards/debris_small_PLACEHOLDER.png` | 32×32 |
 | `resupply/asteroid_large.png` (AI-generated, 2026-08-01) | 760×672 |
@@ -127,6 +128,29 @@ To avoid that:
   small set much further, same spirit as `BackgroundSetPieces`' existing
   seeded random scale/alpha per instance.
 
+**Sourced (2026-08-07):** `debris_large.png` (primary, wired into
+`BootScene`/`GameScene`), `debris_large_alt2.png`, `debris_large_alt3.png`
+(both sourced, neither loaded by any code yet — Phase 2b's pick-a-variant
+content authoring). All three went through `HazardZoneElement`'s `circle`
+shape rather than `rectangle`: circle bodies in Arcade Physics are
+rotation-invariant, so the planned per-instance rotation above never
+desyncs the visible sprite from the actual (always-axis-aligned) collision
+area the way a rotated rectangle body would. Sharing one shape kind across
+all three variants also means Phase 2b's level configs don't change based
+on which texture a placement uses. The AI-generated sources came back
+1408×768 (~1.83:1) rather than square, so each was run through
+`chroma-key-trim.js` and then the new `square-crop.js` (both
+`tools/asset-prep/`) — center-crop to the shorter axis, after trimming, not
+before, so the crop operates on the already tightly-trimmed content rather
+than an arbitrary chunk of the wide canvas. **Known tension, decided
+knowingly:** `tools/art-reviewer/feedback.json` has earlier feedback on a
+prior debris candidate asking to make it "a little more rectangular in
+shape" — the wide source aspect likely reflects that ask. Squaring it back
+off for the `circle` shape overrides that feedback in favor of the
+rotation-consistency argument above; flagged here rather than silently
+overwritten, in case a future pass wants to revisit toward `rectangle`
+instead.
+
 ## Orientation
 
 `ship_base` faces **up** by default, and the code compensates for exactly
@@ -147,14 +171,15 @@ The official art direction for Trailing Edge is **Gritty Dark Sci-Fi Pixel**. Th
 **Resolved 2026-08-01:** the style mismatch flagged here from early
 prototyping (the flat, minimalist `Simple Space` look vs. the shaded,
 rendered `Space Shooter Remastered` family) no longer applies — ship,
-wormhole, Relay Beacon, Probe, AsteroidField (large), and the starfield
-backgrounds are all now AI-generated via the Art Director Agent/Gemini
-against this same Gritty Dark Sci-Fi Pixel direction, so there's one
-consistent look across them rather than two clashing source packs.
-Remaining Kenney/OpenGameArt placeholders not yet replaced (debris,
-AsteroidField medium/small, ship damage overlay, HUD bars/panel) are still
-**legacy placeholders** — any final art replacing those must adhere to the
-Gritty Dark Sci-Fi Pixel style too.
+wormhole, Relay Beacon, Probe, AsteroidField (large), Debris Field, and the
+starfield backgrounds are all now AI-generated via the Art Director
+Agent/Gemini against this same Gritty Dark Sci-Fi Pixel direction, so
+there's one consistent look across them rather than two clashing source
+packs.
+Remaining Kenney/OpenGameArt placeholders not yet replaced (debris
+medium/small, AsteroidField medium/small, ship damage overlay, HUD
+bars/panel) are still **legacy placeholders** — any final art replacing
+those must adhere to the Gritty Dark Sci-Fi Pixel style too.
 
 **Debris Field vs. AsteroidField — deliberate visual differentiation
 (2026-08-07):** Debris Field's fiction was reframed from ship wreckage to

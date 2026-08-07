@@ -12,7 +12,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('ship_base', 'ship/ship_base.png');
-    this.load.image('debris_large', 'hazards/debris_large_PLACEHOLDER.png');
+    this.load.image('debris_large', 'hazards/debris_large.png');
     this.load.image('asteroid_large', 'resupply/asteroid_large.png');
     this.load.image('probe', 'objectives/probe.png');
     this.load.image('relay_beacon', 'objectives/relay_beacon.png');

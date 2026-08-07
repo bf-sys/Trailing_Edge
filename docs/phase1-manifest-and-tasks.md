@@ -166,7 +166,7 @@ reference the placeholder filename by then.
      (AsteroidField, the structure-repair resupply object — moved here
      2026-07-29, now that it's official Phase 1 scope rather than
      incidental).
-   - `hazards/debris_{large,medium,small}_PLACEHOLDER.png` and
+   - `hazards/debris_{medium,small}_PLACEHOLDER.png` and
      `resupply/asteroid_{medium,small}_PLACEHOLDER.png` are **unaffected** —
      still the OGA-sourced placeholders, `_PLACEHOLDER` suffix from
      2026-07-31 per the redefined convention below.
@@ -175,6 +175,16 @@ reference the placeholder filename by then.
      `asteroid_large_PLACEHOLDER.png`. Drops `_PLACEHOLDER`; final art. Only
      the large (currently used) variant was replaced — medium/small stay
      placeholder until/unless they're actually wired into a level.
+   - `hazards/debris_large.png` — **replaced with final AI-generated art
+     2026-08-07**, following the Debris Field re-scope to a movement-
+     blocking obstacle (see `STATUS.md`'s 2026-08-07 entries). Generated via
+     the Art Director Agent/Gemini, prepped with `chroma-key-trim.js` then a
+     new `tools/asset-prep/square-crop.js` (center-crop to square, for
+     `HazardZoneElement`'s `circle` shape), replacing
+     `debris_large_PLACEHOLDER.png`. Drops `_PLACEHOLDER`; final art. Two
+     more distinct-composition variants sourced alongside it,
+     `debris_large_alt2.png`/`debris_large_alt3.png` — reserved for Phase
+     2b's multi-instance/rotation content work, not yet loaded by any code.
 
 3. **Entry Wormhole / Exit Wormhole — replaced with final AI-generated art
    2026-08-01** (was: Simple Space.zip placeholder; role reassigned twice

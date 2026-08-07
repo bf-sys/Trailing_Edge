@@ -35,7 +35,7 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 
 | Phenomenon | Behavior | Drains | Asset note |
 |---|---|---|---|
-| Debris Field | Static zone, blocks movement | None (re-scoped 2026-08-07 — see flag below) | Naturally-occurring rock/ice fragments, not ship wreckage (fiction changed alongside the mechanic). Needs a clear "many small loose fragments" cluster read, distinct from AsteroidField's single-large-rock-with-ore read (see flag). |
+| Debris Field | Static zone, blocks movement | None (re-scoped 2026-08-07 — see flag below) | Naturally-occurring rock/ice fragments, not ship wreckage (fiction changed alongside the mechanic). **Sourced/final (2026-08-07)** — `hazards/debris_large.png`, AI-generated via the Art Director Agent/Gemini, chroma-keyed and center-cropped to a square footprint for `HazardZoneElement`'s `circle` shape. Two additional distinct-composition variants (`debris_large_alt2.png`, `debris_large_alt3.png`) sourced alongside it per the "2-3 distinct textures" guidance in `art-production-guidelines.md`, reserved for Phase 2b's multi-instance/rotation compositing — not yet loaded or referenced by any code. |
 | Solar Flare | Dynamic, pulsed | Energy | Requires a distinct pre-burst warning visual — telegraphing is a hard requirement (§5), not optional polish. |
 | Ion Storm | Dynamic, drifting cloud | Energy | Same visual family as Nebula Field by current assumption — see flag below. Open item, not blocking: source multiple candidate treatments and pick after the week 1–2 test. |
 | Nebula Field | Static cloud | Energy | Same visual family as Ion Storm. |
@@ -132,7 +132,7 @@ Stated to avoid over-sourcing against systems the GDD deliberately excludes (§1
 ## 4. Open Items Carried Into Sourcing
 
 - Ion Storm / Nebula Field — resolve via multiple candidate assets at the week 1–2 vertical-slice gate (§9, §12), not before; now also needs to read as lower-stakes than the structure-draining family (§1.2 flag, added 2026-07-29)
-- Debris Field vs. AsteroidField resupply asteroids — differentiation guidance is now written (`art-production-guidelines.md`, 2026-08-07: many-small-fragments vs. one-large-rock-with-ore); still needs confirming the distinction is legible at a glance once real art exists, not just correct on paper
+- Debris Field vs. AsteroidField resupply asteroids — differentiation guidance is now written (`art-production-guidelines.md`, 2026-08-07: many-small-fragments vs. one-large-rock-with-ore) and Debris Field's real art now exists (`hazards/debris_large.png`) and renders correctly in an in-engine check; still needs a side-by-side playtest read against `resupply/asteroid_large.png` at normal play speed, not just confirmed individually
 - Player ship damage-state implementation — sprite swap vs. overlay VFX vs. material change; affects what to look for in licensed packs
 - Ability activation VFX — not currently named as a requirement anywhere in §7/§11; needs to be added explicitly or it risks being discovered late, during Phase 2a's ability-gating work rather than during asset sourcing
 - **Signal Array (added 2026-07-29)** — unsourced again after its satellite asset was reassigned to the new Relay Beacon waypoint; Phase 2a scope, not urgent. See §1.3.

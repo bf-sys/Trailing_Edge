@@ -5,6 +5,56 @@ for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
 
+## Art update (2026-08-07) — Debris Field sourced/final art, `circle` shape decided
+
+Follow-up to the two entries below, same day: real art for Debris Field is
+now in place, replacing `hazards/debris_large_PLACEHOLDER.png`.
+
+Six AI-generated candidates (`debris_large_4` through `_9`, dropped in
+`art-staging/` by the Art Director Agent/Gemini pipeline) were rated for
+fit, weighing cluster-composition quality, differentiation from
+`AsteroidField`'s single-large-ore-rock look, and how each would hold up
+under the "several overlapping instances + per-instance rotation" plan for
+irregular fields (`art-production-guidelines.md`'s "Variable-size/irregular
+fields" section). `_9` and `_7` were picked as the two primary
+"distinct textures" that section calls for, `_6` as an optional third
+(picked despite being visually low-contrast against black space — a known
+trade-off, not an oversight).
+
+**Shape decision: `circle`, not `rectangle`.** All three sources came back
+1408×768 (`_6` was already square). Went with `circle` anyway, over
+squaring the source images to fit: Arcade circle bodies are
+rotation-invariant, so the rotate-each-instance plan never causes the
+visible sprite to drift out of sync with the (always axis-aligned)
+collision area the way a rotated rectangle body would; sharing one shape
+across all three variant textures also keeps Phase 2b's level-config
+authoring simple regardless of which texture a given placement uses. Doing
+this required center-cropping `_9`/`_7` down from their wide native aspect
+to a square — **flagged, not silently done:** `tools/art-reviewer/
+feedback.json` has earlier feedback on a prior debris candidate asking for
+"a little more rectangular" shape, and the wide aspect on this batch of
+candidates likely traces back to that ask. Surfaced this tension before
+cropping; the call was made knowingly in favor of the rotation-consistency
+argument, not missed.
+
+**Processing:** each source went through `tools/asset-prep/
+chroma-key-trim.js` (existing tool, already used for `asteroid_large`/
+`wormhole`/etc.) for chroma-key removal + auto-trim, then a new
+`tools/asset-prep/square-crop.js` (added this pass) for the center-crop to
+square. Final files: `assets/hazards/debris_large.png` (656×656, from `_9`
+— wired into `BootScene`/`GameScene`, replacing the placeholder),
+`debris_large_alt2.png` (768×768, from `_7`), `debris_large_alt3.png`
+(834×834, from `_6`) — the latter two sourced but not yet loaded/referenced
+by any code, reserved for Phase 2b's multi-texture/rotation content work.
+Verified in-browser (Playwright smoke check against the dev server): new
+art renders with a clean transparent background (no green fringe), ship
+gets blocked at the cluster's edge as expected, no console errors.
+
+**Untouched:** `tools/art-reviewer/assets.json`/`feedback.json` already had
+uncommitted local edits from an earlier, separate review pass (candidates
+`debris_large_1/2/3`, all marked `needs_revision`) — left as-is, not part
+of this pass's scope.
+
 ## Code update (2026-08-07) — Debris Field `blocksMovement` implemented
 
 Follow-up to the design update below, same day: `HazardZoneElement` gained a

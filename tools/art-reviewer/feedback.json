@@ -26,5 +26,17 @@
   "bg_stars_near": {
     "status": "accepted",
     "feedback": ""
+  },
+  "debris_large_1": {
+    "status": "needs_revision",
+    "feedback": ""
+  },
+  "debris_large_3": {
+    "status": "needs_revision",
+    "feedback": ""
+  },
+  "debris_large_2": {
+    "status": "needs_revision",
+    "feedback": "Love this image, can we make it a little more rectangular in shape?\n"
   }
 }

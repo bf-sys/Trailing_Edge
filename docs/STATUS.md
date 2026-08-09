@@ -1,9 +1,42 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-07)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-08)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Planning update (2026-08-08) — Nebula Field / Ion Storm art production approach scoped
+
+**Decision only — nothing sourced yet.** Looking ahead from the Debris
+Field work below, asked the same "what's the best way to generate this"
+question for Nebula Field, and scoped the answer before generating
+anything: since Ion Storm and Nebula Field are already established as "the
+same visual family, motion is the only difference" (GDD §9), this is one
+shared asset-production pass for both hazards, not two separate ones.
+
+**Decided:** don't copy the Debris Field cluster approach — that pattern
+(many small discrete fragments composed into one texture) exists because a
+single rock has an implied real size and looks wrong stretched arbitrarily
+large; a nebula is diffuse gas with no equivalent "correct" density, so a
+single soft-edged, semi-transparent glow/wisp texture per variant,
+stretched via `setDisplaySize()` like everything else, is the right base
+case. What *does* carry over from debris: producing 2-3 distinct
+silhouette variants (repetition-avoidance) and eventually varying rotation
+per placed instance. What doesn't carry over: overlapping translucent
+cloud instances accumulate alpha and can blotch at the overlap, unlike
+opaque rocks which just occlude cleanly — composing a larger/irregular
+field from multiple instances needs more care here than debris required.
+Full reasoning in `docs/reference/art-production-guidelines.md`'s new
+"Nebula Field / Ion Storm cloud art" section.
+
+**Explicitly not resolved by this pass:** whether Ion Storm's motion
+actually reads as distinct from Nebula Field's static cloud at normal play
+speed is a separate, still-open question (GDD §9) — this was scoped as a
+production-pipeline decision, not a look-and-feel one. The reserve fallback
+options already on record (particle trail, border/outline treatment) would
+most likely layer onto this shared texture set per-hazard rather than
+require sourcing separate base art, but that's still to validate with a
+real placeholder during the week 1–2 vertical slice, same as before.
 
 ## Art update (2026-08-07) — Debris Field sourced/final art, `circle` shape decided
 
@@ -487,11 +520,12 @@ not sourced from a licensed pack — see the design-update note above.
 ## Explicitly out of scope right now (Phase 2a/2b — don't start early)
 
 - Comet vs. Meteoroid visual distinction
-- Ion Storm / Nebula Field style choice (composite-yourself vs. pre-made) —
-  now also needs to read as lower-stakes than the structure-draining hazard
-  family, per the 2026-07-29 GDD revision (§9) — Meteoroid is now the *sole*
-  member of that family as of the 2026-08-07 Debris Field re-scope, see
-  above
+- Ion Storm / Nebula Field — production *approach* decided 2026-08-08 (see
+  entry above), but no actual assets sourced yet and the motion-vs-static
+  differentiation question itself is still open; also still needs to read
+  as lower-stakes than the structure-draining hazard family, per the
+  2026-07-29 GDD revision (§9) — Meteoroid is now the *sole* member of that
+  family as of the 2026-08-07 Debris Field re-scope, see above
 - Beacon Cluster (still no named match anywhere)
 - Signal Array (sequence puzzle, formerly named Relay Beacon) — see "What's
   NOT done" above

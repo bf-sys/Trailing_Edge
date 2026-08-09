@@ -35,22 +35,33 @@ next level.
 Puzzle-site elements (§6) are optional/additive content encountered along
 the way, not a required step.
 
-## Current project state (as of 2026-07-29)
+## Current project state (as of 2026-08-08)
 
-**No game code exists yet.** This repo is currently in the asset-sourcing/prep
-stage, run by the three-agent team documented in `README.md` and
-`.claude/agents/*.md`. Section 11 below is the *target* architecture for when
-code work starts (GDD Phase 1, §12) — don't treat any of it as already
-implemented.
+**Phase 1's vertical slice is built and playtests end-to-end.** `src/`
+implements `ExplorationController`, `ShipSurvivalComponent`,
+`HazardZoneElement` (Debris Field, `blocksMovement: true`, zero resource
+cost — matches the current design, not the pre-2026-08-07 drain version),
+`ResupplyPoint`/AsteroidField, `ProbeObject`, `RelayBeaconObject`,
+`EntryWormhole`/`ExitWormhole`, `LevelObjectiveTracker`, hard-fail restart,
+and a bare-minimum `HudOverlay` — the full Phase 1 scope in Section 11/§12
+below. A full run (Entry Wormhole → Debris Field → AsteroidField → Probe →
+Relay Beacon → Exit Wormhole → `WinScene`) has been playtested with zero
+console errors. **Not yet built** (Phase 2a, not started):
+`PuzzleElementBase` and its five subtypes, `AbilityComponent`,
+`ProgressionManager`, `SaveManager`, `CheckpointManager` (deferred by
+design, not just unbuilt). Section 11 below is the contract for both —
+check `src/` before assuming something is or isn't implemented rather than
+trusting this file's age.
 
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
-sourced/extracted vs. still open — e.g. the Relay Beacon sprite is currently
-unresolved). Other reference docs live in `docs/`:
+sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
+but not yet sourced, see its 2026-08-08 entry). Other reference docs live
+in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
 - `docs/phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
 - `docs/ATTRIBUTION.md` — license/credit ledger for sourced assets
 - `docs/asset-procurement-agent-flow.md` — mermaid diagram of the three-agent sourcing pipeline
-- `assets/` — populated per the directory convention in `docs/phase1-manifest-and-tasks.md` (`ship/`, `hazards/`, `resupply/`, `puzzle/`, `ui/`)
+- `assets/` — populated per the directory convention in `docs/phase1-manifest-and-tasks.md` (`ship/`, `hazards/`, `resupply/`, `objectives/`, `puzzle/`, `ui/`, `backgrounds/`)
 
 Dated, point-in-time process logs (not kept up to date, referenced by
 `STATUS.md` for detail it deliberately doesn't repeat) live in
@@ -90,11 +101,12 @@ from the process/state docs above) live in `docs/reference/`:
 
 **The real multi-agent risk isn't asset mergeability — it's shared "wiring"
 files** (a main Scene's `create()`, a central index) where every system gets
-instantiated. Mitigation, and a hard rule once code exists: use
-`SystemRegistry.register(system)`, called from each system's own file at
-module load. Agents append imports; **nobody hand-edits `create()`.**
+instantiated. Mitigation, and a hard rule: use `SystemRegistry.register(system)`,
+called from each system's own file at module load (`src/systems/index.ts`
+is the side-effect import point — see `SystemRegistry.ts`). Agents append
+imports; **nobody hand-edits `create()`.**
 
-## Architecture contract (GDD §11) — build this when code work starts
+## Architecture contract (GDD §11) — Phase 1 items are built (see Current project state above); Phase 2a items below aren't yet
 
 - **`ShipSurvivalComponent`** — owns `currentEnergy`/`maxEnergy`/
   `currentStructure`/`maxStructure`, all `private`. Structure is the sole
@@ -122,8 +134,8 @@ module load. Agents append imports; **nobody hand-edits `create()`.**
 - **`EntryWormhole`** / **`ExitWormhole`** — launch position and required
   return destination, **two distinct locations** (2026-07-31 revision;
   previously one shared `HomeMarker`, now superseded/removed). Both reuse
-  the same placeholder sprite (formerly the Star asset), distinguished only
-  by tint — no new art needed. `EntryWormhole` is visual-only (no Arcade
+  the same final art (`objectives/wormhole.png`, originally reassigned from
+  the old Star asset), distinguished only by tint. `EntryWormhole` is visual-only (no Arcade
   overlap; starts tinted "active", swaps to "inactive" shortly after level
   start). `ExitWormhole` starts tinted "inactive", opens ("active") once
   `LevelObjectiveTracker`'s beacon-reached event fires, and its
@@ -209,12 +221,10 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
    breaking a hard rule or hand-editing a shared wiring file.
 2. **Phase 1 (weeks 1–2)** — single sequential session, gated on review at
    each step: `ExplorationController` → `ShipSurvivalComponent` + one
-   `HazardZoneElement` (Debris Field, structure-cost) + one `ResupplyPoint`
-   (AsteroidField, passive energy regen active) — **flagged drift:** this
-   describes what Phase 1 actually built; Debris Field's design has since
-   moved to a movement-blocking obstacle with `blocksMovement: true` and no
-   resource drain (see "Debris Field re-scoped" above), and the code hasn't
-   been updated to match yet → `ProbeObject`/`RelayBeaconObject`/
+   `HazardZoneElement` (Debris Field, `blocksMovement: true`, zero resource
+   cost — updated 2026-08-07 to match the re-scope below; originally built
+   as a structure-drain zone, since resolved) + one `ResupplyPoint`
+   (AsteroidField, passive energy regen active) → `ProbeObject`/`RelayBeaconObject`/
    `EntryWormhole`/`ExitWormhole`/`LevelObjectiveTracker` wired end-to-end → hard-fail flow
    (full level restart, no `CheckpointManager`) → bare-minimum `HudOverlay`
    (bars only). **No puzzle-site element in Phase 1** — the mandatory loop
@@ -245,10 +255,12 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
 
 **Open-world hazards** (drain resources, encountered while flying — except
 Debris Field, see below): Debris Field (static, **blocks movement, no
-resource drain — re-scoped 2026-08-07**), Solar Flare (dynamic/timed burst,
-energy), Ion Storm (dynamic/slow-drift, energy — visually same family as
-Nebula Field, motion is the *only* difference, **still an open art-
-differentiation question**), Nebula Field (static, energy), Meteoroid
+resource drain — re-scoped and implemented 2026-08-07**), Solar Flare
+(dynamic/timed burst, energy), Ion Storm (dynamic/slow-drift, energy —
+visually same family as Nebula Field, motion is the *only* difference,
+**still an open art-differentiation question; the shared 2-3-variant
+cloud-texture production approach for both is decided as of 2026-08-08, see
+Open design questions below**), Nebula Field (static, energy), Meteoroid
 (dynamic/moving, structure — renamed from "Rogue Comet" to avoid colliding
 with the puzzle element below, and now the *only* structure-draining
 open-world hazard).
@@ -265,22 +277,24 @@ after the probe and before return — **not** the same thing as Signal Array
 above; the name was reassigned to this waypoint, causing the puzzle
 element's rename), Entry Wormhole and Exit Wormhole (launch position and
 required return destination — two distinct locations as of 2026-07-31,
-both reusing the same placeholder sprite, formerly the Star asset, tinted
-differently; previously one shared Home Marker object).
+both reusing the same final art, `wormhole.png` (originally reassigned
+from the old Star asset), tinted differently; previously one shared Home
+Marker object).
 
 ## Phase 1 content scope (exactly these, nothing else)
 
-One hazard (Debris Field — movement-blocking, zero resource cost, per the
-2026-08-07 re-scope), one resupply point (AsteroidField
-— structure repair only; energy regenerates passively, no dedicated object), the Probe,
-the Relay Beacon (mandatory waypoint, not a puzzle), the Entry Wormhole and
-Exit Wormhole (two distinct locations, placeholder: reused Star asset
-tinted per-state), the ship, minimal HUD. **No
-puzzle-taxonomy element ships in Phase 1** — Signal Array and the rest of
-the taxonomy above move to Phase 2a. See `docs/STATUS.md` for what's
-currently sourced-but-not-yet-scoped (Cargo Pod, base tileset) vs.
-genuinely not started — note the asset scope there still reflects the old
-Star-as-resupply framing and needs a follow-up pass.
+One hazard (Debris Field — movement-blocking, zero resource cost, final art
+sourced 2026-08-07, per the re-scope), one resupply point (AsteroidField
+— structure repair only; energy regenerates passively, no dedicated object,
+final art), the Probe (final art), the Relay Beacon (mandatory waypoint,
+not a puzzle, final art), the Entry Wormhole and Exit Wormhole (two
+distinct locations, final art — `wormhole.png`, originally reassigned from
+the old Star asset, tinted per-state), the ship (final art), minimal HUD
+(placeholder bars/panel). **No puzzle-taxonomy element ships in Phase 1** —
+Signal Array and the rest of the taxonomy above move to Phase 2a. See
+`docs/STATUS.md` for what's currently sourced-but-not-yet-scoped (Cargo Pod)
+vs. genuinely not started (Ion Storm/Nebula Field cloud art — production
+approach decided 2026-08-08, nothing sourced yet).
 
 ## Open design questions (GDD §9)
 
@@ -289,7 +303,13 @@ alone is a weak signal (colorblind players; easy to under-read a slow drift
 in a quick glance). Validate with a real placeholder asset during the week
 1–2 vertical slice rather than deciding on paper; fallback options (particle
 trail, border/outline treatment, or reverting to two distinct phenomena) are
-in reserve if color+animation doesn't read clearly.
+in reserve if color+animation doesn't read clearly. **Production approach
+decided 2026-08-08, differentiation itself still unresolved:** one shared
+asset pass serves both hazards — 2-3 distinct soft-cloud silhouette
+textures (not a Debris-Field-style discrete-fragment cluster, since a
+nebula is diffuse gas rather than countable objects), each stretched via
+`setDisplaySize()`. See `docs/reference/art-production-guidelines.md`'s
+"Nebula Field / Ion Storm cloud art" section. Nothing sourced yet.
 
 Also newly open: structure-vs-energy stakes legibility. Since only
 structure can end a level (energy is a non-fail, ability-gating resource),
@@ -324,6 +344,8 @@ Survival. An "Asteroid Field" rename was considered and rejected — it would
 collide with the existing `AsteroidField` resupply object. Visual
 differentiation from that object (many small fragments vs. one large
 ore-rich rock) is locked in, `docs/reference/art-production-guidelines.md`.
-**Design-only so far** — `HazardZoneElement` needs a new `blocksMovement`
-parameter and a solid Arcade collider path; Phase 1's code hasn't been
-touched yet.
+**Implemented 2026-08-07** — `HazardZoneElement` has a `blocksMovement`
+parameter (immovable Arcade body + `physics.add.collider()` in place of
+the overlap-and-drain listener); Phase 1's Debris Field placement uses it.
+Final art sourced the same day (`hazards/debris_large.png`); the full loop
+has since been playtested end-to-end with it in place.

@@ -151,6 +151,61 @@ rotation-consistency argument above; flagged here rather than silently
 overwritten, in case a future pass wants to revisit toward `rectangle`
 instead.
 
+### Nebula Field / Ion Storm cloud art — one soft texture, not a debris-style cluster (2026-08-08)
+
+**Planned, not yet sourced.** Ion Storm and Nebula Field are "the same
+visual family, motion is the only behavioral difference" per GDD §9 — so
+this is one asset-production pass serving both hazards, not two.
+
+Don't copy the Debris Field cluster approach directly — the reasoning that
+made a multi-fragment cluster necessary there doesn't carry over. Debris
+needed a cluster because a single rock has an implied real-world size, and
+stretching it via `setDisplaySize()` to a bigger footprint reads as
+obviously wrong (a boulder the size of a house). A nebula is diffuse gas
+with no equivalent "correct" apparent density — a single soft-edged,
+semi-transparent glow/wisp texture stretched larger just reads as a bigger
+cloud, no distortion problem. So the base case here is **one texture per
+variant**, not several small pieces composed into one image.
+
+What does carry over from the Debris Field work:
+
+- **Produce 2-3 distinct wisp/cloud silhouette variants**, not one asset —
+  same repetition-avoidance reasoning as debris's "2-3 distinct textures":
+  a nebula's silhouette is more visually distinctive than a rock cluster's
+  texture, so a single reused cloud shape would be *more* recognizable as
+  a stamp across placements, not less.
+- **Rotation per placed instance**, once wired into `HazardZoneElement`
+  (same unimplemented hook noted above) — stretches those 2-3 variants
+  further, same logic as debris.
+- **Prefer `circle` for the same rotation-invariance reason** given above,
+  unless a source comes back strongly non-circular in a way that's core to
+  its silhouette (a debris cluster's content survives a square crop fine;
+  a wispy elongated cloud shape might not without looking clipped — judge
+  per candidate rather than assuming the debris precedent applies
+  automatically).
+
+Where it doesn't carry over — **overlapping instances need more care than
+debris did.** Debris's "union of primitives" for irregular fields
+(overlap several opaque instances) works because opaque rocks just occlude
+each other — more rocks, same read. Overlapping *translucent* cloud
+layers accumulate alpha instead, so two overlapping instances can produce a
+visibly denser/brighter blotch right where they overlap, undermining the
+soft, gauzy read a nebula needs. If composing a larger/irregular Nebula
+Field or Ion Storm from multiple instances, check the overlap regions
+specifically, not just the overall silhouette — a lower per-instance
+opacity, or overlap-conscious placement, may be needed in a way debris
+never had to worry about.
+
+**Differentiating Ion Storm from Nebula Field stays a separate, still-open
+question** (GDD §9) — this section is about how to *produce* the shared
+cloud art, not a resolution of whether motion alone reads clearly at normal
+play speed. The fallback options already on record there (particle trail,
+border/outline treatment) would most likely be a per-hazard treatment
+layered on top of this shared texture set (e.g. a border tint or particle
+emitter added only to Ion Storm instances), not a reason to source separate
+base art for each — but that's still to be validated with a real
+placeholder, not decided here.
+
 ## Orientation
 
 `ship_base` faces **up** by default, and the code compensates for exactly

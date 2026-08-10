@@ -232,9 +232,12 @@ Agent/Gemini against this same Gritty Dark Sci-Fi Pixel direction, so
 there's one consistent look across them rather than two clashing source
 packs.
 Remaining Kenney/OpenGameArt placeholders not yet replaced (debris
-medium/small, AsteroidField medium/small, ship damage overlay, HUD
-bars/panel) are still **legacy placeholders** — any final art replacing
-those must adhere to the Gritty Dark Sci-Fi Pixel style too.
+medium/small, AsteroidField medium/small, ship damage overlay) are still
+**legacy placeholders** — any final art replacing those must adhere to the
+Gritty Dark Sci-Fi Pixel style too. (HUD bars/panel dropped from this list
+2026-08-10 — the resource display moved to `ShipStatusArcs`, drawn
+procedurally with `Graphics` rather than sprites, so no final-art
+replacement is needed for them at all; see `STATUS.md`.)
 
 **Debris Field vs. AsteroidField — deliberate visual differentiation
 (2026-08-07):** Debris Field's fiction was reframed from ship wreckage to

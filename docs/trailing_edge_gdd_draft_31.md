@@ -166,7 +166,7 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 *Tracks your ship's structure and energy. Structure is the fail resource; energy just gates ability use.*
 - **State (private):** `currentEnergy`, `maxEnergy`, `currentStructure`, `maxStructure` (`max*` modified by `ProgressionManager` endurance upgrades if/when that track exists — deferred, §7).
 - **Functions:** `consumeEnergy(amount, source): boolean` — gates ability activation only, never fails the level; `consumeStructure(amount, source): boolean`; `regenEnergy(delta): void` — called every update tick at the authored passive rate (`survivalConfig`, §11's tunable-parameters convention), no resupply object involved; `repairStructure(amount): void` (resupply-point objects only).
-- **Events:** Phaser's built-in `EventEmitter` — `onStructureDepleted` (triggers a full level restart — see §11.11 `LevelObjectiveTracker`), `onResourceChanged` (HUD binding only). No `onEnergyDepleted`-triggers-failure event — energy running low has no failure-side effect for the initial build (§5 notes this as a reserved space for future non-fail effects).
+- **Events:** Phaser's built-in `EventEmitter` — `onStructureDepleted` (triggers a full level restart — see §11.11 `LevelObjectiveTracker`), `onResourceChanged` (display binding only — `ShipStatusArcs`, §11.10a, as of 2026-08-10; previously `HudOverlay`). No `onEnergyDepleted`-triggers-failure event — energy running low has no failure-side effect for the initial build (§5 notes this as a reserved space for future non-fail effects).
 - **Hard rule (TS-enforced):** `currentEnergy`/`currentStructure` are `private`. No puzzle element, hazard, or ability may reference them directly. **Regression to watch for specifically:** since energy and structure used to be symmetric fail resources, don't let any code path treat energy depletion as a failure condition — that behavior was deliberately removed (§5).
 
 ### 11.2 `CheckpointManager` — **DEFERRED, not built for the initial 5-week scope**
@@ -237,12 +237,21 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 ### 11.10 `HudOverlay`
 
-*The on-screen display during play — energy/structure bars, ability icons, and a signal that a puzzle site is active.*
+*The on-screen display during play — ability icons and a signal that a puzzle site is active, plus the off-screen objective marker (§9). Energy/structure bars moved out to §11.10a `ShipStatusArcs` on 2026-08-10 — this class no longer owns them.*
 
-- Bound to `ShipSurvivalComponent.onResourceChanged` for energy/structure bars — display-only, per 11.1's existing event contract; no gameplay logic lives here.
-- Ability icons reflect `AbilityComponent.isUnlocked()`/cooldown state (11.4) — again read-only from the HUD's side; it queries, it doesn't gate.
+- Ability icons reflect `AbilityComponent.isUnlocked()`/cooldown state (11.4) — read-only from the HUD's side; it queries, it doesn't gate.
 - A minimal "puzzle site active" indicator (even just a highlight or icon) so §5's telegraphing has an in-the-moment on-screen signal, not just a design-doc guarantee — relevant once Phase 2a's puzzle-site elements exist; nothing to show in Phase 1.
+- Off-screen objective marker: a single edge-pinned directional arrow, sourced from `LevelObjectiveTracker.getCurrentObjectiveTarget()` (§9's "Off-screen objective visibility," resolved 2026-07-31).
 - Not Scene-specific: instantiated once per `GameScene` session, torn down on Scene transition, not persisted across levels (there's nothing in it that needs to persist — `SaveManager` already owns everything that does).
+
+### 11.10a `ShipStatusArcs` (added 2026-08-10)
+
+*World-space, ship-relative energy/structure display — an RTS-unit-health-bar-style readout that follows the ship instead of sitting in a fixed screen corner. A deliberate style choice, validated via an in-browser prototype before being adopted, not a placeholder awaiting real art.*
+
+- Structure renders as a curved arc above the ship; energy renders as a straight bar below it. Both track the ship's position every frame; neither rotates with the ship's heading, so the readout stays screen-upright while the hull turns.
+- Bound to `ShipSurvivalComponent.onResourceChanged` — display-only, same event contract 11.1 already establishes for `HudOverlay`; no gameplay logic lives here.
+- Procedurally drawn via `Phaser.GameObjects.Graphics` (arc + rect), not sprites — no art asset required, matching the precedent set by `HudOverlay`'s generated objective-marker texture.
+- Coexists with `HudOverlay`, not a replacement for it — `HudOverlay` still owns the off-screen objective marker and (once built) ability icons/puzzle-site indicator.
 
 ### 11.11 `LevelObjectiveTracker` (per-level, replaces `CheckpointManager`'s role for the initial build)
 
@@ -277,7 +286,7 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 2. `ShipSurvivalComponent` wired to one hazard (`HazardZoneElement` configured as Debris Field — static, movement-blocking, zero resource cost, per the 2026-08-07 re-scope, §9) and one `ResupplyPoint` (AsteroidField). Passive energy regen active from this step on (§5, §11.1).
 3. `ProbeObject`, `RelayBeaconObject`, `EntryWormhole`/`ExitWormhole`, and `LevelObjectiveTracker` (§11.11–11.14) wired together end-to-end: find probe → reach beacon → reach the Exit Wormhole triggers level completion. **No puzzle-site element in Phase 1** — Signal Array and the rest of §6's taxonomy are Phase 2a work (see below); the mandatory loop doesn't require solving one.
 4. Hard-fail flow: `ShipSurvivalComponent.onStructureDepleted` triggers a full level restart (`scene.restart()` or equivalent — position, structure, and energy back to level-start values). No `CheckpointManager` this scope (§11.2, deferred).
-5. A bare-minimum `HudOverlay` (11.10) — energy/structure bars only, no ability icons or puzzle-site indicator yet. You need *some* way to see the resource state to playtest steps 2–4 at all; full HUD polish is Phase 2a, not Phase 1.
+5. A bare-minimum `HudOverlay` (11.10) — no ability icons or puzzle-site indicator yet. You need *some* way to see the resource state to playtest steps 2–4 at all; originally this meant screen-pinned energy/structure bars in `HudOverlay` itself, **superseded 2026-08-10** by `ShipStatusArcs` (11.10a), a ship-relative world-space readout — full HUD polish (ability icons, puzzle-site indicator) is still Phase 2a, not Phase 1.
 6. **Result:** the same playable loop §3 describes — explore, risk a hazard, find the probe, reach the relay beacon, reach the Exit Wormhole, fail and hard-reset at least once along the way.
 
 **Gate — end of week 2, non-negotiable given the timeline.** Before touching Phase 2:

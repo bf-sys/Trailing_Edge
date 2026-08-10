@@ -28,7 +28,7 @@ unlike the earlier reassignment-only notes above. See `STATUS.md`'s
 | Asset | Source | Pack | License |
 |---|---|---|---|
 | Ship damage overlay / explosion frames (`ship/ship_damage_overlay_PLACEHOLDER.png`) | Kenney | Space Shooter Remastered | CC0 1.0 |
-| HUD bars, panel/slider frames | Kenney | UI Pack - Sci-Fi 2.0 | CC0 1.0 |
+| HUD bars, panel/slider frames (unused in code as of 2026-08-10 — see `STATUS.md`; files moved to gitignored `art-staging/ui-unused/`, reserved not deleted) | Kenney | UI Pack - Sci-Fi 2.0 | CC0 1.0 |
 | Debris Field hazard sprites, AsteroidField medium/small resupply sprites (large variant replaced 2026-08-01, see below) | OpenGameArt (author: The_Scientist___) | Asteroids/Debris Set | CC0 |
 | Cargo Pod/Wreckage tile (Phase 2a, not yet extracted) | OpenGameArt (author: knekko, extending ansimuz) | Warped Top-Down Tech Lab Extension | CC0 (public domain release) |
 

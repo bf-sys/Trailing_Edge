@@ -43,8 +43,9 @@ implements `ExplorationController`, `ShipSurvivalComponent`,
 cost — matches the current design, not the pre-2026-08-07 drain version),
 `ResupplyPoint`/AsteroidField, `ProbeObject`, `RelayBeaconObject`,
 `EntryWormhole`/`ExitWormhole`, `LevelObjectiveTracker`, hard-fail restart,
-and a bare-minimum `HudOverlay` — the full Phase 1 scope in Section 11/§12
-below. A full run (Entry Wormhole → Debris Field → AsteroidField → Probe →
+`HudOverlay` (off-screen objective marker only, as of 2026-08-10), and
+`ShipStatusArcs` (ship-relative energy/structure display, added
+2026-08-10) — the full Phase 1 scope in Section 11/§12 below. A full run (Entry Wormhole → Debris Field → AsteroidField → Probe →
 Relay Beacon → Exit Wormhole → `WinScene`) has been playtested with zero
 console errors. **Not yet built** (Phase 2a, not started):
 `PuzzleElementBase` and its five subtypes, `AbilityComponent`,
@@ -207,9 +208,21 @@ imports; **nobody hand-edits `create()`.**
   `CheckpointManager` is deferred). **Hard rule: the only code allowed to
   touch `localStorage` directly.** One call site: `GameScene`'s
   level-completion handler.
-- **`HudOverlay`** — display-only, bound to existing events
-  (`onResourceChanged`, `AbilityComponent.isUnlocked()`); no gameplay logic
-  lives here.
+- **`HudOverlay`** — display-only, screen-pinned. Owns the off-screen
+  objective marker (`LevelObjectiveTracker.getCurrentObjectiveTarget()`) and,
+  once built, ability icons/puzzle-site indicator via
+  `AbilityComponent.isUnlocked()`; no gameplay logic lives here.
+  **Energy/structure bars moved out 2026-08-10** — see `ShipStatusArcs`
+  below.
+- **`ShipStatusArcs`** — world-space, ship-relative resource readout (added
+  2026-08-10): a curved structure arc above the ship, a straight energy bar
+  below it, both tracking the ship's position every frame without rotating
+  with its heading. Bound to `ShipSurvivalComponent.onResourceChanged`, same
+  display-only contract as `HudOverlay`. Procedurally drawn via
+  `Phaser.GameObjects.Graphics` — no art asset required or planned; this is
+  a deliberate style choice validated via an in-browser prototype, not a
+  placeholder awaiting real art. Coexists with `HudOverlay`, doesn't replace
+  it.
 
 ## Development plan shape (GDD §12)
 
@@ -227,7 +240,9 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
    (AsteroidField, passive energy regen active) → `ProbeObject`/`RelayBeaconObject`/
    `EntryWormhole`/`ExitWormhole`/`LevelObjectiveTracker` wired end-to-end → hard-fail flow
    (full level restart, no `CheckpointManager`) → bare-minimum `HudOverlay`
-   (bars only). **No puzzle-site element in Phase 1** — the mandatory loop
+   (bars only; **superseded 2026-08-10** — resource bars moved to
+   `ShipStatusArcs`, a ship-relative world-space readout, see Architecture
+   contract above). **No puzzle-site element in Phase 1** — the mandatory loop
    doesn't require solving one. Gate at week 2 before touching Phase 2:
    does the hard-reset fail state feel fair, does the passive energy-regen
    rate feel right, validate `SystemRegistry`, prototype tractor/repulsor,
@@ -290,7 +305,9 @@ final art), the Probe (final art), the Relay Beacon (mandatory waypoint,
 not a puzzle, final art), the Entry Wormhole and Exit Wormhole (two
 distinct locations, final art — `wormhole.png`, originally reassigned from
 the old Star asset, tinted per-state), the ship (final art), minimal HUD
-(placeholder bars/panel). **No puzzle-taxonomy element ships in Phase 1** —
+(`HudOverlay`'s off-screen objective marker plus `ShipStatusArcs`'s
+procedurally-drawn ship-relative energy/structure display — no panel/bar
+art asset, by design as of 2026-08-10). **No puzzle-taxonomy element ships in Phase 1** —
 Signal Array and the rest of the taxonomy above move to Phase 2a. See
 `docs/STATUS.md` for what's currently sourced-but-not-yet-scoped (Cargo Pod)
 vs. genuinely not started (Ion Storm/Nebula Field cloud art — production

@@ -11,6 +11,7 @@ import { RelayBeaconObject } from '../objects/RelayBeaconObject';
 import { EntryWormhole } from '../objects/EntryWormhole';
 import { ExitWormhole } from '../objects/ExitWormhole';
 import { HudOverlay } from '../objects/HudOverlay';
+import { ShipStatusArcs } from '../objects/ShipStatusArcs';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
@@ -54,6 +55,7 @@ export class GameScene extends Phaser.Scene {
   private hazards: HazardZoneElement[] = [];
   private resupplyPoints: ResupplyPoint[] = [];
   private hudOverlay!: HudOverlay;
+  private shipStatusArcs!: ShipStatusArcs;
 
   constructor() {
     super(GAME_SCENE_KEY);
@@ -144,6 +146,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.hudOverlay = new HudOverlay(this, tracker);
+    this.shipStatusArcs = new ShipStatusArcs(this);
     new DestinationMarker(this);
 
     this.wireHardFailRestart();
@@ -160,6 +163,7 @@ export class GameScene extends Phaser.Scene {
     this.hazards.forEach((hazard) => hazard.update(time, delta));
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
     this.hudOverlay.update();
+    this.shipStatusArcs.update();
   }
 
   // Deliberately minimal: real levelOrder resolution + SaveManager.saveProgress()

@@ -17,9 +17,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('probe', 'objectives/probe.png');
     this.load.image('relay_beacon', 'objectives/relay_beacon.png');
     this.load.image('wormhole', 'objectives/wormhole.png');
-    this.load.image('panel_frame', 'ui/panel_frame_PLACEHOLDER.png');
-    this.load.image('bar_energy', 'ui/bar_energy_PLACEHOLDER.png');
-    this.load.image('bar_structure', 'ui/bar_structure_PLACEHOLDER.png');
     this.load.image(STARFIELD_FAR_KEY, 'backgrounds/bg_stars_far.png');
     this.load.image(STARFIELD_NEAR_KEY, 'backgrounds/bg_stars_near.png');
   }

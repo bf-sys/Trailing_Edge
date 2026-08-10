@@ -244,6 +244,13 @@ reference the placeholder filename by then.
    - Filenames (`bar_energy_PLACEHOLDER.png`, `bar_structure_PLACEHOLDER.png`,
      `panel_frame_PLACEHOLDER.png`) carry `_PLACEHOLDER` as of 2026-07-31
      per the redefined convention above.
+   - **Superseded 2026-08-10:** the resource display moved to
+     `ShipStatusArcs`, a procedurally-drawn, ship-relative readout — these
+     three extracted files are no longer loaded by any code (`BootScene`'s
+     preload calls for them were removed). Moved from `assets/ui/` to
+     `art-staging/ui-unused/` (gitignored) rather than deleted; see
+     `STATUS.md`'s 2026-08-10 entry and `trailing_edge_art_asset_list.md`
+     §1.6.
 
 ## On deck (Phase 2a/2b — found or reassigned away, not prepped for Phase 1)
 

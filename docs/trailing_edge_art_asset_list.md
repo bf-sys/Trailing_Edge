@@ -82,14 +82,22 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 
 **Flag:** None of these four are named as art requirements anywhere in §7 or §11 — they're implied by the ability existing at all. Worth confirming before Phase 2a closes, since §6 already flags PushPullObjectElement/TractorBeam as the one ability most likely to need rework if it doesn't feel clean in Arcade physics (§11) — a placeholder VFX here could mask or exaggerate that feel during prototyping.
 
-### 1.6 UI / HUD (§11.10)
+### 1.6 UI / HUD (§11.10, §11.10a)
 
 | Asset | Notes |
 |---|---|
-| Energy bar | Bound to `onResourceChanged`; display-only. |
-| Structure bar | Bound to `onResourceChanged`; display-only. |
+| Energy bar | **Resolved 2026-08-10 — no art asset needed.** Implemented as `ShipStatusArcs`'s ship-relative straight bar, procedurally drawn via `Phaser.GameObjects.Graphics`, not a sprite. Previously sourced `ui/bar_energy_PLACEHOLDER.png` (Kenney UI Pack - Sci-Fi) is now unused. |
+| Structure bar | **Resolved 2026-08-10 — no art asset needed.** Implemented as `ShipStatusArcs`'s ship-relative curved arc, procedurally drawn the same way. Previously sourced `ui/bar_structure_PLACEHOLDER.png` is now unused. |
 | Ability icons × 4 | Scan, Tractor/Repulsor, Teleport, Rocket boost — reflect `isUnlocked()` / cooldown state. |
 | Puzzle-site-active indicator | GDD explicitly allows this to be minimal — "even just a highlight or icon." Low sourcing cost, don't over-invest. |
+
+**Note (2026-08-10):** the on-screen resource display was replaced with a
+world-space, ship-relative readout (`ShipStatusArcs`) — a deliberate style
+choice, not a placeholder. `ui/panel_frame_PLACEHOLDER.png` (previously the
+bars' background panel) is now unused for the same reason. All three
+placeholder files were moved to `art-staging/ui-unused/` (gitignored,
+reserved for reuse if ever needed) since they're no longer loaded by any
+code; see `STATUS.md`'s 2026-08-10 entry.
 
 ### 1.7 Scenes (§11.8)
 

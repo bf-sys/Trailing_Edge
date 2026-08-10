@@ -1,9 +1,49 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-08)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-10)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Code update (2026-08-10) — resource display moved from screen-pinned HudOverlay to ship-relative ShipStatusArcs
+
+Owner decision, implemented same day: the energy/structure bars in the
+top-left `HudOverlay` panel (`ui/panel_frame_PLACEHOLDER.png`,
+`ui/bar_energy_PLACEHOLDER.png`, `ui/bar_structure_PLACEHOLDER.png`) are
+replaced by a new **`ShipStatusArcs`** class (`src/objects/ShipStatusArcs.ts`)
+— a world-space, ship-relative readout: structure renders as a curved arc
+above the ship, energy as a straight bar below it, both procedurally drawn
+via `Phaser.GameObjects.Graphics` rather than sprites. `HudOverlay`
+(`src/objects/HudOverlay.ts`) now owns only the off-screen objective-marker
+arrow, unaffected by this change. `BootScene.ts`'s preload calls for the
+three now-unused UI textures were removed. Verified in a headless-browser
+run against the dev server (position/rotation tracking and depletion both
+render correctly, no console errors) before being adopted as final.
+
+**Not an art-sourcing gap** — this is a deliberate, decided style choice,
+not a stand-in awaiting real art; no further HUD-bar sourcing is needed.
+New tunables live in `src/config/shipStatusArcConfig.ts`, registered on
+`window.tuning.shipStatusArc` (see `console-tuning-reference.md`).
+
+**Follow-up done same day:** `panel_frame_PLACEHOLDER.png`,
+`bar_energy_PLACEHOLDER.png`, `bar_structure_PLACEHOLDER.png` were
+unreferenced by any code after this change, so — per the precedent set by
+the 2026-08-01 "build-time caveat" fix (unused files under `assets/` still
+ship into `dist/` via Vite's `publicDir`) — moved via `git mv` from
+`assets/ui/` to `art-staging/ui-unused/` (gitignored, verified untracked
+after the move; `git mv` initially force-added the destination despite the
+ignore rule, corrected with `git rm --cached`). Same "reserved, easily
+re-sourced if ever needed again" treatment as the tech-lab sheet in the
+2026-08-01 entry below.
+
+**Docs updated this pass:** `trailing_edge_gdd_draft_31.md` (source of
+truth — §11.10 `HudOverlay` trimmed, new §11.10a `ShipStatusArcs` added,
+§11.1's event comment, §12 Phase 1 plan step 5), `CLAUDE.md` (mirrors the
+GDD edits), this STATUS.md entry, `trailing_edge_art_asset_list.md` (§1.6
+UI/HUD rows), `phase1-manifest-and-tasks.md` (HUD extraction task note),
+`art-production-guidelines.md` (dropped HUD bars/panel from the
+legacy-placeholder list), `console-tuning-reference.md` (new
+`window.tuning.shipStatusArc` section).
 
 ## Planning update (2026-08-08) — Nebula Field / Ion Storm art production approach scoped
 

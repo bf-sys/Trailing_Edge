@@ -228,13 +228,42 @@ full page reload. `durationMs`/`startScale`/`endScale`/`startAlpha`/`depth`
 are read fresh each time a ping plays, so those apply to the very next click
 with no reload needed.
 
+## `window.tuning.hazard` (`src/config/hazardConfig.ts`)
+
+Per-hazard-type shape/movement/activation/resource-cost defaults for all
+five named hazards (GDD §9/§11.3's "one class, five content configs"
+collapse) — extracted 2026-08-11 from literals that used to sit inline in
+`GameScene.create()`, closing the gap this file used to flag below. Keyed
+by `HazardType`: `debrisField`, `solarFlare`, `ionStorm`, `nebulaField`,
+`meteoroid`. Deliberately excludes each instance's `x`/`y` — placement is
+per-level authored content (GDD §11.7), not a global tunable, and stays in
+`GameScene.ts` until Phase 2b's per-level config files exist.
+
+| Field (per hazard type) | What it does |
+|---|---|
+| `shape` | `{ kind: 'circle', radius }` or `{ kind: 'rectangle', width, height }` — collision/interaction size, authored independent of sprite pixel size |
+| `movementPattern` / `speed` / `headingRadians` | `'static'` \| `'linear'` \| `'patrol'` (`'patrol'` reserved, unimplemented — see `HazardZoneElement`); `speed` px/s, ignored when static |
+| `activation` / `pulseIntervalSeconds` | `'continuous'` drains every frame while overlapping; `'pulsed'` drains once per interval |
+| `resourceCost` | `{ energy, structure }` per second (continuous) or per pulse (pulsed) |
+| `blocksMovement` | Debris Field only — solid collider, no `onHazardContact()`/resource-cost call at all |
+| `placeholderTexture` | `{ color, alpha }` for the four hazards with no sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid, `docs/STATUS.md`) — `GameScene` bakes this into a flat circle texture under `textureKey`. Debris Field omits this since it has final sourced art. |
+
+```js
+window.tuning.hazard.meteoroid.resourceCost.structure = 40  // meaner Meteoroid hits
+window.tuning.hazard.ionStorm.speed = 40                    // faster drift
+window.tuning.hazard.solarFlare.pulseIntervalSeconds = 1    // more frequent bursts
+```
+
+**Note:** like `survival`/`ship`, most fields are read fresh by
+`HazardZoneElement` each frame or each pulse, so cost/speed/pulse-interval
+edits apply live. `shape`, `placeholderTexture`, and `blocksMovement` are
+only read once, when `GameScene.create()` constructs that hazard's
+`HazardZoneElement` instance — a console edit to those needs a level
+restart (hard-fail restart or a fresh `Start`) to take effect, same
+next-restart-only caveat as `backgroundSetPieces`.
+
 ## Not tunable from the console yet
 
-- **Hazard costs** (e.g. Meteoroid's structure-drain rate) — currently a
-  literal object inline in `GameScene.create()`, not its own config module.
-  Debris Field's `blocksMovement: true` obstacle config is likewise inline
-  there rather than tunable (2026-08-07 — see `STATUS.md`'s "Code update"
-  entry).
 - **Ability costs/cooldowns** — `AbilityComponent` doesn't exist yet.
 - **Camera/parallax settings** (scroll factors, level size) — level/scene
   setup, not treated as a tunable-feel config module.

@@ -18,6 +18,7 @@ import { LEVEL_ORDER } from '../config/levelOrder';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
+import { hazardConfig, type HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
 import { PuzzleSite } from '../objects/PuzzleSite';
 import { ScanInteractElement } from '../objects/puzzle/ScanInteractElement';
@@ -109,19 +110,10 @@ export class GameScene extends Phaser.Scene {
     // cost (re-scoped 2026-08-07, GDD §9/§11.3). activation/resourceCost
     // are inert for a blocksMovement hazard but still required by the
     // config type; left at 'continuous'/zero rather than made optional.
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        x: 1750,
-        y: 950,
-        textureKey: 'debris_large',
-        shape: { kind: 'circle', radius: 60 },
-        movementPattern: 'static',
-        speed: 0,
-        activation: 'continuous',
-        resourceCost: { energy: 0, structure: 0 },
-        blocksMovement: true,
-      }),
-    );
+    // Per-type shape/movement/cost tunables now live in hazardConfig.ts
+    // (CLAUDE.md's "hazard ... costs" config-module convention) — only
+    // this test-level's x/y placement stays here as level content.
+    this.placeHazard(1750, 950, hazardConfig.debrisField);
 
     // AsteroidField resupply point (structure repair only).
     this.resupplyPoints.push(
@@ -132,70 +124,16 @@ export class GameScene extends Phaser.Scene {
     // one test-level instance each, against HazardZoneElement's existing
     // parameterization (config only, no new code, per the collapse
     // confirmed in §11.3). Textures are procedurally generated placeholders
-    // (createHazardPlaceholderTexture below) -- Ion Storm/Nebula Field/Solar
-    // Flare/Meteoroid have no sourced art yet (docs/STATUS.md), and none is
-    // required to validate the mechanic. Real per-hazard art and authored
-    // per-level placement are Phase 2b content work; these placements exist
-    // solely so the Phase 2a->2b gate can playtest all hazard types
-    // together in game space.
-    this.createHazardPlaceholderTexture('hazard_solar_flare', 70, 0xff6644, 0.55);
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        x: 1000,
-        y: 1000,
-        textureKey: 'hazard_solar_flare',
-        shape: { kind: 'circle', radius: 70 },
-        movementPattern: 'static',
-        speed: 0,
-        activation: 'pulsed',
-        pulseIntervalSeconds: 2.5,
-        resourceCost: { energy: 12, structure: 0 },
-      }),
-    );
-
-    this.createHazardPlaceholderTexture('hazard_ion_storm', 90, 0x6a6aff, 0.4);
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        x: 1400,
-        y: 400,
-        textureKey: 'hazard_ion_storm',
-        shape: { kind: 'circle', radius: 90 },
-        movementPattern: 'linear',
-        speed: 15,
-        headingRadians: Math.PI,
-        activation: 'continuous',
-        resourceCost: { energy: 6, structure: 0 },
-      }),
-    );
-
-    this.createHazardPlaceholderTexture('hazard_nebula_field', 100, 0x9966cc, 0.4);
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        x: 2000,
-        y: 700,
-        textureKey: 'hazard_nebula_field',
-        shape: { kind: 'circle', radius: 100 },
-        movementPattern: 'static',
-        speed: 0,
-        activation: 'continuous',
-        resourceCost: { energy: 6, structure: 0 },
-      }),
-    );
-
-    this.createHazardPlaceholderTexture('hazard_meteoroid', 26, 0x998877, 1);
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        x: 300,
-        y: 900,
-        textureKey: 'hazard_meteoroid',
-        shape: { kind: 'circle', radius: 26 },
-        movementPattern: 'linear',
-        speed: 60,
-        headingRadians: 0,
-        activation: 'continuous',
-        resourceCost: { energy: 0, structure: 25 },
-      }),
-    );
+    // (placeHazard below, via hazardConfig's placeholderTexture field) --
+    // Ion Storm/Nebula Field/Solar Flare/Meteoroid have no sourced art yet
+    // (docs/STATUS.md), and none is required to validate the mechanic. Real
+    // per-hazard art and authored per-level placement are Phase 2b content
+    // work; these placements exist solely so the Phase 2a->2b gate can
+    // playtest all hazard types together in game space.
+    this.placeHazard(1000, 1000, hazardConfig.solarFlare);
+    this.placeHazard(1400, 400, hazardConfig.ionStorm);
+    this.placeHazard(2000, 700, hazardConfig.nebulaField);
+    this.placeHazard(300, 900, hazardConfig.meteoroid);
 
     // All five puzzle-site elements (GDD §6/§11.3, Phase 2a Steps 2-3) --
     // one test-level instance each, optional/additive per the core loop
@@ -354,13 +292,32 @@ export class GameScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD);
   }
 
-  // Placeholder texture for the four hazard configs Phase 2a's Step 5 adds
-  // (Solar Flare/Ion Storm/Nebula Field/Meteoroid) -- none has sourced art
-  // yet (docs/STATUS.md), and none is needed to validate HazardZoneElement's
-  // config-only parameterization. A flat generated circle, same
-  // procedural-texture precedent as everything else added this phase
-  // (createObjectiveMarkerTexture, ScanInteractElement's ring, ...). Real
-  // per-hazard art is Phase 2b's job, tracked in trailing_edge_art_asset_list.md.
+  // Places one HazardZoneElement instance from a hazardConfig.ts entry at
+  // this test-level's authored x/y (level content, stays here per GDD
+  // §11.7 -- only the hazard-type defaults live in the shared config
+  // module). Generates the type's placeholder circle texture first if the
+  // config carries one (Solar Flare/Ion Storm/Nebula Field/Meteoroid have
+  // no sourced art yet, docs/STATUS.md); Debris Field skips this since it
+  // already has final sourced art loaded by BootScene.
+  private placeHazard(x: number, y: number, config: HazardTypeConfig): void {
+    if (config.placeholderTexture && config.shape.kind === 'circle') {
+      this.createHazardPlaceholderTexture(
+        config.textureKey,
+        config.shape.radius,
+        config.placeholderTexture.color,
+        config.placeholderTexture.alpha,
+      );
+    }
+
+    this.hazards.push(new HazardZoneElement(this, { x, y, ...config }));
+  }
+
+  // Placeholder texture for the four hazardConfig.ts entries with no
+  // sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid,
+  // docs/STATUS.md) -- a flat generated circle, same procedural-texture
+  // precedent as everything else added this phase (createObjectiveMarkerTexture,
+  // ScanInteractElement's ring, ...). Real per-hazard art is Phase 2b's job,
+  // tracked in trailing_edge_art_asset_list.md.
   private createHazardPlaceholderTexture(key: string, radius: number, color: number, alpha: number): void {
     if (this.textures.exists(key)) return;
 

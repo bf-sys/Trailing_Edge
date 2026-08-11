@@ -35,7 +35,7 @@ next level.
 Puzzle-site elements (§6) are optional/additive content encountered along
 the way, not a required step.
 
-## Current project state (as of 2026-08-08)
+## Current project state (as of 2026-08-11)
 
 **Phase 1's vertical slice is built and playtests end-to-end.** `src/`
 implements `ExplorationController`, `ShipSurvivalComponent`,
@@ -47,12 +47,41 @@ cost — matches the current design, not the pre-2026-08-07 drain version),
 `ShipStatusArcs` (ship-relative energy/structure display, added
 2026-08-10) — the full Phase 1 scope in Section 11/§12 below. A full run (Entry Wormhole → Debris Field → AsteroidField → Probe →
 Relay Beacon → Exit Wormhole → `WinScene`) has been playtested with zero
-console errors. **Not yet built** (Phase 2a, not started):
-`PuzzleElementBase` and its five subtypes, `AbilityComponent`,
-`ProgressionManager`, `SaveManager`, `CheckpointManager` (deferred by
-design, not just unbuilt). Section 11 below is the contract for both —
-check `src/` before assuming something is or isn't implemented rather than
-trusting this file's age.
+console errors.
+
+**Phase 2a is also now built** (completed 2026-08-10, committed
+2026-08-11): `PuzzleElementBase` and all five subtypes
+(`SequenceSpotElement`/`ScanInteractElement`/`MovingSpotDurationElement`/
+`PushPullObjectElement`/`TrailDrawElement`) plus `PuzzleSite`,
+`AbilityComponent`, `ProgressionManager`, `SaveManager`, and the rest of
+`HudOverlay` (ability icons + puzzle-site indicator) and `TitleScene`
+(Start/Continue) are all implemented and wired into `GameScene`'s one test
+level (`level-000`). `CheckpointManager` remains **deferred by design, not
+unbuilt** — nothing above changes that.
+
+**Two important nuances Phase 2a's completion doesn't erase — check before
+assuming a Phase 2b task is ready:**
+- **Code vs. art.** Everything above is mechanically complete, but its
+  *content* is still test-level placeholder instances, not authored Phase
+  2b levels — one instance of each puzzle element and each of the four
+  non-Debris hazards, all using procedurally-generated placeholder
+  textures. Per `docs/STATUS.md`, no final art exists yet for any puzzle
+  element, or for Solar Flare/Ion Storm/Nebula Field/Meteoroid. Sourcing
+  that art is tracked separately and is **not** closed by this commit.
+- **Ability gate vs. in-world effect.** `AbilityComponent`'s dual gate
+  (unlock/cooldown/energy) is fully functional for all four abilities, and
+  `ProgressionManager` auto-grants them in a fixed order
+  (`scan → tractorBeam → teleport → rocketBoost`, 2026-08-10 decision — no
+  player-facing unlock-choice UI) on level completion. But only
+  `tractorBeam` is actually wired to an in-world effect
+  (`PushPullObjectElement`'s `isUnlocked()` check). `scan`/`teleport`/
+  `rocketBoost` unlock and gate correctly but do nothing in-world yet —
+  flagged in `docs/trailing_edge_art_asset_list.md` §1.5, not a Phase 2a
+  gap to silently "finish."
+
+Section 11 below is the contract for all of this — check `src/` before
+assuming something is or isn't implemented rather than trusting this
+file's age.
 
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
@@ -107,7 +136,7 @@ called from each system's own file at module load (`src/systems/index.ts`
 is the side-effect import point — see `SystemRegistry.ts`). Agents append
 imports; **nobody hand-edits `create()`.**
 
-## Architecture contract (GDD §11) — Phase 1 items are built (see Current project state above); Phase 2a items below aren't yet
+## Architecture contract (GDD §11) — Phase 1 and Phase 2a items below are all built (see Current project state above); only `CheckpointManager` remains deferred by design
 
 - **`ShipSurvivalComponent`** — owns `currentEnergy`/`maxEnergy`/
   `currentStructure`/`maxStructure`, all `private`. Structure is the sole
@@ -144,15 +173,20 @@ imports; **nobody hand-edits `create()`.**
   completing the level. `LevelObjectiveTracker` also exposes
   `getCurrentObjectiveTarget()`, used by `HudOverlay`'s off-screen marker
   (see Open design questions below).
-- **`PuzzleElementBase`** (abstract) and subtypes — **optional/additive
-  content, not required to complete a level; none of these ship in Phase 1**
-  (see Phase 1 content scope below):
+- **`PuzzleElementBase`** (abstract) and subtypes — **built 2026-08-10
+  (Phase 2a). Optional/additive content, not required to complete a level;
+  none of these ship in Phase 1** (see Phase 1 content scope below); one
+  test-level instance of each currently exists in `GameScene`'s
+  `level-000`, grouped one-per-`PuzzleSite`, all using placeholder
+  procedural textures (no final art sourced yet, per `docs/STATUS.md`) —
+  authored Phase 2b level placement is still separate, unstarted work:
   - `SequenceSpotElement` — Signal Array (renamed from "Relay Beacon" — see
     `RelayBeaconObject` above)
   - `ScanInteractElement` — Scan Target/Marker
   - `MovingSpotDurationElement` — Comet (tracking)
   - `PushPullObjectElement` — Cargo Pod/Wreckage (checks
-    `AbilityComponent.isUnlocked(TractorBeam)` first)
+    `AbilityComponent.isUnlocked('tractorBeam')` first — the one ability
+    with a real in-world effect so far, see Current project state above)
   - `TrailDrawElement` — Beacon Cluster
   - **`HazardZoneElement`** — one parameterized class for *all four*
     open-world hazards (Debris Field, Solar Flare, Ion Storm, Nebula Field)
@@ -180,13 +214,25 @@ imports; **nobody hand-edits `create()`.**
     already-established `AsteroidField` resupply object below. **Implemented
     2026-08-07** — Phase 1's `HazardZoneElement` config now sets
     `blocksMovement: true` with zero resource cost.
-- **`AbilityComponent`** — per-ability dual gate (`energyCost`,
-  `cooldownSeconds`), either settable to 0. Puzzle elements query
-  `isUnlocked()` before allowing gated interactions.
-- **`ProgressionManager`** — owns `unlockedAbilities`. Endurance-upgrade
-  half (efficiency/recharge/capacity stats) is **deferred**, not implemented,
-  for the initial build. Hard rule: never modifies fixed hazard costs or
-  fixed puzzle costs.
+- **`AbilityComponent`** — **built 2026-08-10 (Phase 2a).** Per-ability
+  dual gate (`energyCost`, `cooldownSeconds`), either settable to 0.
+  Rebuilt fresh on every `PlayerShip`/hard-fail restart, but delegates
+  `isUnlocked()` to `ProgressionManager` rather than owning unlock state
+  itself, so a restart never re-locks an already-earned ability. Puzzle
+  elements query `isUnlocked()` before allowing gated interactions — only
+  `PushPullObjectElement` actually does so today (see Current project
+  state above for the gate-vs-in-world-effect caveat on the other three).
+- **`ProgressionManager`** — **built 2026-08-10 (Phase 2a).** Durable
+  `SystemRegistry` singleton owning `unlockedAbilities`; its `init()` is a
+  deliberate no-op so unlocks survive a hard-fail `GameScene` restart (only
+  `ShipSurvivalComponent`'s resources/position reset, not this).
+  `grantNextAbility()` auto-grants the next ability in a fixed order
+  (`abilityUnlockOrder` in `abilityConfig.ts`) from `GameScene`'s
+  level-completion handler — **no player-facing unlock-choice UI**, a
+  2026-08-10 decision, not a placeholder for one. Endurance-upgrade half
+  (efficiency/recharge/capacity stats) is still **deferred**, not
+  implemented, for the initial build. Hard rule: never modifies fixed
+  hazard costs or fixed puzzle costs.
 - **`ResupplyPoint`** (AsteroidField only) — Arcade overlap → repair
   structure. No longer covers energy (passive regen instead) and no longer
   registers a checkpoint (deferred). The Star variant is retired as a
@@ -203,15 +249,21 @@ imports; **nobody hand-edits `create()`.**
   `GameScene` (parameterized by `levelId` only — always starts at the
   level's beginning, no mid-level resume) → `WinScene` when `levelOrder` is
   exhausted; `PauseScene` as a stacked overlay, not a Scene swap.
-- **`SaveManager`** — thin `localStorage` wrapper, simplified to
-  level-completion saves only (no mid-level snapshot, since
-  `CheckpointManager` is deferred). **Hard rule: the only code allowed to
-  touch `localStorage` directly.** One call site: `GameScene`'s
-  level-completion handler.
+- **`SaveManager`** — **built 2026-08-10 (Phase 2a).** Thin `localStorage`
+  wrapper (module functions, not a class — encapsulation is the hard rule,
+  not a `private` field), simplified to level-completion saves only (no
+  mid-level snapshot, since `CheckpointManager` is deferred). **Hard rule:
+  the only code allowed to touch `localStorage` directly.** Two call sites:
+  `GameScene`'s level-completion handler (`saveProgress`) and `TitleScene`'s
+  Start/Continue flow (`hasSaveData`/`loadProgress` — Continue only renders
+  if a save exists, and resumes at the saved `levelId`, never a mid-level
+  position).
 - **`HudOverlay`** — display-only, screen-pinned. Owns the off-screen
-  objective marker (`LevelObjectiveTracker.getCurrentObjectiveTarget()`) and,
-  once built, ability icons/puzzle-site indicator via
-  `AbilityComponent.isUnlocked()`; no gameplay logic lives here.
+  objective marker (`LevelObjectiveTracker.getCurrentObjectiveTarget()`)
+  and, **built 2026-08-10 (Phase 2a)**, ability icons (via
+  `AbilityComponent.isUnlocked()`/`getCooldownRemainingMs()`) and the
+  puzzle-site-active indicator (via `PuzzleSite.solved`, registered through
+  `setPuzzleSites()`); no gameplay logic lives here.
   **Energy/structure bars moved out 2026-08-10** — see `ShipStatusArcs`
   below.
 - **`ShipStatusArcs`** — world-space, ship-relative resource readout (added
@@ -248,12 +300,17 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
    rate feel right, validate `SystemRegistry`, prototype tractor/repulsor,
    confirm `HazardZoneElement` produces 4 visually distinct hazards
    (including structure-vs-energy stakes legibility).
-3. **Phase 2a (early week 3, still core work)** — **all five** puzzle
-   element types (`SequenceSpotElement`/Signal Array,
+3. **Phase 2a — done (completed 2026-08-10, committed 2026-08-11).**
+   **All five** puzzle element types (`SequenceSpotElement`/Signal Array,
    `ScanInteractElement`, `MovingSpotDurationElement`,
    `PushPullObjectElement`, `TrailDrawElement`) — larger than originally
-   planned since Phase 1 ships none of them — plus remaining Scenes, the
-   now-simplified `SaveManager`, full `HudOverlay`. Must close before 2b.
+   planned since Phase 1 shipped none of them — plus `AbilityComponent`/
+   `ProgressionManager`, the now-simplified `SaveManager`, full
+   `HudOverlay`, and `TitleScene`'s Start/Continue are all implemented and
+   wired into the one test level. What's still open is content/art, not
+   code: no puzzle element or non-Debris hazard has final art yet (see
+   Current project state above), and only `tractorBeam` has a real
+   in-world effect. Closed before 2b, as required.
 4. **Phase 2b (bulk of weeks 3–5, genuinely parallel)** — content only:
    levels, required per-level probe/relay-beacon/home-marker placement,
    hazard placements (config, not code), optional puzzle-site instances.
@@ -312,6 +369,13 @@ Signal Array and the rest of the taxonomy above move to Phase 2a. See
 `docs/STATUS.md` for what's currently sourced-but-not-yet-scoped (Cargo Pod)
 vs. genuinely not started (Ion Storm/Nebula Field cloud art — production
 approach decided 2026-08-08, nothing sourced yet).
+
+**Phase 2a's code is now complete** (see Current project state above), but
+don't read that as Phase 2b content being underway — the puzzle-taxonomy
+and non-Debris-hazard code above still has exactly one placeholder-art test
+instance each, in the same single test level. Authored per-level placement
+of any of it, and sourcing final art for any of it, are still unstarted
+Phase 2b/asset-track work.
 
 ## Open design questions (GDD §9)
 

@@ -4,3 +4,4 @@
 //
 // Per CLAUDE.md: agents append an import line here as they add systems.
 import './ExplorationController';
+import './ProgressionManager';

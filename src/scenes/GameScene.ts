@@ -10,11 +10,21 @@ import { ProbeObject } from '../objects/ProbeObject';
 import { RelayBeaconObject } from '../objects/RelayBeaconObject';
 import { EntryWormhole } from '../objects/EntryWormhole';
 import { ExitWormhole } from '../objects/ExitWormhole';
-import { HudOverlay } from '../objects/HudOverlay';
+import { HudOverlay, type PuzzleSiteMarker } from '../objects/HudOverlay';
 import { ShipStatusArcs } from '../objects/ShipStatusArcs';
+import { getProgressionManager } from '../systems/ProgressionManager';
+import { saveProgress } from '../objects/SaveManager';
+import { LEVEL_ORDER } from '../config/levelOrder';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
+import { PuzzleElementBase } from '../objects/PuzzleElementBase';
+import { PuzzleSite } from '../objects/PuzzleSite';
+import { ScanInteractElement } from '../objects/puzzle/ScanInteractElement';
+import { SequenceSpotElement } from '../objects/puzzle/SequenceSpotElement';
+import { TrailDrawElement } from '../objects/puzzle/TrailDrawElement';
+import { MovingSpotDurationElement } from '../objects/puzzle/MovingSpotDurationElement';
+import { PushPullObjectElement } from '../objects/puzzle/PushPullObjectElement';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -54,6 +64,7 @@ export class GameScene extends Phaser.Scene {
   private levelId!: string;
   private hazards: HazardZoneElement[] = [];
   private resupplyPoints: ResupplyPoint[] = [];
+  private puzzleElements: PuzzleElementBase[] = [];
   private hudOverlay!: HudOverlay;
   private shipStatusArcs!: ShipStatusArcs;
 
@@ -68,6 +79,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.hazards = [];
     this.resupplyPoints = [];
+    this.puzzleElements = [];
 
     this.physics.world.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
     this.createParallaxBackground();
@@ -116,6 +128,119 @@ export class GameScene extends Phaser.Scene {
       new ResupplyPoint(this, { x: 650, y: 300, textureKey: 'asteroid_large', radius: 40 }),
     );
 
+    // Remaining four open-world hazards (GDD §9/§11.3, Phase 2a Step 5) --
+    // one test-level instance each, against HazardZoneElement's existing
+    // parameterization (config only, no new code, per the collapse
+    // confirmed in §11.3). Textures are procedurally generated placeholders
+    // (createHazardPlaceholderTexture below) -- Ion Storm/Nebula Field/Solar
+    // Flare/Meteoroid have no sourced art yet (docs/STATUS.md), and none is
+    // required to validate the mechanic. Real per-hazard art and authored
+    // per-level placement are Phase 2b content work; these placements exist
+    // solely so the Phase 2a->2b gate can playtest all hazard types
+    // together in game space.
+    this.createHazardPlaceholderTexture('hazard_solar_flare', 70, 0xff6644, 0.55);
+    this.hazards.push(
+      new HazardZoneElement(this, {
+        x: 1000,
+        y: 1000,
+        textureKey: 'hazard_solar_flare',
+        shape: { kind: 'circle', radius: 70 },
+        movementPattern: 'static',
+        speed: 0,
+        activation: 'pulsed',
+        pulseIntervalSeconds: 2.5,
+        resourceCost: { energy: 12, structure: 0 },
+      }),
+    );
+
+    this.createHazardPlaceholderTexture('hazard_ion_storm', 90, 0x6a6aff, 0.4);
+    this.hazards.push(
+      new HazardZoneElement(this, {
+        x: 1400,
+        y: 400,
+        textureKey: 'hazard_ion_storm',
+        shape: { kind: 'circle', radius: 90 },
+        movementPattern: 'linear',
+        speed: 15,
+        headingRadians: Math.PI,
+        activation: 'continuous',
+        resourceCost: { energy: 6, structure: 0 },
+      }),
+    );
+
+    this.createHazardPlaceholderTexture('hazard_nebula_field', 100, 0x9966cc, 0.4);
+    this.hazards.push(
+      new HazardZoneElement(this, {
+        x: 2000,
+        y: 700,
+        textureKey: 'hazard_nebula_field',
+        shape: { kind: 'circle', radius: 100 },
+        movementPattern: 'static',
+        speed: 0,
+        activation: 'continuous',
+        resourceCost: { energy: 6, structure: 0 },
+      }),
+    );
+
+    this.createHazardPlaceholderTexture('hazard_meteoroid', 26, 0x998877, 1);
+    this.hazards.push(
+      new HazardZoneElement(this, {
+        x: 300,
+        y: 900,
+        textureKey: 'hazard_meteoroid',
+        shape: { kind: 'circle', radius: 26 },
+        movementPattern: 'linear',
+        speed: 60,
+        headingRadians: 0,
+        activation: 'continuous',
+        resourceCost: { energy: 0, structure: 25 },
+      }),
+    );
+
+    // All five puzzle-site elements (GDD §6/§11.3, Phase 2a Steps 2-3) --
+    // one test-level instance each, optional/additive per the core loop
+    // (§3), placed clear of the core-loop objects and hazards above. Each
+    // gets its own single-element PuzzleSite (GDD §11.3's grouping wrapper)
+    // so HudOverlay's puzzle-site indicator has something to query.
+    const puzzleSiteMarkers: PuzzleSiteMarker[] = [];
+
+    const scanTarget = new ScanInteractElement(this, { x: 1200, y: 300 });
+    this.puzzleElements.push(scanTarget);
+    puzzleSiteMarkers.push({ x: 1200, y: 300, site: new PuzzleSite([scanTarget]) });
+
+    const signalArray = new SequenceSpotElement(this, {
+      points: [
+        { x: 900, y: 600 },
+        { x: 1000, y: 500 },
+        { x: 1100, y: 600 },
+      ],
+    });
+    this.puzzleElements.push(signalArray);
+    puzzleSiteMarkers.push({ x: 1000, y: 550, site: new PuzzleSite([signalArray]) });
+
+    const beaconCluster = new TrailDrawElement(this, {
+      beaconPoints: [
+        { x: 1500, y: 1150 },
+        { x: 1650, y: 1250 },
+        { x: 1750, y: 1150 },
+      ],
+    });
+    this.puzzleElements.push(beaconCluster);
+    puzzleSiteMarkers.push({ x: 1633, y: 1183, site: new PuzzleSite([beaconCluster]) });
+
+    const comet = new MovingSpotDurationElement(this, {
+      path: [
+        { x: 300, y: 500 },
+        { x: 700, y: 700 },
+      ],
+    });
+    this.puzzleElements.push(comet);
+    puzzleSiteMarkers.push({ x: 500, y: 600, site: new PuzzleSite([comet]) });
+
+    const cargoPod = new PushPullObjectElement(this, { x: 1900, y: 500, targetX: 2100, targetY: 650 });
+    this.puzzleElements.push(cargoPod);
+    puzzleSiteMarkers.push({ x: 1900, y: 500, site: new PuzzleSite([cargoPod]) });
+
     // Core-loop objects (§11.11-11.14): find probe -> reach beacon -> reach
     // the exit wormhole. Spread across the level on purpose now that it's
     // bigger than the viewport — see GDD §9's off-screen-objective marker,
@@ -146,6 +271,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.hudOverlay = new HudOverlay(this, tracker);
+    this.hudOverlay.setPuzzleSites(puzzleSiteMarkers);
     this.shipStatusArcs = new ShipStatusArcs(this);
     new DestinationMarker(this);
 
@@ -162,16 +288,28 @@ export class GameScene extends Phaser.Scene {
     SystemRegistry.all().forEach((system) => system.update?.(time, delta));
     this.hazards.forEach((hazard) => hazard.update(time, delta));
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
+    this.puzzleElements.forEach((element) => element.update(time, delta));
     this.hudOverlay.update();
     this.shipStatusArcs.update();
   }
 
-  // Deliberately minimal: real levelOrder resolution + SaveManager.saveProgress()
-  // are Phase 2a scope (§11.8/§11.9). This single test level just proves the
-  // find-probe -> reach-beacon -> return sequence works end-to-end.
+  // Real levelOrder resolution + SaveManager (GDD §11.8/§11.9, Phase 2a
+  // Step 4): grants the next ability in ProgressionManager's fixed order
+  // (2026-08-10 decision — auto-grant, no unlock-choice UI), then either
+  // saves progress and advances to the next level, or transitions to
+  // WinScene once LEVEL_ORDER is exhausted (currently just one level, until
+  // Phase 2b adds more).
   private handleLevelComplete(): void {
-    console.log('[level] complete — transitioning to WinScene (levelOrder/SaveManager not wired yet)');
-    this.scene.start('WinScene');
+    getProgressionManager().grantNextAbility();
+
+    const nextLevelId = LEVEL_ORDER[LEVEL_ORDER.indexOf(this.levelId) + 1];
+    if (!nextLevelId) {
+      this.scene.start('WinScene');
+      return;
+    }
+
+    saveProgress(nextLevelId);
+    this.scene.start('GameScene', { levelId: nextLevelId });
   }
 
   // Hard-fail flow (GDD §11.1/§5/§12 step 4): hitting zero structure resets
@@ -214,6 +352,24 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0.4)
       .setDepth(-90)
       .setBlendMode(Phaser.BlendModes.ADD);
+  }
+
+  // Placeholder texture for the four hazard configs Phase 2a's Step 5 adds
+  // (Solar Flare/Ion Storm/Nebula Field/Meteoroid) -- none has sourced art
+  // yet (docs/STATUS.md), and none is needed to validate HazardZoneElement's
+  // config-only parameterization. A flat generated circle, same
+  // procedural-texture precedent as everything else added this phase
+  // (createObjectiveMarkerTexture, ScanInteractElement's ring, ...). Real
+  // per-hazard art is Phase 2b's job, tracked in trailing_edge_art_asset_list.md.
+  private createHazardPlaceholderTexture(key: string, radius: number, color: number, alpha: number): void {
+    if (this.textures.exists(key)) return;
+
+    const diameter = radius * 2;
+    const graphics = this.make.graphics({}, false);
+    graphics.fillStyle(color, alpha);
+    graphics.fillCircle(radius, radius, radius);
+    graphics.generateTexture(key, diameter, diameter);
+    graphics.destroy();
   }
 
   // Objective flags have no HUD requirement in Phase 1 (only the

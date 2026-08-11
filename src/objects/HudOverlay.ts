@@ -1,9 +1,19 @@
 import Phaser from 'phaser';
 import { LevelObjectiveTracker } from './LevelObjectiveTracker';
 import { hudConfig } from '../config/hudConfig';
+import { abilityConfig, type AbilityType } from '../config/abilityConfig';
+import { getPlayerShip } from '../systems/ExplorationController';
+import type { PuzzleSite } from './PuzzleSite';
 
 const DEPTH = 2000;
 const OBJECTIVE_MARKER_KEY = 'objective_marker';
+const ABILITY_TYPES = Object.keys(abilityConfig) as AbilityType[];
+
+export interface PuzzleSiteMarker {
+  x: number;
+  y: number;
+  site: PuzzleSite;
+}
 
 // Generated once into the global texture manager (same pattern as
 // StarfieldBackground's createStarfieldTextures) — an apex-up triangle, used
@@ -22,17 +32,21 @@ function createObjectiveMarkerTexture(scene: Phaser.Scene, size: number, color: 
   graphics.destroy();
 }
 
-// HudOverlay for Phase 1 (GDD §11.10/§12 step 5). Energy/structure bars
-// moved out to ShipStatusArcs (world-space, ship-relative) on 2026-08-10 —
-// this class now owns only the off-screen objective marker. Display-only,
-// no gameplay logic lives here. Not Scene-specific — a plain object
-// constructed once per GameScene session; its GameObjects are torn down
-// automatically on Scene shutdown/restart like everything else in this
-// scene.
+// HudOverlay for Phase 1 (GDD §11.10/§12 step 5), completed for Phase 2a
+// (2026-08-10): off-screen objective marker, ability icons, and the
+// puzzle-site-active indicator. Energy/structure bars moved out to
+// ShipStatusArcs (world-space, ship-relative) on 2026-08-10, so this class
+// no longer owns those. Display-only, no gameplay logic lives here. Not
+// Scene-specific — a plain object constructed once per GameScene session;
+// its GameObjects are torn down automatically on Scene shutdown/restart
+// like everything else in this scene.
 export class HudOverlay {
   private readonly scene: Phaser.Scene;
   private readonly tracker: LevelObjectiveTracker;
   private readonly objectiveMarker: Phaser.GameObjects.Image;
+  private readonly abilityIcons: Phaser.GameObjects.Graphics;
+  private readonly puzzleSiteIndicator: Phaser.GameObjects.Text;
+  private puzzleSites: PuzzleSiteMarker[] = [];
 
   constructor(scene: Phaser.Scene, tracker: LevelObjectiveTracker) {
     this.scene = scene;
@@ -50,10 +64,87 @@ export class HudOverlay {
       .setScrollFactor(0)
       .setDepth(DEPTH + 1)
       .setVisible(false);
+
+    // Ability icons (GDD §11.10) — one square per abilityConfig entry,
+    // left-to-right in authored order, procedurally drawn (no art asset,
+    // same precedent as everything else in this file/ShipStatusArcs).
+    this.abilityIcons = scene.add.graphics().setScrollFactor(0).setDepth(DEPTH + 1);
+
+    // Puzzle-site-active indicator (GDD §11.10) — "even just a highlight or
+    // icon" per the GDD, so a single text label shown while the ship is
+    // near any unsolved PuzzleSite. Nothing is registered until GameScene
+    // calls setPuzzleSites() (Phase 2a Step 5's test-level content), so this
+    // correctly never shows in a scene without puzzle-site instances.
+    this.puzzleSiteIndicator = scene.add
+      .text(scene.scale.width / 2, hudConfig.puzzleSiteIndicatorY, 'Puzzle site nearby', {
+        fontSize: '14px',
+        color: '#ffd28f',
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(DEPTH + 1)
+      .setVisible(false);
+  }
+
+  // Display-only registration — HudOverlay never creates/owns puzzle sites,
+  // it only reads their position/solved state to decide whether to show the
+  // indicator above.
+  setPuzzleSites(sites: PuzzleSiteMarker[]): void {
+    this.puzzleSites = sites;
   }
 
   update(): void {
     this.updateObjectiveMarker();
+    this.updateAbilityIcons();
+    this.updatePuzzleSiteIndicator();
+  }
+
+  private updateAbilityIcons(): void {
+    this.abilityIcons.clear();
+
+    const ship = getPlayerShip();
+    if (!ship) return;
+
+    const nowMs = this.scene.time.now;
+    ABILITY_TYPES.forEach((type, index) => {
+      const x = hudConfig.abilityIconX + index * (hudConfig.abilityIconSize + hudConfig.abilityIconSpacing);
+      const y = hudConfig.abilityIconY;
+      const size = hudConfig.abilityIconSize;
+      const unlocked = ship.ability.isUnlocked(type);
+
+      this.abilityIcons.fillStyle(hudConfig.abilityIconColors[type], unlocked ? 1 : hudConfig.abilityIconLockedAlpha);
+      this.abilityIcons.fillRect(x, y, size, size);
+
+      if (!unlocked) return;
+
+      // Cooldown sweep: a dark rect wipes from full-height down to nothing
+      // as the cooldown counts down — the same "draw an overlay
+      // proportional to remaining/total" idea as ShipStatusArcs's arcs,
+      // applied to a rect since these are square icons.
+      const remainingMs = ship.ability.getCooldownRemainingMs(type, nowMs);
+      const totalMs = abilityConfig[type].cooldownSeconds * 1000;
+      if (remainingMs <= 0 || totalMs <= 0) return;
+
+      const pct = remainingMs / totalMs;
+      this.abilityIcons.fillStyle(hudConfig.abilityCooldownOverlayColor, hudConfig.abilityCooldownOverlayAlpha);
+      this.abilityIcons.fillRect(x, y, size, size * pct);
+    });
+  }
+
+  private updatePuzzleSiteIndicator(): void {
+    const ship = getPlayerShip();
+    if (!ship || this.puzzleSites.length === 0) {
+      this.puzzleSiteIndicator.setVisible(false);
+      return;
+    }
+
+    const nearby = this.puzzleSites.some(
+      (marker) =>
+        !marker.site.solved &&
+        Phaser.Math.Distance.Between(ship.image.x, ship.image.y, marker.x, marker.y) <=
+          hudConfig.puzzleSiteIndicatorRadius,
+    );
+    this.puzzleSiteIndicator.setVisible(nearby);
   }
 
   private updateObjectiveMarker(): void {

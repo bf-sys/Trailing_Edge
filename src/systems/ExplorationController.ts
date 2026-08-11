@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SystemRegistry, type GameSystem } from './SystemRegistry';
 import { shipConfig } from '../config/shipConfig';
+import { abilityConfig, type AbilityType } from '../config/abilityConfig';
 import { PlayerShip } from '../objects/PlayerShip';
 
 interface Target {
@@ -25,6 +26,11 @@ let currentPlayerShip: PlayerShip | undefined;
 // ExplorationController's internals.
 export function getPlayerShip(): PlayerShip | undefined {
   return currentPlayerShip;
+}
+
+// Dev-only debug handle, same convention as main.ts's window.game.
+if (import.meta.env.DEV) {
+  (window as unknown as { getPlayerShip: typeof getPlayerShip }).getPlayerShip = getPlayerShip;
 }
 
 // Click-to-move, non-Newtonian ship movement (GDD §4). Owns the PlayerShip
@@ -70,6 +76,16 @@ export class ExplorationController implements GameSystem {
       if (this.target) {
         this.playerShip?.image.emit(EXPLORATION_EVENTS.DestinationSet, { x: this.target.x, y: this.target.y });
       }
+    });
+
+    // Ability hotkeys (GDD §4 "abilities on number-key hotkeys"). Bound
+    // here since this is the existing per-scene input-wiring site; each
+    // listener reads this.playerShip at press time, not capture time, so it
+    // stays correct across a hard-fail restart's fresh PlayerShip.
+    (Object.keys(abilityConfig) as AbilityType[]).forEach((type) => {
+      scene.input.keyboard?.on(`keydown-${abilityConfig[type].hotkey}`, () => {
+        this.playerShip?.ability.tryActivate(type, scene.time.now);
+      });
     });
   }
 

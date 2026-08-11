@@ -20,4 +20,12 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, TitleScene, GameScene, WinScene, PauseScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Dev-only debug handle (same window-exposure convention as
+// devTuning.ts's window.tuning) -- lets a headless-browser smoke test (or a
+// human) inspect/drive scene state from the console without adding
+// production code paths.
+if (import.meta.env.DEV) {
+  (window as unknown as { game: Phaser.Game }).game = game;
+}

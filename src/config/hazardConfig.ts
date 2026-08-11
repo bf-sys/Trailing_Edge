@@ -49,6 +49,14 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     blocksMovement: true,
   },
 
+  // 2026-08-11: energy costs below bumped so all three energy-draining
+  // hazards clearly outdrain survivalConfig.energyRegenPerSecond (8/s) --
+  // at the old values (solarFlare avg 4.8/s, ionStorm/nebulaField 6/s),
+  // passive regen ran ahead of drain every frame (regenEnergy() runs before
+  // hazard update() in GameScene.update()), so the energy bar visibly held
+  // near max instead of draining. No regen-side change made -- regen is
+  // already the smallest lever in the system, and "weaker regen inside a
+  // hazard" is equivalent to a bigger hazard-side number anyway.
   solarFlare: {
     textureKey: 'hazard_solar_flare',
     shape: { kind: 'circle', radius: 70 },
@@ -56,7 +64,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     speed: 0,
     activation: 'pulsed',
     pulseIntervalSeconds: 2.5,
-    resourceCost: { energy: 12, structure: 0 },
+    resourceCost: { energy: 28, structure: 0 }, // 11.2/s avg, delivered as a visible ~28% chunk per pulse
     placeholderTexture: { color: 0xff6644, alpha: 0.55 },
   },
 
@@ -69,7 +77,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     speed: 15,
     headingRadians: Math.PI,
     activation: 'continuous',
-    resourceCost: { energy: 6, structure: 0 },
+    resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
     placeholderTexture: { color: 0x6a6aff, alpha: 0.4 },
   },
 
@@ -79,7 +87,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     movementPattern: 'static',
     speed: 0,
     activation: 'continuous',
-    resourceCost: { energy: 6, structure: 0 },
+    resourceCost: { energy: 15, structure: 0 }, // matches ionStorm -- same family, same rate
     placeholderTexture: { color: 0x9966cc, alpha: 0.4 },
   },
 

@@ -36,7 +36,6 @@ export interface HazardZoneConfig {
 export class HazardZoneElement {
   private readonly config: HazardZoneConfig;
   private readonly zone: Phaser.Physics.Arcade.Image;
-  private overlapping = false;
   private pulseElapsedSeconds = 0;
 
   constructor(scene: Phaser.Scene, config: HazardZoneConfig) {
@@ -46,30 +45,55 @@ export class HazardZoneElement {
     this.applyShape();
     this.applyMovement();
 
-    const ship = getPlayerShip();
+    // blocksMovement hazards still use a real Arcade collider -- that's a
+    // physical separation response (§11.3's "solid collider"), not a
+    // per-frame cost calculation, so Arcade's internal ~60Hz physics step
+    // rate (decoupled from the render/update rate) doesn't undercount
+    // anything here the way it would for resourceCost below.
     if (config.blocksMovement) {
+      const ship = getPlayerShip();
       // Immovable so the ship's body is the one that gets pushed out on
       // overlap, not this zone -- still allowed to have its own velocity
       // via applyMovement() above for a future moving+blocking variant.
       (this.zone.body as Phaser.Physics.Arcade.Body).setImmovable(true);
       if (ship) scene.physics.add.collider(this.zone, ship.image);
-    } else if (ship) {
-      scene.physics.add.overlap(this.zone, ship.image, () => {
-        this.overlapping = true;
-      });
     }
   }
 
   update(_time: number, delta: number): void {
     const dt = delta / 1000;
 
-    if (this.overlapping) {
+    // Resource-cost contact is checked directly here (distance/AABB against
+    // the ship's current position) rather than via scene.physics.add.overlap()
+    // -- 2026-08-11 fix. Arcade's overlap *callback* only fires on its own
+    // internal ~60Hz physics step, decoupled from the render/update rate; on
+    // a >60Hz display the old flag-set-by-callback approach silently missed
+    // most render frames' worth of dt, applying drain at only
+    // roughly (60/actual fps) of its configured rate while regenEnergy (a
+    // plain per-frame call, no physics dependency) ran at full rate. Doing
+    // the check here ties contact detection to the exact same dt driving
+    // the cost math and everything else in this method.
+    if (!this.config.blocksMovement && this.isOverlappingShip()) {
       this.applyResourceCost(dt);
     } else if (this.config.activation === 'pulsed') {
       this.pulseElapsedSeconds = 0; // no partial credit carried across an exit
     }
+  }
 
-    this.overlapping = false; // re-armed by next frame's overlap callback
+  private isOverlappingShip(): boolean {
+    const ship = getPlayerShip();
+    if (!ship) return false;
+
+    const { shape } = this.config;
+    if (shape.kind === 'circle') {
+      const distance = Phaser.Math.Distance.Between(this.zone.x, this.zone.y, ship.image.x, ship.image.y);
+      return distance <= shape.radius;
+    }
+
+    return (
+      Math.abs(ship.image.x - this.zone.x) <= shape.width / 2 &&
+      Math.abs(ship.image.y - this.zone.y) <= shape.height / 2
+    );
   }
 
   private applyShape(): void {

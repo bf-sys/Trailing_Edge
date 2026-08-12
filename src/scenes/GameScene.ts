@@ -14,18 +14,16 @@ import { HudOverlay, type PuzzleSiteMarker } from '../objects/HudOverlay';
 import { ShipStatusArcs } from '../objects/ShipStatusArcs';
 import { getProgressionManager } from '../systems/ProgressionManager';
 import { saveProgress } from '../objects/SaveManager';
-import { LEVEL_ORDER } from '../config/levelOrder';
+import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
-import { hazardConfig, type HazardTypeConfig } from '../config/hazardConfig';
+import { hazardConfig } from '../config/hazardConfig';
+import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
 import { PuzzleSite } from '../objects/PuzzleSite';
-import { ScanInteractElement } from '../objects/puzzle/ScanInteractElement';
-import { SequenceSpotElement } from '../objects/puzzle/SequenceSpotElement';
-import { TrailDrawElement } from '../objects/puzzle/TrailDrawElement';
-import { MovingSpotDurationElement } from '../objects/puzzle/MovingSpotDurationElement';
-import { PushPullObjectElement } from '../objects/puzzle/PushPullObjectElement';
+import { getLevelConfig } from '../levels';
+import { createPuzzleElement, puzzleSiteMarkerPosition } from '../levels/puzzleElementFactory';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -33,28 +31,12 @@ interface GameSceneData {
   levelId: string;
 }
 
-// Test-map world size (GDD §9's new open question): deliberately larger
-// than the 1280x720 viewport, with the camera following the ship, to
-// exercise the Sinistar-style "bounded level, not screen-sized level"
-// reading of §8 rather than the single-screen layout Phase 1 steps 1-5
-// used so far.
-const LEVEL_WIDTH = 2400;
-const LEVEL_HEIGHT = 1350;
-
-// Core-loop object placements (§11.11-11.14): find probe -> reach beacon ->
-// reach the (separate) exit wormhole. Named consts, not inline literals, so
-// each placed object and LevelObjectiveTracker's waypoints share one source
-// of truth rather than duplicating coordinates.
-const ENTRY_WORMHOLE_POSITION = { x: LEVEL_WIDTH / 2, y: LEVEL_HEIGHT / 2 };
-const EXIT_WORMHOLE_POSITION = { x: 500, y: 1000 };
-const PROBE_POSITION = { x: 2200, y: 200 };
-const RELAY_BEACON_POSITION = { x: 200, y: 1150 };
-
 // Parameterized by levelId only — always starts at the level's beginning,
-// no mid-level resume (CheckpointManager is deferred). Doubles as Phase 1's
-// "small test scene" — every placement below (hazard, resupply, probe,
-// beacon, entry/exit wormhole) is hardcoded test-scene content, not real
-// level-config authoring (that's Phase 2b's per-level authored-data work).
+// no mid-level resume (CheckpointManager is deferred). Every placement below
+// (hazard, resupply, probe, beacon, entry/exit wormhole, puzzle element)
+// comes from this.levelId's LevelConfig (src/levels/) — GameScene itself
+// carries no per-level content, only the generic instantiation logic shared
+// by every level.
 //
 // A hard fail (onStructureDepleted) calls scene.restart(), which re-runs
 // init()/create() on this SAME Scene instance (Phaser scenes are singletons
@@ -63,6 +45,8 @@ const RELAY_BEACON_POSITION = { x: 200, y: 1150 };
 // accumulate across restarts instead of starting clean.
 export class GameScene extends Phaser.Scene {
   private levelId!: string;
+  private levelWidth!: number;
+  private levelHeight!: number;
   private hazards: HazardZoneElement[] = [];
   private resupplyPoints: ResupplyPoint[] = [];
   private puzzleElements: PuzzleElementBase[] = [];
@@ -82,9 +66,13 @@ export class GameScene extends Phaser.Scene {
     this.resupplyPoints = [];
     this.puzzleElements = [];
 
-    this.physics.world.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
+    const config = getLevelConfig(this.levelId);
+    this.levelWidth = config.width;
+    this.levelHeight = config.height;
+
+    this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.createParallaxBackground();
-    placeBackgroundSetPieces(this, this.levelId, LEVEL_WIDTH, LEVEL_HEIGHT);
+    placeBackgroundSetPieces(this, this.levelId, this.levelWidth, this.levelHeight);
 
     this.add
       .text(8, 88, `levelId: ${this.levelId}\nClick to move`, { fontSize: '14px', color: '#ffffff' })
@@ -100,110 +88,63 @@ export class GameScene extends Phaser.Scene {
 
     const ship = getPlayerShip();
     if (ship) {
-      ship.image.setPosition(ENTRY_WORMHOLE_POSITION.x, ENTRY_WORMHOLE_POSITION.y);
+      ship.image.setPosition(config.entryWormholeLocation.x, config.entryWormholeLocation.y);
       ship.image.setCollideWorldBounds(true);
-      this.cameras.main.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
+      this.cameras.main.setBounds(0, 0, this.levelWidth, this.levelHeight);
       this.cameras.main.startFollow(ship.image, true, 0.1, 0.1);
     }
 
-    // Debris Field — static, movement-blocking obstacle, zero resource
-    // cost (re-scoped 2026-08-07, GDD §9/§11.3). activation/resourceCost
-    // are inert for a blocksMovement hazard but still required by the
-    // config type; left at 'continuous'/zero rather than made optional.
-    // Per-type shape/movement/cost tunables now live in hazardConfig.ts
-    // (CLAUDE.md's "hazard ... costs" config-module convention) — only
-    // this test-level's x/y placement stays here as level content.
-    this.placeHazard(1750, 950, hazardConfig.debrisField);
+    // Hazard placements (GDD §9/§11.3): x/y is this level's authored
+    // content; shape/movement/cost per hazard type stays in hazardConfig.ts
+    // (CLAUDE.md's "hazard ... costs" config-module convention).
+    config.hazards.forEach((placement) => {
+      this.placeHazard(placement.x, placement.y, hazardConfig[placement.type]);
+    });
 
-    // AsteroidField resupply point (structure repair only).
-    this.resupplyPoints.push(
-      new ResupplyPoint(this, { x: 650, y: 300, textureKey: 'asteroid_large', radius: 40 }),
-    );
+    // Resupply points (AsteroidField -- structure repair only).
+    config.resupplyPoints.forEach((placement) => {
+      this.resupplyPoints.push(new ResupplyPoint(this, placement));
+    });
 
-    // Remaining four open-world hazards (GDD §9/§11.3, Phase 2a Step 5) --
-    // one test-level instance each, against HazardZoneElement's existing
-    // parameterization (config only, no new code, per the collapse
-    // confirmed in §11.3). Textures are procedurally generated placeholders
-    // (placeHazard below, via hazardConfig's placeholderTexture field) --
-    // Ion Storm/Nebula Field/Solar Flare/Meteoroid have no sourced art yet
-    // (docs/STATUS.md), and none is required to validate the mechanic. Real
-    // per-hazard art and authored per-level placement are Phase 2b content
-    // work; these placements exist solely so the Phase 2a->2b gate can
-    // playtest all hazard types together in game space.
-    this.placeHazard(1000, 1000, hazardConfig.solarFlare);
-    this.placeHazard(1400, 400, hazardConfig.ionStorm);
-    this.placeHazard(2000, 700, hazardConfig.nebulaField);
-    this.placeHazard(300, 900, hazardConfig.meteoroid);
-
-    // All five puzzle-site elements (GDD §6/§11.3, Phase 2a Steps 2-3) --
-    // one test-level instance each, optional/additive per the core loop
-    // (§3), placed clear of the core-loop objects and hazards above. Each
-    // gets its own single-element PuzzleSite (GDD §11.3's grouping wrapper)
-    // so HudOverlay's puzzle-site indicator has something to query.
+    // Puzzle-site elements (GDD §6/§11.3) -- optional/additive per the core
+    // loop (§3); a level's config may leave this array empty (level-001).
+    // Each placement gets its own single-element PuzzleSite (GDD §11.3's
+    // grouping wrapper) so HudOverlay's puzzle-site indicator has something
+    // to query.
     const puzzleSiteMarkers: PuzzleSiteMarker[] = [];
 
-    const scanTarget = new ScanInteractElement(this, { x: 1200, y: 300 });
-    this.puzzleElements.push(scanTarget);
-    puzzleSiteMarkers.push({ x: 1200, y: 300, site: new PuzzleSite([scanTarget]) });
-
-    const signalArray = new SequenceSpotElement(this, {
-      points: [
-        { x: 900, y: 600 },
-        { x: 1000, y: 500 },
-        { x: 1100, y: 600 },
-      ],
+    config.puzzleElements.forEach((placement) => {
+      const element = createPuzzleElement(this, placement);
+      this.puzzleElements.push(element);
+      const markerPosition = puzzleSiteMarkerPosition(placement);
+      puzzleSiteMarkers.push({ ...markerPosition, site: new PuzzleSite([element]) });
     });
-    this.puzzleElements.push(signalArray);
-    puzzleSiteMarkers.push({ x: 1000, y: 550, site: new PuzzleSite([signalArray]) });
-
-    const beaconCluster = new TrailDrawElement(this, {
-      beaconPoints: [
-        { x: 1500, y: 1150 },
-        { x: 1650, y: 1250 },
-        { x: 1750, y: 1150 },
-      ],
-    });
-    this.puzzleElements.push(beaconCluster);
-    puzzleSiteMarkers.push({ x: 1633, y: 1183, site: new PuzzleSite([beaconCluster]) });
-
-    const comet = new MovingSpotDurationElement(this, {
-      path: [
-        { x: 300, y: 500 },
-        { x: 700, y: 700 },
-      ],
-    });
-    this.puzzleElements.push(comet);
-    puzzleSiteMarkers.push({ x: 500, y: 600, site: new PuzzleSite([comet]) });
-
-    const cargoPod = new PushPullObjectElement(this, { x: 1900, y: 500, targetX: 2100, targetY: 650 });
-    this.puzzleElements.push(cargoPod);
-    puzzleSiteMarkers.push({ x: 1900, y: 500, site: new PuzzleSite([cargoPod]) });
 
     // Core-loop objects (§11.11-11.14): find probe -> reach beacon -> reach
     // the exit wormhole. Spread across the level on purpose now that it's
     // bigger than the viewport — see GDD §9's off-screen-objective marker,
     // resolved via HudOverlay's edge-pinned arrow below.
     const tracker = new LevelObjectiveTracker({
-      probe: PROBE_POSITION,
-      relayBeacon: RELAY_BEACON_POSITION,
-      exitWormhole: EXIT_WORMHOLE_POSITION,
+      probe: config.probeLocation,
+      relayBeacon: config.relayBeaconLocation,
+      exitWormhole: config.exitWormholeLocation,
     });
 
-    new ProbeObject(this, { ...PROBE_POSITION, textureKey: 'probe', radius: 27 }, tracker);
+    new ProbeObject(this, { ...config.probeLocation, textureKey: 'probe', radius: 27 }, tracker);
 
     new RelayBeaconObject(
       this,
       // relay_beacon.png is 1124x656 (~1.71:1) -- displayWidth/Height match
       // that aspect ratio rather than forcing a square, per radius*2 elsewhere.
-      { ...RELAY_BEACON_POSITION, textureKey: 'relay_beacon', radius: 45, displayWidth: 154, displayHeight: 90 },
+      { ...config.relayBeaconLocation, textureKey: 'relay_beacon', radius: 45, displayWidth: 154, displayHeight: 90 },
       tracker,
     );
 
-    new EntryWormhole(this, { ...ENTRY_WORMHOLE_POSITION, textureKey: 'wormhole', radius: 40 });
+    new EntryWormhole(this, { ...config.entryWormholeLocation, textureKey: 'wormhole', radius: 40 });
 
     new ExitWormhole(
       this,
-      { ...EXIT_WORMHOLE_POSITION, textureKey: 'wormhole', radius: 40 },
+      { ...config.exitWormholeLocation, textureKey: 'wormhole', radius: 40 },
       tracker,
       () => this.handleLevelComplete(),
     );
@@ -235,9 +176,16 @@ export class GameScene extends Phaser.Scene {
   // Step 4): grants the next ability in ProgressionManager's fixed order
   // (2026-08-10 decision — auto-grant, no unlock-choice UI), then either
   // saves progress and advances to the next level, or transitions to
-  // WinScene once LEVEL_ORDER is exhausted (currently just one level, until
-  // Phase 2b adds more).
+  // WinScene once LEVEL_ORDER is exhausted. TEST_LEVEL_ID is outside
+  // LEVEL_ORDER entirely (2026-08-12) -- completing it returns straight to
+  // TitleScene with no ability grant and no save, since it's a sandbox, not
+  // part of the real playthrough.
   private handleLevelComplete(): void {
+    if (this.levelId === TEST_LEVEL_ID) {
+      this.scene.start('TitleScene');
+      return;
+    }
+
     getProgressionManager().grantNextAbility();
 
     const nextLevelId = LEVEL_ORDER[LEVEL_ORDER.indexOf(this.levelId) + 1];
@@ -273,10 +221,10 @@ export class GameScene extends Phaser.Scene {
   // decorative layer on top of this — a few random planet/galaxy set pieces,
   // purely visual, to break up the tiled starfield's monotony.
   private createParallaxBackground(): void {
-    const width = LEVEL_WIDTH * 1.5;
-    const height = LEVEL_HEIGHT * 1.5;
-    const centerX = LEVEL_WIDTH / 2;
-    const centerY = LEVEL_HEIGHT / 2;
+    const width = this.levelWidth * 1.5;
+    const height = this.levelHeight * 1.5;
+    const centerX = this.levelWidth / 2;
+    const centerY = this.levelHeight / 2;
 
     this.add.tileSprite(centerX, centerY, width, height, STARFIELD_FAR_KEY).setScrollFactor(0.15).setDepth(-100);
     // ADD blend: bg_stars_near.jpg is a fully opaque (non-transparent) JPG,
@@ -293,7 +241,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Places one HazardZoneElement instance from a hazardConfig.ts entry at
-  // this test-level's authored x/y (level content, stays here per GDD
+  // this level's authored x/y (level content, stays in src/levels/ per GDD
   // §11.7 -- only the hazard-type defaults live in the shared config
   // module). Generates the type's placeholder circle texture first if the
   // config carries one (Solar Flare/Ion Storm/Nebula Field/Meteoroid have

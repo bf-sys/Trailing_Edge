@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { LEVEL_ORDER } from '../config/levelOrder';
+import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
 import { hasSaveData, loadProgress } from '../objects/SaveManager';
 
 export const TITLE_SCENE_KEY = 'TitleScene';
@@ -40,5 +40,19 @@ export class TitleScene extends Phaser.Scene {
         this.scene.start('GameScene', { levelId: save?.levelId ?? LEVEL_ORDER[0] });
       });
     }
+
+    // Not part of LEVEL_ORDER progression -- no save read/write on either
+    // side of this trip (GameScene.handleLevelComplete() special-cases
+    // TEST_LEVEL_ID to return here directly). Exists for human playtesting
+    // and for running test passes against a level carrying every hazard and
+    // every puzzle element at once, per config/levelOrder.ts.
+    const testLevelText = this.add
+      .text(width / 2, height / 2 + 100, 'Test Level', { fontSize: '16px', color: '#7a8a99' })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    testLevelText.on('pointerdown', () => {
+      this.scene.start('GameScene', { levelId: TEST_LEVEL_ID });
+    });
   }
 }

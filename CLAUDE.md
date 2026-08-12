@@ -35,7 +35,7 @@ next level.
 Puzzle-site elements (§6) are optional/additive content encountered along
 the way, not a required step.
 
-## Current project state (as of 2026-08-11)
+## Current project state (as of 2026-08-12)
 
 **Phase 1's vertical slice is built and playtests end-to-end.** `src/`
 implements `ExplorationController`, `ShipSurvivalComponent`,
@@ -79,6 +79,24 @@ assuming a Phase 2b task is ready:**
   flagged in `docs/trailing_edge_art_asset_list.md` §1.5, not a Phase 2a
   gap to silently "finish."
 
+**Test level split from real progression (2026-08-12).** `level-000` — the
+single test level Phase 1/2a built, carrying one instance of every hazard
+and every puzzle-taxonomy element — is no longer `LEVEL_ORDER[0]`. It's
+exactly what makes it good for testing (compact, full mechanical surface in
+one place) and bad as a real first level a player starts on, so it's been
+pulled out of progression into `config/levelOrder.ts`'s `TEST_LEVEL_ID`,
+reachable only via a "Test Level" link on `TitleScene` (no save read/write
+on either side of that trip; `GameScene.handleLevelComplete()`
+special-cases it to return straight to `TitleScene` instead of granting an
+ability/advancing). `LEVEL_ORDER[0]` is now `level-001` — a fresh level
+(same hazard roster, zero puzzle-taxonomy content) meant both as the real
+first level and as the base for level-design iteration going forward. This
+is also the point where "one config file per level" (Tech stack, below)
+stopped being aspirational: both levels are real `LevelConfig` objects
+under `src/levels/`, and `GameScene.create()` now reads placements from
+`getLevelConfig(this.levelId)` instead of hardcoding them — check
+`src/levels/` before assuming a placement lives in `GameScene.ts`.
+
 Section 11 below is the contract for all of this — check `src/` before
 assuming something is or isn't implemented rather than trusting this
 file's age.
@@ -114,9 +132,13 @@ from the process/state docs above) live in `docs/reference/`:
   velocity-and-overlap hazard, not a true physics collision. If
   tractor/repulsor abilities feel wrong once prototyped, the agreed fallback
   is to cut/de-emphasize that ability — **not** to revisit the physics engine.
-- **Hand-authored TS/JSON level configs**, not Tiled. One config file per
-  level, by design — keeps the project 100% agent-touchable and keeps
-  content authoring low-collision for parallel agents.
+- **Hand-authored TS level configs**, not Tiled. One config file per level
+  under `src/levels/` (a `LevelConfig` object — see `src/levels/levelTypes.ts`),
+  by design — keeps the project 100% agent-touchable and keeps content
+  authoring low-collision for parallel agents. **Implemented 2026-08-12**
+  (previously aspirational — every placement lived inline in `GameScene.create()`
+  regardless of `levelId`); see "Test level split" under Current project
+  state below.
 - **Asset/gameplay-size decoupling.** Collision/interaction dimensions are
   always authored data, never derived from a sprite's native pixel size —
   sprites are scaled to fit via `setDisplaySize()`/`setScale()`, never the
@@ -176,10 +198,12 @@ imports; **nobody hand-edits `create()`.**
 - **`PuzzleElementBase`** (abstract) and subtypes — **built 2026-08-10
   (Phase 2a). Optional/additive content, not required to complete a level;
   none of these ship in Phase 1** (see Phase 1 content scope below); one
-  test-level instance of each currently exists in `GameScene`'s
-  `level-000`, grouped one-per-`PuzzleSite`, all using placeholder
-  procedural textures (no final art sourced yet, per `docs/STATUS.md`) —
-  authored Phase 2b level placement is still separate, unstarted work:
+  test-level instance of each currently exists in `src/levels/level-000.ts`
+  (the test level — see Current project state above; `level-001`'s config
+  has an empty `puzzleElements` array), grouped one-per-`PuzzleSite`, all
+  using placeholder procedural textures (no final art sourced yet, per
+  `docs/STATUS.md`) — authored Phase 2b level placement is still separate,
+  unstarted work:
   - `SequenceSpotElement` — Signal Array (renamed from "Relay Beacon" — see
     `RelayBeaconObject` above)
   - `ScanInteractElement` — Scan Target/Marker
@@ -244,7 +268,12 @@ imports; **nobody hand-edits `create()`.**
   (linear progression — no level-select; content agents append to this
   array, never hardcode a "next level" pointer). Per-level checkpoint-floor
   values are removed for the initial build (tied to the deferred
-  checkpoint system).
+  checkpoint system). **Implemented 2026-08-12** as real `LevelConfig`
+  objects under `src/levels/` (`getLevelConfig(levelId)`, `src/levels/index.ts`)
+  — `GameScene.create()` reads placements from this instead of hardcoding
+  them, via `HazardPlacement`/`ResupplyPlacement`/`PuzzleElementPlacement`
+  (the latter turned into a live instance via
+  `src/levels/puzzleElementFactory.ts`'s `createPuzzleElement()`).
 - **Scene flow** — `BootScene` → `TitleScene` (Start/Continue) →
   `GameScene` (parameterized by `levelId` only — always starts at the
   level's beginning, no mid-level resume) → `WinScene` when `levelOrder` is

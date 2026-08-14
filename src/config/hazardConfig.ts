@@ -19,6 +19,10 @@ import type { HazardActivation, HazardMovementPattern, HazardShape } from '../ob
 // places an instance -- belongs in this module.
 export interface HazardTypeConfig {
   textureKey: string;
+  // Player-facing name shown by scan's hazard-ID overlay (2026-08-14 ability
+  // rework, docs/ability-rework-brainstorm-2026-08-14.md) -- the fix for
+  // Ion Storm/Nebula Field being visually hard to tell apart at a glance.
+  displayName: string;
   shape: HazardShape;
   movementPattern: HazardMovementPattern;
   speed: number;
@@ -41,6 +45,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // resource drain -- naturally-occurring rock/ice debris, not a drain zone.
   debrisField: {
     textureKey: 'debris_large',
+    displayName: 'DEBRIS FIELD',
     shape: { kind: 'circle', radius: 60 },
     movementPattern: 'static',
     speed: 0,
@@ -59,6 +64,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // hazard" is equivalent to a bigger hazard-side number anyway.
   solarFlare: {
     textureKey: 'hazard_solar_flare',
+    displayName: 'SOLAR FLARE',
     shape: { kind: 'circle', radius: 70 },
     movementPattern: 'static',
     speed: 0,
@@ -72,6 +78,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // behavioral difference: a slow linear drift vs. fully static.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
+    displayName: 'ION STORM',
     shape: { kind: 'circle', radius: 90 },
     movementPattern: 'linear',
     speed: 15,
@@ -83,6 +90,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
 
   nebulaField: {
     textureKey: 'hazard_nebula_field',
+    displayName: 'NEBULA FIELD',
     shape: { kind: 'circle', radius: 100 },
     movementPattern: 'static',
     speed: 0,
@@ -96,6 +104,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // the structure-vs-energy asymmetry.
   meteoroid: {
     textureKey: 'hazard_meteoroid',
+    displayName: 'METEOROID',
     shape: { kind: 'circle', radius: 26 },
     movementPattern: 'linear',
     speed: 60,

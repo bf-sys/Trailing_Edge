@@ -16,12 +16,17 @@ export const ABILITY_EVENTS = {
 // correctly wiped by that same reconstruction -- no reason to persist them.
 export class AbilityComponent extends Phaser.Events.EventEmitter {
   private readonly cooldownReadyAtMs = new Map<AbilityType, number>();
+  private readonly activeUntilMs = new Map<AbilityType, number>();
 
   constructor(private readonly survival: ShipSurvivalComponent) {
     super();
   }
 
+  // tractorBeam is de-scoped from ProgressionManager entirely (2026-08-14
+  // ability rework) -- always unlocked, no grant trigger, no player-facing
+  // UI. Every other type still delegates to ProgressionManager as before.
   isUnlocked(type: AbilityType): boolean {
+    if (type === 'tractorBeam') return true;
     return getProgressionManager().isUnlocked(type);
   }
 
@@ -30,6 +35,14 @@ export class AbilityComponent extends Phaser.Events.EventEmitter {
   getCooldownRemainingMs(type: AbilityType, nowMs: number): number {
     const readyAt = this.cooldownReadyAtMs.get(type) ?? 0;
     return Math.max(0, readyAt - nowMs);
+  }
+
+  // Read-only query for whether type's durationSeconds window (scan's
+  // hazard-ID/objective-marker pulse) is currently open. Types with no
+  // durationSeconds configured are simply never active.
+  isActive(type: AbilityType, nowMs: number): boolean {
+    const activeUntil = this.activeUntilMs.get(type) ?? 0;
+    return nowMs < activeUntil;
   }
 
   // Dual gate (GDD §7/§11.4): unlock, then cooldown, then energy -- either
@@ -45,6 +58,7 @@ export class AbilityComponent extends Phaser.Events.EventEmitter {
     if (!this.survival.consumeEnergy(cost.energyCost, `ability:${type}`)) return this.fail(type, 'energy');
 
     this.cooldownReadyAtMs.set(type, nowMs + cost.cooldownSeconds * 1000);
+    if (cost.durationSeconds) this.activeUntilMs.set(type, nowMs + cost.durationSeconds * 1000);
     this.logDebug(type, 'activated');
     this.emit(ABILITY_EVENTS.Activated, type);
     return true;

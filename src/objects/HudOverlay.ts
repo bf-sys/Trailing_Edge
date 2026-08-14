@@ -1,13 +1,16 @@
 import Phaser from 'phaser';
 import { LevelObjectiveTracker } from './LevelObjectiveTracker';
 import { hudConfig } from '../config/hudConfig';
-import { abilityConfig, type AbilityType } from '../config/abilityConfig';
+import { abilityConfig, abilityUnlockOrder } from '../config/abilityConfig';
 import { getPlayerShip } from '../systems/ExplorationController';
 import type { PuzzleSite } from './PuzzleSite';
 
 const DEPTH = 2000;
 const OBJECTIVE_MARKER_KEY = 'objective_marker';
-const ABILITY_TYPES = Object.keys(abilityConfig) as AbilityType[];
+// tractorBeam is de-scoped from all player-facing ability UI (2026-08-14
+// ability rework) -- abilityUnlockOrder (now 3 entries) is the source of
+// truth for what appears here, not every key in abilityConfig.
+const ABILITY_TYPES = abilityUnlockOrder;
 
 export interface PuzzleSiteMarker {
   x: number;
@@ -47,6 +50,10 @@ export class HudOverlay {
   private readonly abilityIcons: Phaser.GameObjects.Graphics;
   private readonly puzzleSiteIndicator: Phaser.GameObjects.Text;
   private puzzleSites: PuzzleSiteMarker[] = [];
+  // 2026-08-14 ability rework: one-shot objective-marker flash window (see
+  // flashObjectiveMarker() below), timestamped in the same this.scene.time.now
+  // clock updateObjectiveMarker() reads every frame.
+  private markerFlashUntilMs = 0;
 
   constructor(scene: Phaser.Scene, tracker: LevelObjectiveTracker) {
     this.scene = scene;
@@ -91,6 +98,15 @@ export class HudOverlay {
   // indicator above.
   setPuzzleSites(sites: PuzzleSiteMarker[]): void {
     this.puzzleSites = sites;
+  }
+
+  // 2026-08-14 ability rework: opens a brief window where the objective
+  // marker shows regardless of scan state. GameScene calls this once at
+  // level start and on LevelObjectiveTracker's ProbeFound/BeaconReached
+  // events -- the moments the game changes what it's asking of the player,
+  // when they shouldn't be locked out of orientation by their energy state.
+  flashObjectiveMarker(): void {
+    this.markerFlashUntilMs = this.scene.time.now + hudConfig.objectiveMarkerFlashSeconds * 1000;
   }
 
   update(): void {
@@ -147,7 +163,24 @@ export class HudOverlay {
     this.puzzleSiteIndicator.setVisible(nearby);
   }
 
+  // 2026-08-14 ability rework: the marker is no longer unconditional --
+  // gated on scan's duration window OR the one-shot flash (see
+  // flashObjectiveMarker() above) on top of the pre-existing off-screen
+  // check below. Without either, the marker stays hidden even if the
+  // target is off-screen -- the whole point of the rework is that
+  // orientation is now something a player spends scan energy on, not a
+  // free constant readout (see docs/ability-rework-brainstorm-2026-08-14.md).
   private updateObjectiveMarker(): void {
+    const nowMs = this.scene.time.now;
+    const ship = getPlayerShip();
+    const scanActive = ship?.ability.isActive('scan', nowMs) ?? false;
+    const flashing = nowMs < this.markerFlashUntilMs;
+
+    if (!scanActive && !flashing) {
+      this.objectiveMarker.setVisible(false);
+      return;
+    }
+
     const camera = this.scene.cameras.main;
     const target = this.tracker.getCurrentObjectiveTarget();
     const screenX = target.x - camera.scrollX;

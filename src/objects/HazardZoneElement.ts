@@ -13,6 +13,10 @@ export interface HazardZoneConfig {
   x: number;
   y: number;
   textureKey: string;
+  // Player-facing name shown by scan's hazard-ID overlay (see
+  // HazardScanOverlay) -- carried through from hazardConfig.ts's
+  // per-type displayName, not authored per-placement.
+  displayName: string;
   shape: HazardShape;
   movementPattern: HazardMovementPattern;
   speed: number; // px/s; ignored when movementPattern is 'static'
@@ -58,6 +62,30 @@ export class HazardZoneElement {
       (this.zone.body as Phaser.Physics.Arcade.Body).setImmovable(true);
       if (ship) scene.physics.add.collider(this.zone, ship.image);
     }
+  }
+
+  // Read-only queries for HazardScanOverlay (2026-08-14 ability rework) --
+  // display-only consumers, same contract as every other getter added for a
+  // HUD/overlay class in this codebase (e.g. LevelObjectiveTracker's
+  // getCurrentObjectiveTarget()). No mutation surface exposed here.
+  getPosition(): { x: number; y: number } {
+    return { x: this.zone.x, y: this.zone.y };
+  }
+
+  getDisplayName(): string {
+    return this.config.displayName;
+  }
+
+  getShape(): HazardShape {
+    return this.config.shape;
+  }
+
+  getResourceCost(): { energy: number; structure: number } {
+    return this.config.resourceCost;
+  }
+
+  getBlocksMovement(): boolean {
+    return this.config.blocksMovement ?? false;
   }
 
   update(_time: number, delta: number): void {

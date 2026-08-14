@@ -8,6 +8,12 @@ export const hudConfig = {
   objectiveMarkerEdgeMargin: 32, // px inset from the viewport edge
   objectiveMarkerSize: 18, // px, arrow triangle size
   objectiveMarkerColor: 0xffcc33,
+  // 2026-08-14 ability rework: the marker is no longer always-on -- visible
+  // only while scan's duration window is active, plus this one-shot flash
+  // window (level start, probe found, beacon reached) so a player is never
+  // left with zero information right when the game changes what it's
+  // asking of them, regardless of energy state.
+  objectiveMarkerFlashSeconds: 2,
 
   // Ability icons (GDD §11.10, completed 2026-08-10/Phase 2a) -- one square
   // per AbilityType in abilityConfig, left-to-right in authored order,

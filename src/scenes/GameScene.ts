@@ -3,6 +3,8 @@ import { SystemRegistry } from '../systems/SystemRegistry';
 import '../systems'; // side-effect import: registers any systems that exist so far
 import { getPlayerShip } from '../systems/ExplorationController';
 import { HazardZoneElement } from '../objects/HazardZoneElement';
+import { HazardScanOverlay } from '../objects/HazardScanOverlay';
+import { TeleportRangeRing } from '../objects/TeleportRangeRing';
 import { ResupplyPoint } from '../objects/ResupplyPoint';
 import { SHIP_SURVIVAL_EVENTS } from '../objects/ShipSurvivalComponent';
 import { LevelObjectiveTracker, LEVEL_OBJECTIVE_EVENTS } from '../objects/LevelObjectiveTracker';
@@ -15,6 +17,7 @@ import { ShipStatusArcs } from '../objects/ShipStatusArcs';
 import { getProgressionManager } from '../systems/ProgressionManager';
 import { saveProgress } from '../objects/SaveManager';
 import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
+import { abilityUnlockOrder } from '../config/abilityConfig';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
@@ -24,6 +27,8 @@ import { PuzzleElementBase } from '../objects/PuzzleElementBase';
 import { PuzzleSite } from '../objects/PuzzleSite';
 import { getLevelConfig } from '../levels';
 import { createPuzzleElement, puzzleSiteMarkerPosition } from '../levels/puzzleElementFactory';
+import { ABILITY_UNLOCK_SCENE_KEY } from './AbilityUnlockScene';
+import type { AbilityType } from '../config/abilityConfig';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -52,6 +57,8 @@ export class GameScene extends Phaser.Scene {
   private puzzleElements: PuzzleElementBase[] = [];
   private hudOverlay!: HudOverlay;
   private shipStatusArcs!: ShipStatusArcs;
+  private hazardScanOverlay!: HazardScanOverlay;
+  private teleportRangeRing!: TeleportRangeRing;
 
   constructor() {
     super(GAME_SCENE_KEY);
@@ -69,6 +76,16 @@ export class GameScene extends Phaser.Scene {
     const config = getLevelConfig(this.levelId);
     this.levelWidth = config.width;
     this.levelHeight = config.height;
+
+    // Test Level is a sandbox outside LEVEL_ORDER (2026-08-12) with no save
+    // read/write on entry or exit -- force-granting every unlockable
+    // ability here (not via a save-driven grant) makes its full hazard/
+    // ability surface testable without first playing through real levels.
+    // grantNextAbility() no-ops once exhausted, so re-entering the Test
+    // Level within the same session is safe to call this again.
+    if (this.levelId === TEST_LEVEL_ID) {
+      abilityUnlockOrder.forEach(() => getProgressionManager().grantNextAbility());
+    }
 
     this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.createParallaxBackground();
@@ -151,7 +168,24 @@ export class GameScene extends Phaser.Scene {
 
     this.hudOverlay = new HudOverlay(this, tracker);
     this.hudOverlay.setPuzzleSites(puzzleSiteMarkers);
+    // 2026-08-14 ability rework: the objective marker is no longer
+    // always-on (see HudOverlay.flashObjectiveMarker()) -- flash once at
+    // level start, and again on each of these two moments the game changes
+    // what it's asking of the player, so a scan-less/energy-less player is
+    // never left with zero orientation info right when it matters most.
+    // Deferred one tick via delayedCall(0, ...): a freshly booted Scene's
+    // this.time.now reads 0 synchronously inside create() (its Clock
+    // hasn't ticked yet) and only jumps to the real elapsed time on the
+    // next frame -- calling flashObjectiveMarker() directly here would
+    // stamp its expiry against that stale 0 baseline instead of the real
+    // clock, making the flash expire almost instantly instead of lasting
+    // hudConfig.objectiveMarkerFlashSeconds.
+    this.time.delayedCall(0, () => this.hudOverlay.flashObjectiveMarker());
+    tracker.on(LEVEL_OBJECTIVE_EVENTS.ProbeFound, () => this.hudOverlay.flashObjectiveMarker());
+    tracker.on(LEVEL_OBJECTIVE_EVENTS.BeaconReached, () => this.hudOverlay.flashObjectiveMarker());
     this.shipStatusArcs = new ShipStatusArcs(this);
+    this.hazardScanOverlay = new HazardScanOverlay(this, this.hazards);
+    this.teleportRangeRing = new TeleportRangeRing(this);
     new DestinationMarker(this);
 
     this.wireHardFailRestart();
@@ -170,6 +204,8 @@ export class GameScene extends Phaser.Scene {
     this.puzzleElements.forEach((element) => element.update(time, delta));
     this.hudOverlay.update();
     this.shipStatusArcs.update();
+    this.hazardScanOverlay.update(time);
+    this.teleportRangeRing.update();
   }
 
   // Real levelOrder resolution + SaveManager (GDD §11.8/§11.9, Phase 2a
@@ -180,22 +216,44 @@ export class GameScene extends Phaser.Scene {
   // LEVEL_ORDER entirely (2026-08-12) -- completing it returns straight to
   // TitleScene with no ability grant and no save, since it's a sandbox, not
   // part of the real playthrough.
+  //
+  // 2026-08-14 ability rework ("Ability-unlock info popup"): the level
+  // transition below is no longer immediate whenever an ability is actually
+  // granted -- AbilityUnlockScene interposes a paused, explicit-close-only
+  // popup first, and its close button performs the (identical) transition
+  // via the performTransition closure. grantNextAbility() returns null
+  // once every entry in abilityUnlockOrder is already unlocked, in which
+  // case the transition still happens immediately, same as before this
+  // rework. tractorBeam is never in abilityUnlockOrder, so grantNextAbility()
+  // can never return it -- the cast below documents that rather than
+  // guarding against a case that can't happen.
   private handleLevelComplete(): void {
     if (this.levelId === TEST_LEVEL_ID) {
       this.scene.start('TitleScene');
       return;
     }
 
-    getProgressionManager().grantNextAbility();
-
     const nextLevelId = LEVEL_ORDER[LEVEL_ORDER.indexOf(this.levelId) + 1];
-    if (!nextLevelId) {
-      this.scene.start('WinScene');
+    const performTransition = () => {
+      if (!nextLevelId) {
+        this.scene.start('WinScene');
+        return;
+      }
+      saveProgress(nextLevelId);
+      this.scene.start('GameScene', { levelId: nextLevelId });
+    };
+
+    const grantedAbility = getProgressionManager().grantNextAbility();
+    if (!grantedAbility) {
+      performTransition();
       return;
     }
 
-    saveProgress(nextLevelId);
-    this.scene.start('GameScene', { levelId: nextLevelId });
+    this.scene.pause();
+    this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
+      abilityType: grantedAbility as Exclude<AbilityType, 'tractorBeam'>,
+      onClose: performTransition,
+    });
   }
 
   // Hard-fail flow (GDD §11.1/§5/§12 step 4): hitting zero structure resets

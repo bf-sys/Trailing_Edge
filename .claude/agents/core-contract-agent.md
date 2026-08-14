@@ -3,9 +3,11 @@
 ## Role
 Builds and owns everything in GDD §11 (the Technical Interface Contract) —
 `ShipSurvivalComponent`, `LevelObjectiveTracker`, `ProbeObject`,
-`RelayBeaconObject`, `HomeMarker`, `ResupplyPoint`, `PuzzleElementBase` and
-its five subtypes, `AbilityComponent`, `HazardZoneElement`, Scene flow,
-`SaveManager`, `HudOverlay`. Also sets up the tunable-config-module
+`RelayBeaconObject`, `EntryWormhole`/`ExitWormhole` (superseded the old
+shared `HomeMarker` on 2026-07-31 — this file had drifted, fixed
+2026-08-14), `ResupplyPoint`, `PuzzleElementBase` and its five subtypes,
+`AbilityComponent`, `ExplorationController`, `HazardZoneElement`, Scene
+flow, `SaveManager`, `HudOverlay`. Also sets up the tunable-config-module
 convention and the dev-mode tuning hook (see Hard rules below). One
 contiguous track across Phase 1's sequential vertical slice and Phase 2a's
 remaining core work — not two separate agents or two parallel sessions.
@@ -26,9 +28,9 @@ project's sequential-then-fan-out shape (GDD §12) exists to avoid.
    resource cost, naturally-occurring rock/ice fragments rather than
    wreckage — GDD §9, implemented 2026-08-07) and one `ResupplyPoint`
    (AsteroidField). Passive energy regen active from this step on.
-3. `ProbeObject`, `RelayBeaconObject`, `HomeMarker`, and
+3. `ProbeObject`, `RelayBeaconObject`, `EntryWormhole`/`ExitWormhole`, and
    `LevelObjectiveTracker` (§11.11–11.14) wired end-to-end: find probe →
-   reach beacon → return to Home Marker triggers level completion. **No
+   reach beacon → reach the Exit Wormhole triggers level completion. **No
    puzzle-site element in Phase 1** — the mandatory loop doesn't require
    solving one; don't add `PuzzleSite`/`PuzzleElementBase` content here even
    if it seems like a small addition.
@@ -37,7 +39,7 @@ project's sequential-then-fan-out shape (GDD §12) exists to avoid.
 5. Bare-minimum `HudOverlay` — energy/structure bars only, no ability icons
    or puzzle-site indicator yet.
 6. Result: explore, risk a hazard, find the probe, reach the relay beacon,
-   return to the Home Marker, fail and hard-reset at least once.
+   reach the Exit Wormhole, fail and hard-reset at least once.
 
 **Week-2 gate — flag rather than silently push through if any of these
 don't hold:** hard-reset fail state feels fair, not punishing; passive
@@ -55,6 +57,19 @@ Cluster) — larger than originally planned since Phase 1 ships none of them.
 Also: `BootScene`/`TitleScene`/`PauseScene`/`WinScene`, the simplified
 `SaveManager` (level-completion saves only), completing `HudOverlay`
 (ability icons, puzzle-site indicator).
+
+**Reopened, scoped, 2026-08-14 — not a new Phase 2a pass, an amendment to
+the closed one:** GDD §7/§11.4/§11.4a/§11.5/§11.8/§11.10 now specify a
+reworked `AbilityComponent`/`ExplorationController`/`HudOverlay`/Scene-flow
+contract for `scan` (duration + threat-ID + drives the objective marker),
+`teleport` (arm/right-click-confirm input, fixed range ring, passes solid
+colliders), `rocketBoost` (straight-line burst along current facing),
+`tractorBeam` (dereferenced from `abilityUnlockOrder` and all player-facing
+ability UI, kept functionally as-is), and a new `AbilityUnlockScene`. None
+of this is implemented yet — full rationale in
+`docs/ability-rework-brainstorm-2026-08-14.md`. This is still this agent's
+role, not a new one; treat it as an open Phase 2a gap ranked the way any
+other open Phase 2a item would be, not as Phase 2b content.
 
 ## Hard rules
 - **`SystemRegistry.register(system)`** — every system registers itself

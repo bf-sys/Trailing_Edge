@@ -57,7 +57,7 @@ This is structurally similar to an ARPG hub-and-return loop (town → dungeon �
 ## 4. Controls
 
 - Click-to-move, explicitly non-Newtonian (accessibility over flight-sim realism).
-- Abilities on number-key hotkeys.
+- Abilities on number-key hotkeys. **Exception (decided 2026-08-14, not yet implemented — §7):** `teleport`'s hotkey arms an aiming state rather than firing immediately; the right mouse button confirms the destination and fires. This is the only ability whose activation isn't a single keypress, since it's the only one needing a spatial target.
 - No control remapping in initial build (deferred — don't forget it needs revisiting before wider release/testing with other players).
 - Overall control feel: comparable to Diablo.
 
@@ -98,13 +98,101 @@ This is structurally similar to an ARPG hub-and-return loop (town → dungeon �
 
 Two progression tracks, intentionally serving different layers:
 
-**Ability unlocks (micro layer — new puzzle grammar):**
+**Ability unlocks (micro layer — new puzzle grammar, but see the
+2026-08-14 reframe below):**
 - Scan → object-interact puzzles
 - Tractor/repulsor beam → push/pull puzzles
 - Teleport → reach/bypass puzzles
 - Rocket boost → timing/reach puzzles
 
-**Summary — ability cost model:** Each ability has two independently-authored gates — an energy cost and a cooldown — either settable to 0 (pure-cooldown and pure-energy abilities are the special cases where one is 0). Which gates apply to which ability is decided per-ability during implementation; information/deduction abilities (e.g. scan) are good candidates for 0 energy cost + cooldown, capability-spending abilities (e.g. rocket boost) for energy cost + 0 cooldown (full rationale in Appendix, §7).
+**Reframe (decided 2026-08-14, not yet implemented — see
+`docs/ability-rework-brainstorm-2026-08-14.md` for the full brainstorm this
+distills):** the list above still holds for each ability's puzzle-grammar
+role, but three of the four abilities now also carry a job outside the
+micro/puzzle layer — this section's original "micro layer only" framing no
+longer fully describes them. Motivating problem: with `scan` doing nothing
+in-world, `tractorBeam` deliberately de-emphasized (per the tractor/repulsor
+exit ramp already on record in §11's Arcade-physics tradeoff), and
+`teleport`/`rocketBoost` reading as near-duplicate mobility assists, energy
+had no legible reason to matter — and hazards that drain energy lose their
+stakes along with it. Resolution below keeps the fix to as few abilities as
+possible rather than inventing new mechanics from scratch, per this
+project's class-timeline scoping discipline (§10).
+
+- **`scan`** — reworked into a duration-window pulse (a new authored
+  `durationSeconds` field, §11.7) serving three jobs at once: (1) its
+  original object-interact puzzle-grammar role, unchanged; (2) hazard
+  threat-identification — revealing/labeling a nearby hazard's type and
+  which resource it threatens, aimed directly at §9's still-open Ion
+  Storm/Nebula Field differentiation and structure-vs-energy legibility
+  items (see §9's note — **this is an additional player-initiated aid,
+  not a resolution of either open item**, which stay open for passive,
+  no-ability legibility); (3) driving the off-screen objective marker
+  (§11.10) — visible while `scan`'s window is active, plus two
+  energy-independent one-shot reveals (level start, and each
+  `LevelObjectiveTracker` target change) so a player is never left
+  without a bearing regardless of energy state. Stays first in the
+  unlock order — arguably a stronger first ability now than before the
+  rework, since it teaches hazard-reading and orientation before either
+  escape/routing tool.
+- **`teleport`** — reworked into the **Meso/Exploration** pillar's
+  ability: a short blink that passes through solid colliders, the one way
+  to bypass a `blocksMovement: true` hazard (Debris Field, §9) without
+  rerouting — a direct match for Debris Field's own 2026-08-07 re-scope
+  into "the first hazard tied to routing rather than only survival."
+  Fixed max range, flat energy cost — **not** distance-scaled, a
+  deliberate choice to keep it inside the existing all-or-nothing
+  per-ability cost gate (§11.4) rather than adding a one-off exception
+  to that model for marginal strategic depth. Input: hotkey arms an
+  aiming state (normal click-to-move suppressed while armed), a range
+  ring shows the max-distance limit, right mouse button confirms — if
+  aimed beyond the ring, the destination clamps to the ring's edge and
+  the confirm reticle is drawn at the clamped point, never the raw
+  cursor, so the player always sees exactly where they'll land before
+  committing (§11.4a).
+- **`rocketBoost`** — reworked into the **Macro/Survival** pillar's
+  ability: a rapid straight-line burst along the ship's current facing,
+  overriding click-to-move steering for the burst's duration and then
+  resuming toward whatever destination is current when it ends. A
+  reactive/panic-button tool — outrun a timed energy-hazard pulse, or
+  close distance to a resupply point before structure runs out — not a
+  routing tool. Unlike `teleport`, it does **not** pass through solid
+  colliders: boosting into a `blocksMovement: true` hazard just gets
+  stopped by the existing collider, energy already spent, no refund.
+  That asymmetry is deliberate, not an oversight — it's what makes the
+  Meso/Macro split between these two abilities mechanically true, not
+  just thematic (§11.4a).
+- **`tractorBeam`** — mechanically unchanged (push/pull, gates Cargo
+  Pod/Wreckage, §11.3) and **not** removed, but dereferenced from
+  player-facing ability UI entirely: pulled out of the auto-unlock
+  sequence below, not shown in the ability-icon HUD (§11.10), no unlock
+  popup. Effectively always-available from the start with no ceremony,
+  consistent with its already-decided status as the intentionally-minor
+  support ability (per the tractor/repulsor cut/de-emphasize fallback
+  already on record in §11).
+
+**Fixed auto-unlock order (superseding the prior four-entry sequence):**
+`scan → teleport → rocketBoost` — three entries, not four. Each grant is
+accompanied by a paused, no-time-pressure info popup describing the new
+ability, dismissed only by an explicit close/exit button (§11.8's new
+`AbilityUnlockScene`) — not shown for `tractorBeam`, which was never
+added to this sequence in the first place.
+
+**Ability-unlock info popup (decided 2026-08-14, not yet implemented):**
+see §11.8 for the Scene-flow mechanics. Content (what each popup actually
+says) is not authored as part of this GDD pass.
+
+**Summary — ability cost model:** Each ability has up to three
+independently-authored gates — an energy cost, a cooldown, and (added
+2026-08-14 for `scan`) a duration — any of which may be settable to 0/omitted
+where irrelevant (pure-cooldown and pure-energy abilities remain the
+special cases where one of the original two is 0). Which gates apply to
+which ability is decided per-ability during implementation;
+information/deduction abilities (e.g. scan) are good candidates for 0
+energy cost + cooldown + duration, capability-spending abilities (e.g.
+rocket boost) for energy cost + 0 cooldown, and `teleport` for a flat
+energy cost + cooldown with a fixed (not cost-scaled) range (full
+rationale in Appendix, §7).
 
 **Endurance upgrades (macro layer — survival buffer) — DEFERRED for the initial build:**
 - Energy efficiency / recharge speed
@@ -129,13 +217,13 @@ Discrete levels (level-select style), chosen for implementation/iteration simpli
 
 **Still open:**
 
-1. Ion Storm vs. Nebula Field art differentiation — the phenomenon-to-taxonomy mapping (formerly this item; resolved via reference table, see Appendix) settled Ion Storm and Nebula Field as the same visual family (drifting cloud) with motion as the *only* behavioral difference: Ion Storm is a slow-moving hazard area, Nebula Field is static. Current assumption is that color plus simple animation is sufficient to tell them apart at a glance. Worth treating as genuinely open rather than settled: color alone is a weak signal for colorblind players, and "slow-moving" is the kind of difference that's easy to under-read in a still image or a quick glance mid-flight — the actual test is whether a player can tell, in motion, at normal play speed, that one is drifting before they're already in its path, since misreading Ion Storm as static would violate §5's telegraphing rule the same way the original name-collision would have. Recommend validating with an actual placeholder asset during the week 1–2 vertical slice (§12, archived Unreal plan's sequencing logic still applies) rather than deciding this on paper — if color + animation doesn't read clearly, the fallback options (distinct particle trail, a border/outline treatment, or accepting a name change back to two visually distinct phenomena) are worth having in reserve rather than discovering the need for them after several levels already use both. **Production approach decided 2026-08-08, differentiation itself still open:** `docs/reference/art-production-guidelines.md`'s new "Nebula Field / Ion Storm cloud art" section scopes one shared asset-production pass for both hazards — 2-3 distinct soft-cloud silhouette textures (not a Debris-Field-style discrete-fragment cluster, since a nebula is diffuse gas rather than countable objects), each stretched via `setDisplaySize()` rather than composed from smaller pieces. The fallback options above (particle trail, border/outline) would most likely layer onto this shared texture set per-hazard rather than require separate base art, but that's still to validate with a real placeholder, not decided here — this paragraph is about how the art gets *produced*, not a resolution of whether motion alone reads clearly.
+1. Ion Storm vs. Nebula Field art differentiation — the phenomenon-to-taxonomy mapping (formerly this item; resolved via reference table, see Appendix) settled Ion Storm and Nebula Field as the same visual family (drifting cloud) with motion as the *only* behavioral difference: Ion Storm is a slow-moving hazard area, Nebula Field is static. Current assumption is that color plus simple animation is sufficient to tell them apart at a glance. Worth treating as genuinely open rather than settled: color alone is a weak signal for colorblind players, and "slow-moving" is the kind of difference that's easy to under-read in a still image or a quick glance mid-flight — the actual test is whether a player can tell, in motion, at normal play speed, that one is drifting before they're already in its path, since misreading Ion Storm as static would violate §5's telegraphing rule the same way the original name-collision would have. Recommend validating with an actual placeholder asset during the week 1–2 vertical slice (§12, archived Unreal plan's sequencing logic still applies) rather than deciding this on paper — if color + animation doesn't read clearly, the fallback options (distinct particle trail, a border/outline treatment, or accepting a name change back to two visually distinct phenomena) are worth having in reserve rather than discovering the need for them after several levels already use both. **Production approach decided 2026-08-08, differentiation itself still open:** `docs/reference/art-production-guidelines.md`'s new "Nebula Field / Ion Storm cloud art" section scopes one shared asset-production pass for both hazards — 2-3 distinct soft-cloud silhouette textures (not a Debris-Field-style discrete-fragment cluster, since a nebula is diffuse gas rather than countable objects), each stretched via `setDisplaySize()` rather than composed from smaller pieces. The fallback options above (particle trail, border/outline) would most likely layer onto this shared texture set per-hazard rather than require separate base art, but that's still to validate with a real placeholder, not decided here — this paragraph is about how the art gets *produced*, not a resolution of whether motion alone reads clearly. **Related mitigation, not a resolution (decided 2026-08-14):** the reworked `scan` ability (§7) will let a player actively reveal a hazard's type on demand. That's a player-initiated aid layered on top of this question, not an answer to it — this item stays open for passive, no-ability legibility (a player with `scan` on cooldown, or who hasn't unlocked it yet on an early level, still needs to tell these apart at a glance).
 
-2. Structure-vs-energy stakes legibility — since only structure can end a level (energy is a non-fail, ability-gating resource, §5), structure-draining hazards carry real fail stakes while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't. **Narrower as of 2026-08-07:** Meteoroid is now the *only* structure-draining open-world hazard — Debris Field moved to a movement-blocking obstacle with no resource drain at all (see Resolved item 2 below), so this is no longer a two-hazard vs. three-hazard split but a one-vs-three split, making the visual-legibility question sharper, not milder. Whether the current visual language communicates that difference (not just each hazard's individual identity) is untested — worth checking during the week 1–2 vertical slice and again once more hazard types exist in Phase 2b.
+2. Structure-vs-energy stakes legibility — since only structure can end a level (energy is a non-fail, ability-gating resource, §5), structure-draining hazards carry real fail stakes while energy-draining hazards (Solar Flare, Ion Storm, Nebula Field) don't. **Narrower as of 2026-08-07:** Meteoroid is now the *only* structure-draining open-world hazard — Debris Field moved to a movement-blocking obstacle with no resource drain at all (see Resolved item 2 below), so this is no longer a two-hazard vs. three-hazard split but a one-vs-three split, making the visual-legibility question sharper, not milder. Whether the current visual language communicates that difference (not just each hazard's individual identity) is untested — worth checking during the week 1–2 vertical slice and again once more hazard types exist in Phase 2b. **Related mitigation, not a resolution (decided 2026-08-14):** same caveat as item 1 above — the reworked `scan` ability (§7) can tell a player which resource a hazard threatens on demand, but that doesn't substitute for the passive visual language this item asks about; keep this open for the no-ability case.
 
 **Resolved:**
 
-1. Off-screen objective visibility (2026-07-31) — resolved as a single edge-pinned directional arrow (Sinistar-style), not a minimap. Since `LevelObjectiveTracker` already sequences the loop strictly linearly (Probe → Relay Beacon → Exit Wormhole, §11.11–11.14), there's only ever one "current" objective to point at — no need to juggle multiple simultaneous markers, which was the main complexity a minimap would have had to solve. Implemented in `HudOverlay` (§11.10): `LevelObjectiveTracker.getCurrentObjectiveTarget()` exposes the current target's world position (keeping the "which stage are we at" decision with the class that already owns that state), and `HudOverlay` clamps it to the viewport edge when off-screen, display-only per its existing contract. Revisit if a future level introduces multiple simultaneous objectives/hazards that need tracking at once — a minimap may become warranted then, per the original open item's reasoning.
+1. Off-screen objective visibility (2026-07-31) — resolved as a single edge-pinned directional arrow (Sinistar-style), not a minimap. Since `LevelObjectiveTracker` already sequences the loop strictly linearly (Probe → Relay Beacon → Exit Wormhole, §11.11–11.14), there's only ever one "current" objective to point at — no need to juggle multiple simultaneous markers, which was the main complexity a minimap would have had to solve. Implemented in `HudOverlay` (§11.10): `LevelObjectiveTracker.getCurrentObjectiveTarget()` exposes the current target's world position (keeping the "which stage are we at" decision with the class that already owns that state), and `HudOverlay` clamps it to the viewport edge when off-screen, display-only per its existing contract. Revisit if a future level introduces multiple simultaneous objectives/hazards that need tracking at once — a minimap may become warranted then, per the original open item's reasoning. **Amended 2026-08-14, not yet implemented:** the marker is no longer unconditionally visible — it's tied to the reworked `scan` ability instead (§7, §11.10). The always-on behavior above is superseded, not the underlying "one current objective, edge-pinned arrow, no minimap" design — see §11.10 for the current contract.
 
 2. Debris Field re-scoped to a movement-blocking obstacle, not a resource drain (2026-08-07) — two separate problems prompted this. Mechanically: Debris Field (static/structure) and Nebula Field (static/energy) read as too similar in *feel* despite draining different resources — both are "sit in a zone, take passive drain, avoidance is the only counterplay" — echoing the same too-similar-static-hazards concern already flagged for Ion Storm/Nebula Field above. Narratively: Debris Field's original fiction (ship wreckage) doesn't fit a setting that never establishes prior space-faring civilizations litter-able with wrecks. Resolved: Debris Field **keeps its name** (an "Asteroid Field" rename was considered and rejected — it would collide with the already-established `AsteroidField` resupply object, §11.6, two objects with the same name doing opposite things) but its fiction changes to naturally-occurring rock/ice debris, and its mechanic changes to a solid, movement-blocking collision — no resource drain at all — rather than an overlap-and-drain zone. This makes it the first hazard to affect the Meso/Exploration pillar (routing) rather than only the Macro/Survival pillar (§2). Visual differentiation from AsteroidField (many small loose fragments vs. one large ore-rich rock) is locked in — see `docs/reference/art-production-guidelines.md`. **Implemented in code (2026-08-07).** `HazardZoneElement` (§11.3) now takes a `blocksMovement` param: an immovable Arcade body plus `physics.add.collider()` in place of the overlap-and-drain listener, with no resource-cost call at all. Phase 1's vertical slice (§12 step 2) now configures Debris Field with `blocksMovement: true` and zero resource cost, matching this resolution.
 
@@ -194,13 +282,21 @@ For the initial build, a hard fail (`ShipSurvivalComponent.onStructureDepleted`)
 ### 11.4 `AbilityComponent` (composed onto the player Ship object)
 *Tracks which special abilities you've unlocked, and whether you're currently allowed to use them.*
 - **State:** `unlockedAbilities: Set<AbilityType>`.
-- **Functions:** `isUnlocked(type): boolean`, `tryActivate(type): boolean` — checks cooldown (if authored `cooldownSeconds` > 0) and energy cost (if authored `energyCost` > 0) via `ShipSurvivalComponent.consumeEnergy`; either gate no-ops at 0, per §7's dual-gate model.
+- **Functions:** `isUnlocked(type): boolean`, `tryActivate(type): boolean` — checks cooldown (if authored `cooldownSeconds` > 0), duration (if authored `durationSeconds` > 0, added 2026-08-14 for `scan` — not yet implemented), and energy cost (if authored `energyCost` > 0) via `ShipSurvivalComponent.consumeEnergy`; any gate no-ops when its field is 0, per §7's dual/triple-gate model. Cost stays a single flat, authored number per ability type (§11.7) — deliberately not computed per-activation (e.g. not scaled to a clicked `teleport` distance), so this stays all-or-nothing with no partial-spend exception.
 - Cooldowns via Phaser's `Time.addEvent` or a timestamp comparison against `scene.time.now` — don't build a second timer system.
+- **`tractorBeam` exception (decided 2026-08-14, not yet implemented):** `isUnlocked('tractorBeam')` returns `true` unconditionally rather than consulting `ProgressionManager` — it's deliberately excluded from the unlock sequence below (§7), not merely reordered within it. Any per-ability display logic (ability icons, §11.10; the unlock popup, §11.8) must iterate `abilityUnlockOrder` (three entries) rather than every key of the ability-cost config, or `tractorBeam` will surface in player-facing UI it's meant to be dereferenced from.
+
+### 11.4a `ExplorationController` — ability-driven movement effects (added 2026-08-14, not yet implemented)
+*What `teleport` and `rocketBoost` actually do to the ship, once `AbilityComponent.tryActivate()` succeeds — as opposed to the gate/cost model §11.4 owns.* Both are effects on `ExplorationController` (§4, §12 Phase 1 step 1), the click-to-move system, not new classes of their own.
+
+- **`rocketBoost`:** on activation, captures the ship's current heading from `ship.rotation` (already kept continuously in sync with velocity direction while moving, and simply retained while stopped — no new heading-tracking needed) and drives velocity directly along it for `durationSeconds`, overriding the normal click-to-move target-seeking calculation. Clicks/drags during the boost window keep updating the click-to-move target in the background exactly as they do outside a boost — nothing needs to suppress input — so movement resumes toward the current target the instant the boost ends, with no dead input period. **Implementation note:** the ship's Arcade body has a `setMaxVelocity()` cap set once at construction (§11's asset/gameplay-size-decoupling sibling concern — a tunable, not this section's subject, but worth flagging here since it's easy to miss): a boost speed above the ship's normal max speed will be silently clamped back down unless that cap is explicitly raised for the boost window and restored after. Boosting into a `blocksMovement: true` hazard is simply stopped by the hazard's existing solid collider, same as ordinary movement — energy already spent, no refund; this is deliberate (§7), not a bug to fix later.
+- **`teleport`:** on hotkey press, enters an aiming state that suppresses normal click-to-move input; a range ring (radius = the ability's fixed max distance, §7) renders centered on the ship, procedurally drawn the same way as `ShipStatusArcs`/the objective-marker texture (§11.10a, §11.10) rather than a new sprite asset. The right mouse button confirms: if the cursor is within the ring, the ship blinks directly there; if beyond it, the destination clamps to the ring's edge along that direction and the confirm reticle is drawn at the clamped point, not the raw cursor position, so the player always sees exactly where they'll land before committing. Passes through solid colliders — the one ability that can cross a `blocksMovement: true` hazard (§7, §9's Debris Field entry).
 
 ### 11.5 `ProgressionManager`
 *Keeps track of which abilities you've earned across the whole game.*
 - Owns `unlockedAbilities`. Endurance multipliers deferred for the initial build (§7) — interface reserves the hooks without implementing them.
 - **Hard rule:** never modifies fixed per-hazard costs, fixed per-puzzle costs, or the level-authored checkpoint floor (§5, §7).
+- **`abilityUnlockOrder` is now three entries, not four** (decided 2026-08-14, not yet implemented): `scan → teleport → rocketBoost`. `tractorBeam` is never granted through this sequence — see §11.4's exception above.
 
 ### 11.6 `ResupplyPoint` (AsteroidField)
 *The asteroids you visit to repair structure.* No longer covers energy — energy regenerates passively (§5, §11.1); the Star variant is retired as a resupply object (see `EntryWormhole`/`ExitWormhole`, §11.14).
@@ -210,7 +306,7 @@ For the initial build, a hard fail (`ShipSurvivalComponent.onStructureDepleted`)
 *The numbers and settings a level designer sets by hand — hazard costs, ability costs, per-level object placement, and what order the levels play in.*
 - Per-hazard `CostData { energyCost, structureCost }` plus the `HazardZoneElement` parameters above — authored as typed TS/JSON level-config objects (one file per level, preserving low agent-collision), not via an external editor.
 - Per-level checkpoint-floor values (`levelFloorEnergy`/`levelFloorStructure`) are **removed for the initial build** — tied to the now-deferred checkpoint system (§11.2); revisit if/when checkpoints return.
-- Per-ability `AbilityCostData { energyCost, cooldownSeconds }` — either field may be 0.
+- Per-ability `AbilityCostData { energyCost, cooldownSeconds }` — either field may be 0. **Extended 2026-08-14, not yet implemented:** adds an optional `durationSeconds` field, a sibling to the two above and following the same "may be 0/omitted where irrelevant" pattern — authored for `scan` (§7), unused by the other three abilities. `teleport`'s fixed max range (§7, §11.4a) is a separate authored field on the same record, not derived from `energyCost` — the two are deliberately not linked by a cost-to-distance formula (§7).
 - Per-level object placement: `probeLocation`, `relayBeaconLocation`, `entryWormholeLocation`, `exitWormholeLocation` (§11.12–11.14) — required in every level config, unlike the optional puzzle-site/hazard placements.
 - Level sequence: an ordered array of level-config identifiers (`levelOrder: string[]`), owned by whichever module resolves "next level" on completion (11.8). Linear progression (§8: no level-select) means this ordering is the only place "what comes next" is decided — content agents adding a level append to this array, they don't hardcode a "next level" pointer inside the level they're authoring.
 - Tunable gameplay parameters (ship movement, energy regen rate, structure repair rate) — see §11's "Tunable parameters" convention above; these live in per-subsystem config modules, not per-level config, since they're global defaults rather than per-level content.
@@ -219,10 +315,11 @@ For the initial build, a hard fail (`ShipSurvivalComponent.onStructureDepleted`)
 
 *The screens the player actually moves through — title, playing a level, pausing, and the win screen at the end — and how they connect.*
 
-Four Scenes, no level-select — progression is linear, the next level loads automatically on completion:
+Five Scenes as of 2026-08-14 (not yet implemented — four until the new one below lands), no level-select — progression is linear, the next level loads automatically on completion:
 - **`BootScene`** — loads assets/asset-pack manifests, then starts `TitleScene`.
 - **`TitleScene`** — "Start" and "Continue" buttons. `Continue` is only shown/enabled if `SaveManager.hasSaveData()` (11.9) returns true. `Start` always begins at `levelOrder[0]` with default (full) resources, and **overwrites** any existing save the first time progress is made (not on button press — see 11.9's hard rule) so an old save can't linger and desync from a fresh run.
-- **`GameScene`** — parameterized by which level config to load (`levelId`) only; always starts at that level's beginning (Entry Wormhole, full resources) — no mid-level resume for the initial build, since `CheckpointManager` is deferred (§11.2). A hard fail (`onStructureDepleted`) restarts the current `GameScene` the same way. On completing the level's find-probe → find-beacon → return sequence (§11.11 `LevelObjectiveTracker`), resolves the next `levelId` from `levelOrder` (11.7) and either restarts `GameScene` with the next level, or — if `levelOrder` is exhausted — transitions to `WinScene`.
+- **`GameScene`** — parameterized by which level config to load (`levelId`) only; always starts at that level's beginning (Entry Wormhole, full resources) — no mid-level resume for the initial build, since `CheckpointManager` is deferred (§11.2). A hard fail (`onStructureDepleted`) restarts the current `GameScene` the same way. On completing the level's find-probe → find-beacon → return sequence (§11.11 `LevelObjectiveTracker`), grants the next ability in `abilityUnlockOrder` if any remain (§7, §11.5); if one was granted, launches `AbilityUnlockScene` below instead of transitioning immediately. Either way, the eventual transition resolves the next `levelId` from `levelOrder` (11.7) and either restarts `GameScene` with the next level, or — if `levelOrder` is exhausted — transitions to `WinScene`.
+- **`AbilityUnlockScene`** (added 2026-08-14, not yet implemented) — launched as a stacked overlay on the just-completed `GameScene`, same `scene.launch()` convention as `PauseScene` below rather than a new mechanism, showing what the just-granted ability does. Paused, no-time-pressure by design — dismissed only by an explicit close/exit button, never a timer or click-anywhere. Its close button performs the level transition `GameScene` deferred above; that transition target (next `levelId`, or `WinScene` if this was the last level) is passed through as scene-launch data, the same pattern `GameScene` already uses for `levelId`, so the correct destination fires regardless of which one applies. Never launched for `tractorBeam` (§7, §11.4) — it isn't part of `abilityUnlockOrder`.
 - **`WinScene`** — reached when `levelOrder` is exhausted. No decided content beyond "the game is won" at this point (a message, maybe a return-to-title option) — fine to keep minimal, since nothing else in the contract depends on what it shows, only on the fact that something distinct from looping back into `GameScene` exists for this case.
 - **`PauseScene`** — launched as an overlay on top of a paused `GameScene` (Phaser's scene-stacking, not a scene swap, so `GameScene`'s state isn't torn down). One option: return to `TitleScene`. This is a hard cut, not a save point — whatever progress exists is only as current as the last level-completion save (11.9, no mid-level checkpoint exists to fall back on for this scope, §11.2); there's no separate "save on pause" behavior, so pausing and returning to title never loses more than a hard-fail reset already would.
 
@@ -239,9 +336,9 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 *The on-screen display during play — ability icons and a signal that a puzzle site is active, plus the off-screen objective marker (§9). Energy/structure bars moved out to §11.10a `ShipStatusArcs` on 2026-08-10 — this class no longer owns them.*
 
-- Ability icons reflect `AbilityComponent.isUnlocked()`/cooldown state (11.4) — read-only from the HUD's side; it queries, it doesn't gate.
+- Ability icons reflect `AbilityComponent.isUnlocked()`/cooldown state (11.4) — read-only from the HUD's side; it queries, it doesn't gate. **Source list changed 2026-08-14, not yet implemented:** iterates `abilityUnlockOrder` (three entries, §11.5) rather than every key of the ability-cost config, so `tractorBeam` — dereferenced from player-facing ability UI (§7, §11.4) — never appears here.
 - A minimal "puzzle site active" indicator (even just a highlight or icon) so §5's telegraphing has an in-the-moment on-screen signal, not just a design-doc guarantee — relevant once Phase 2a's puzzle-site elements exist; nothing to show in Phase 1.
-- Off-screen objective marker: a single edge-pinned directional arrow, sourced from `LevelObjectiveTracker.getCurrentObjectiveTarget()` (§9's "Off-screen objective visibility," resolved 2026-07-31).
+- Off-screen objective marker: a single edge-pinned directional arrow, sourced from `LevelObjectiveTracker.getCurrentObjectiveTarget()` (§9's "Off-screen objective visibility," resolved 2026-07-31). **Amended 2026-08-14, not yet implemented:** no longer unconditionally visible. Shown only while `scan`'s duration window is active (§7), plus two energy-independent one-shot reveals — level start, and each `LevelObjectiveTracker` target change (probe found, beacon reached) — so a player is never left without a bearing at a moment the game just changed what it's asking of them, regardless of energy state. Rationale for why this doesn't reopen the disorientation problem the always-on version solved: objective locations are static within a phase, and the marker stays live for the full scan duration while the ship moves, so the player gets bearing-rate-of-change for free (motion parallax) — meaningfully more information than a single frozen reading — and can re-scan at will to refresh orientation after maneuvering.
 - Not Scene-specific: instantiated once per `GameScene` session, torn down on Scene transition, not persisted across levels (there's nothing in it that needs to persist — `SaveManager` already owns everything that does).
 
 ### 11.10a `ShipStatusArcs` (added 2026-08-10)
@@ -300,6 +397,23 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 *Phase 2a (early week 3, still sequential-ish, still core work):* close out **all five** of §6's puzzle element types — `SequenceSpotElement` (Signal Array), `ScanInteractElement` (Scan Target), `MovingSpotDurationElement` (Comet), `PushPullObjectElement` (Cargo Pod), `TrailDrawElement` (Beacon Cluster). Phase 1 shipped none of these (§12 above), so this list is larger than originally planned — these are new classes, not content, and belong on the core track regardless. If the `HazardZoneElement` parameterization from §11.3 holds, no new hazard *classes* are needed here — Solar Flare, Ion Storm, Nebula Field, and Meteoroid become content-only work once their shared class exists, which is the main thing this split buys you. Also on this track, because it's system work rather than content: `BootScene`/`TitleScene`/`PauseScene`/`WinScene` (§11.8), the now-simplified `SaveManager` (§11.9, level-completion saves only), and completing the `HudOverlay` (ability icons, puzzle-site indicator). None of this blocks Phase 1's slice from being playable, which is why it's here rather than in Phase 1 — but it does need to close before Phase 2b, since Continue/save behavior and Scene transitions are exactly the kind of shared-file risk the core-vs-content split exists to keep out of the parallel track.
 
+**Ability rework amendment (decided 2026-08-14, not yet implemented — full
+rationale in `docs/ability-rework-brainstorm-2026-08-14.md`).** The
+`AbilityComponent`/`ExplorationController`/`HudOverlay`/Scene-flow changes
+in §7, §11.4, §11.4a, §11.5, §11.8, and §11.10 above reopen a slice of
+Phase 2a's core work after it was already marked closed (2026-08-10/11).
+This is **not** a full Phase 2a reopening — it's scoped specifically to
+the ability-mechanics surface (scan/teleport/rocketBoost effects,
+`tractorBeam` dereferencing, the ability-icon source list, the objective
+marker's visibility rule, and the new `AbilityUnlockScene`) and doesn't
+touch the five `PuzzleElementBase` subtypes, `SaveManager`, or
+`BootScene`/`TitleScene`/`PauseScene`/`WinScene` beyond the one new Scene
+noted above. Flagging this explicitly rather than letting "Phase 2a is
+closed" read as still fully true: until this amendment is implemented,
+Core-Contract Agent (§12.1) has open work here, and any session (agent or
+otherwise) prioritizing what to build next should treat it as an open
+Phase 2a gap, not Phase 2b content.
+
 *Phase 2b (bulk of weeks 3–5, genuinely parallel):* content production against the now-closed contract — levels, hazard placements (config only, per 2a), per-level `probeLocation`/`relayBeaconLocation`/`entryWormholeLocation`/`exitWormholeLocation` placement (§11.7 — required in every level, unlike the rest of this list), and optional puzzle-site instances, one hand-authored TS/JSON config file per level. Content agents don't touch core files; the boundary is enforceable by what directory/context you hand them, not just convention. This is also where §6's "additive, not all-or-nothing" scope note becomes your lever if week 4 gets tight: fewer levels, or drop the execution/timing taxonomy rows first (§6 already frames those as minority seasoning) — cut content, not anything from Phase 1 or 2a, and not the required probe/beacon/wormhole-pair placements.
 
 **Phase 3 — Final integration (last 2–3 days of week 5, carved out of Phase 2b's time, not additional time).** Every gate up to this point checks a component in isolation — one hazard, one puzzle type, one Scene transition. Nothing checks the assembled game, and content agents working in parallel per level don't automatically produce a coherent whole once strung together. This phase is scoped narrowly on purpose — no new content, no new systems — and closes out:
@@ -313,15 +427,15 @@ Four Scenes, no level-select — progression is linear, the next level loads aut
 
 Every agent role in the plan, named in one place — build roles first (the sequential core track, then parallel content), then the supporting roles that fill gaps a pure build plan doesn't cover.
 
-**Core-Contract Agent (Phase 1 & Phase 2a).** Builds and owns everything in §11 — `ShipSurvivalComponent`, `LevelObjectiveTracker`, `ProbeObject`, `RelayBeaconObject`, `EntryWormhole`/`ExitWormhole`/`ResupplyPoint`, `PuzzleElementBase` and its subtypes (all five now land in Phase 2a, §12 above), `AbilityComponent`, `HazardZoneElement`, Scene flow, `SaveManager`, `HudOverlay`. `CheckpointManager` is explicitly out of scope — deferred, §11.2. Also owns setting up the per-subsystem tunable-config-module convention and the dev-mode `window`-exposed tuning hook (§11) from the start of Phase 1, since most of Phase 1 is feel-tuning (ship movement, energy regen). One contiguous track across Phase 1's sequential vertical slice and Phase 2a's remaining core work, not two separate roles — splitting "core" across simultaneous sessions is exactly the risk this plan's sequential-then-fan-out shape was chosen to avoid. Runs weeks 1 through early week 3, sequentially, each step gated on your review before the next starts. Rough cost: see §12.2's Phase 1 and Phase 2a rows.
+**Core-Contract Agent (Phase 1 & Phase 2a).** Builds and owns everything in §11 — `ShipSurvivalComponent`, `LevelObjectiveTracker`, `ProbeObject`, `RelayBeaconObject`, `EntryWormhole`/`ExitWormhole`/`ResupplyPoint`, `PuzzleElementBase` and its subtypes (all five now land in Phase 2a, §12 above), `AbilityComponent`, `ExplorationController` (§11.4a), `HazardZoneElement`, Scene flow (including the new `AbilityUnlockScene`, §11.8), `SaveManager`, `HudOverlay`. `CheckpointManager` is explicitly out of scope — deferred, §11.2. **Note (2026-08-14):** the ability rework amendment above (§12) is additional work inside this same existing role, not a reason to add a new agent — every file it touches (`AbilityComponent`, `ExplorationController`, `HudOverlay`, Scene flow) was already this agent's remit before the rework. Also owns setting up the per-subsystem tunable-config-module convention and the dev-mode `window`-exposed tuning hook (§11) from the start of Phase 1, since most of Phase 1 is feel-tuning (ship movement, energy regen). One contiguous track across Phase 1's sequential vertical slice and Phase 2a's remaining core work, not two separate roles — splitting "core" across simultaneous sessions is exactly the risk this plan's sequential-then-fan-out shape was chosen to avoid. Runs weeks 1 through early week 3, sequentially, each step gated on your review before the next starts. Rough cost: see §12.2's Phase 1 and Phase 2a rows.
 
 **Content Agents (Phase 2b).** Produce game content against the closed core contract — level configs, required per-level probe/relay-beacon/entry-wormhole/exit-wormhole placement, hazard placements (config only, against Phase 2a's `HazardZoneElement`), and optional puzzle-site instances. Multiple agents can genuinely run in parallel here, one per level or content batch, since each works in its own config file and never touches core files — the boundary enforced by what directory/context you hand each one, not just convention. Runs the bulk of weeks 3–5. Rough cost: see §12.2's Phase 2b rows; total spend here is a scoping lever (§6's additive scope note) for the optional puzzle-site content specifically, not for the required probe/beacon/wormhole-pair placements, if time gets tight.
 
-**Contract/Config Validation.** Checks Phase 2b's level-config files against §11's schemas — valid `movementPattern` values, required fields present on `HazardZoneElement`/`CostData` configs, every level config has a `probeLocation`/`relayBeaconLocation`/`homeMarkerLocation` (§11.7 — these are required, unlike optional puzzle-site content), every `levelOrder` entry resolving to a real level file. Runs continuously as content lands, cheapest to run often. Honest note: most of this is deterministic and could be a plain validation script with no LLM involved — framing it as an "agent role" matters more for demonstrating the workflow than for the checking itself, worth keeping in mind if the course wants agent roles demonstrated specifically. Rough cost: ~10K–30K tokens to build the validator once; near-zero marginal cost per run after that.
+**Contract/Config Validation.** Checks Phase 2b's level-config files against §11's schemas — valid `movementPattern` values, required fields present on `HazardZoneElement`/`CostData` configs (as of 2026-08-14, `AbilityCostData` may also carry `durationSeconds`, §11.7 — not itself level-config content, but worth the validator's schema staying current with §11.7 as ability authoring evolves), every level config has a `probeLocation`/`relayBeaconLocation`/`entryWormholeLocation`/`exitWormholeLocation` (§11.7 — these are required, unlike optional puzzle-site content), every `levelOrder` entry resolving to a real level file. Runs continuously as content lands, cheapest to run often. Honest note: most of this is deterministic and could be a plain validation script with no LLM involved — framing it as an "agent role" matters more for demonstrating the workflow than for the checking itself, worth keeping in mind if the course wants agent roles demonstrated specifically. Rough cost: ~10K–30K tokens to build the validator once; near-zero marginal cost per run after that.
 
 **Contract Compliance Reviewer.** Reviews diffs against §11's hard rules before merge — anything reaching for `localStorage` outside `SaveManager` (§11.9), anything writing to `currentEnergy`/`currentStructure` from outside `ShipSurvivalComponent` (§11.1), any content-track edit touching a core file instead of registering through `SystemRegistry`, and — new for this scope — any code path that treats energy depletion as a fail/restart condition (§11.1's flagged regression risk, since energy and structure used to be symmetric fail resources and old habits could reintroduce that). This formalizes the review habit already used throughout this plan; worth a named role specifically because it's the thing most likely to erode under time pressure in week 4–5. Runs on every merge from Phase 1 onward. Rough cost: ~5K–15K tokens per review pass, scaling with how many diffs land per week.
 
-**Accessibility/Telegraphing Reviewer.** Tied directly to §9's still-open items: does Ion Storm actually read as distinct from Nebula Field in motion at normal play speed; is any hazard signaled by color alone; and — new for this scope — does a structure-draining hazard read as visibly higher-stakes than an energy-draining hazard, given only structure can end the level (§5, §9). Runs once at the week-2 gate (already specified there) and again during Phase 3 across the full level set, once all hazard placements exist. Rough cost: ~10K–25K tokens total across both passes.
+**Accessibility/Telegraphing Reviewer.** Tied directly to §9's still-open items: does Ion Storm actually read as distinct from Nebula Field in motion at normal play speed; is any hazard signaled by color alone; and — new for this scope — does a structure-draining hazard read as visibly higher-stakes than an energy-draining hazard, given only structure can end the level (§5, §9). **Caveat (2026-08-14):** the reworked `scan` ability (§7) gives players an active way to identify a hazard's type/threatened resource on demand — this does not narrow this role's mandate. Both §9 items explicitly stay open for the passive, no-ability case (early levels before `scan` unlocks, or a player who's out of energy/on cooldown), so this review should keep evaluating the visual language on its own, not credit `scan`'s existence as closing either gap. Runs once at the week-2 gate (already specified there) and again during Phase 3 across the full level set, once all hazard placements exist. Rough cost: ~10K–25K tokens total across both passes.
 
 **Asset Integration.** A track of its own, not folded into Phase 2b's content work, because it has different failure modes than puzzle-site/hazard placement — broken file paths, mismatched resolution/palette across sourced packs, license terms worth a quick check per pack, and enforcing §11's asset/gameplay-size decoupling principle (sprites scaled to fit authored gameplay dimensions, never the reverse) so a later art pass — including resolution changes — never requires re-tuning collision/gameplay feel. Runs in parallel with Phase 2a/2b, feeding normalized assets into the loading manifest as content agents need them. Rough cost: ~20K–50K tokens, mostly front-loaded before Phase 2b content production ramps up.
 

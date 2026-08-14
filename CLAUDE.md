@@ -68,16 +68,31 @@ assuming a Phase 2b task is ready:**
   textures. Per `docs/STATUS.md`, no final art exists yet for any puzzle
   element, or for Solar Flare/Ion Storm/Nebula Field/Meteoroid. Sourcing
   that art is tracked separately and is **not** closed by this commit.
-- **Ability gate vs. in-world effect.** `AbilityComponent`'s dual gate
-  (unlock/cooldown/energy) is fully functional for all four abilities, and
-  `ProgressionManager` auto-grants them in a fixed order
-  (`scan → tractorBeam → teleport → rocketBoost`, 2026-08-10 decision — no
-  player-facing unlock-choice UI) on level completion. But only
-  `tractorBeam` is actually wired to an in-world effect
-  (`PushPullObjectElement`'s `isUnlocked()` check). `scan`/`teleport`/
-  `rocketBoost` unlock and gate correctly but do nothing in-world yet —
-  flagged in `docs/trailing_edge_art_asset_list.md` §1.5, not a Phase 2a
-  gap to silently "finish."
+- **Ability rework implemented (2026-08-14, playtested and committed
+  2026-08-15) — see Architecture contract below for full detail.** All
+  three unlockable abilities now have real in-world effects: `scan`
+  reveals nearby hazards (`HazardScanOverlay` — outline colored by
+  structure/energy cost, plus a name label) and drives `HudOverlay`'s
+  off-screen objective marker for its duration window; `teleport` is an
+  arm/left-click-confirm blink to a fixed max range that passes through
+  solid colliders (`TeleportRangeRing` shows the range/reticle; originally
+  right-click-confirm, switched after playtesting showed the browser's
+  native context menu made right-click unreliable to actually use);
+  `rocketBoost` is a straight-line speed burst along the ship's current
+  facing that does *not* pass through colliders. `ProgressionManager` now
+  auto-grants only three abilities, in order `scan → teleport →
+  rocketBoost`; `tractorBeam` is de-scoped from all player-facing UI
+  (always unlocked, no grant ceremony, no icon, no unlock popup) but
+  unchanged mechanically — `PushPullObjectElement`'s Cargo Pod puzzle
+  still gates on it. A new `AbilityUnlockScene` shows a paused,
+  explicit-close-only popup whenever a real level grants one of the
+  three. Test Level force-unlocks all three on entry so its full ability
+  surface is testable without playing through real levels first.
+  `docs/trailing_edge_art_asset_list.md` §1.5's flag is about dedicated
+  activation *VFX* (a beam/pulse/thruster-trail sprite effect) — still
+  genuinely unaddressed and separate from the mechanical in-world effects
+  above (a position change, a Graphics-drawn outline/ring); don't read
+  this rework as having closed that gap.
 
 **Test level split from real progression (2026-08-12).** `level-000` — the
 single test level Phase 1/2a built, carrying one instance of every hazard
@@ -101,20 +116,25 @@ Section 11 below is the contract for all of this — check `src/` before
 assuming something is or isn't implemented rather than trusting this
 file's age.
 
-**Ability rework decided 2026-08-14 — contract updated, code not yet
-touched.** `scan`/`teleport`/`rocketBoost`/`tractorBeam` all change (new
-`scan` duration + threat-ID + objective-marker role, `teleport` arm/confirm
-input with a fixed range, `rocketBoost` straight-line burst,
-`tractorBeam` dereferenced from player-facing ability UI), plus a new
-`AbilityUnlockScene`. This reopens a scoped slice of the already-closed
-Phase 2a — see Architecture contract's `AbilityComponent`/
-`ProgressionManager`/`HudOverlay`/Scene-flow bullets below and GDD
-§7/§11.4/§11.4a/§11.5/§11.8/§11.10. Full rationale and the mechanics
-discussion behind each decision: `docs/ability-rework-brainstorm-2026-08-14.md`.
-No new agent role needed — this is Core-Contract Agent's existing remit
-(GDD §12.1); a pre-existing stale `HomeMarker` reference in
-`.claude/agents/core-contract-agent.md` was also corrected while checking
-that.
+**Ability rework decided 2026-08-14, implemented the same day
+(playtested and committed 2026-08-15).** `scan`/`teleport`/`rocketBoost`/
+`tractorBeam` all changed as designed (new `scan` duration + threat-ID +
+objective-marker role, `teleport` arm/left-click-confirm input with a
+fixed range, `rocketBoost` straight-line burst, `tractorBeam`
+dereferenced from player-facing ability UI), plus the new
+`AbilityUnlockScene`. This re-closes the scoped slice of Phase 2a the
+design pass had reopened — see Architecture contract's
+`AbilityComponent`/`ProgressionManager`/`HudOverlay`/Scene-flow bullets
+below and GDD §7/§11.4/§11.4a/§11.5/§11.8/§11.10, all now updated to
+reflect the built state. Full rationale and the mechanics discussion
+behind each decision: `docs/ability-rework-brainstorm-2026-08-14.md`
+(still accurate for the "why"; the sections below are the "what's
+actually built" where the two differ — e.g. teleport's confirm input,
+switched from right-click to left-click after playtesting surfaced the
+browser context-menu conflict). No new agent role was needed — this was
+Core-Contract Agent's existing remit (GDD §12.1); a pre-existing stale
+`HomeMarker` reference in `.claude/agents/core-contract-agent.md` was
+also corrected while checking that.
 
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
@@ -173,7 +193,7 @@ called from each system's own file at module load (`src/systems/index.ts`
 is the side-effect import point — see `SystemRegistry.ts`). Agents append
 imports; **nobody hand-edits `create()`.**
 
-## Architecture contract (GDD §11) — Phase 1 and Phase 2a items below are all built (see Current project state above) as of 2026-08-12; `CheckpointManager` remains deferred by design, and the `AbilityComponent`/`ExplorationController`/`HudOverlay`/Scene-flow items below carry a 2026-08-14 ability-rework amendment that reopens a slice of Phase 2a — decided, not yet implemented (full rationale in `docs/ability-rework-brainstorm-2026-08-14.md`; GDD §7/§11.4/§11.4a/§11.5/§11.8/§11.10)
+## Architecture contract (GDD §11) — Phase 1 and Phase 2a items below are all built (see Current project state above) as of 2026-08-12; `CheckpointManager` remains deferred by design, and the `AbilityComponent`/`ExplorationController`/`HudOverlay`/Scene-flow items below carry the 2026-08-14 ability rework, implemented and playtested (full rationale in `docs/ability-rework-brainstorm-2026-08-14.md`; GDD §7/§11.4/§11.4a/§11.5/§11.8/§11.10)
 
 - **`ShipSurvivalComponent`** — owns `currentEnergy`/`maxEnergy`/
   `currentStructure`/`maxStructure`, all `private`. Structure is the sole
@@ -253,30 +273,37 @@ imports; **nobody hand-edits `create()`.**
     already-established `AsteroidField` resupply object below. **Implemented
     2026-08-07** — Phase 1's `HazardZoneElement` config now sets
     `blocksMovement: true` with zero resource cost.
-- **`AbilityComponent`** — **built 2026-08-10 (Phase 2a).** Per-ability
-  dual gate (`energyCost`, `cooldownSeconds`), either settable to 0.
-  Rebuilt fresh on every `PlayerShip`/hard-fail restart, but delegates
-  `isUnlocked()` to `ProgressionManager` rather than owning unlock state
-  itself, so a restart never re-locks an already-earned ability. Puzzle
-  elements query `isUnlocked()` before allowing gated interactions — only
-  `PushPullObjectElement` actually does so today (see Current project
-  state above for the gate-vs-in-world-effect caveat on the other three).
-  **Ability rework, decided 2026-08-14, not yet implemented** (GDD §7,
-  §11.4, §11.4a — full rationale in
-  `docs/ability-rework-brainstorm-2026-08-14.md`): `scan` gains a
-  `durationSeconds` field (a third gate, sibling to `energyCost`/
-  `cooldownSeconds`) and two new jobs beyond its original puzzle-grammar
-  role — hazard threat-identification, and driving `HudOverlay`'s
-  off-screen objective marker (see that bullet below). `teleport` gets a
-  fixed max range/flat cost, an arm/right-click-confirm input (not a plain
-  hotkey fire), and passes through `blocksMovement: true` hazards.
-  `rocketBoost` becomes a straight-line burst along the ship's current
-  facing (`ship.rotation`), overriding click-to-move for its duration, and
-  does *not* pass through solid colliders — that asymmetry with `teleport`
-  is deliberate (§7). `tractorBeam` is unchanged mechanically but
-  dereferenced from `abilityUnlockOrder` and all player-facing ability UI —
-  `isUnlocked('tractorBeam')` will return `true` unconditionally rather
-  than consulting `ProgressionManager`, once implemented.
+- **`AbilityComponent`** — **built 2026-08-10 (Phase 2a); ability rework
+  implemented 2026-08-14** (GDD §7, §11.4, §11.4a — full rationale in
+  `docs/ability-rework-brainstorm-2026-08-14.md`). Per-ability dual gate
+  (`energyCost`, `cooldownSeconds`), either settable to 0, plus a third
+  `durationSeconds` gate (same "settable to 0" pattern), used so far only
+  by `scan`; `isActive(type, nowMs)` reports whether that duration window
+  is currently open. Rebuilt fresh on every `PlayerShip`/hard-fail
+  restart, but delegates `isUnlocked()` to `ProgressionManager` rather
+  than owning unlock state itself, so a restart never re-locks an
+  already-earned ability — **except `tractorBeam`, which `isUnlocked()`
+  now special-cases to always return `true` without consulting
+  `ProgressionManager` at all** (de-scoped from player-facing UI, per the
+  rework). `scan` uses `isActive()` for its two new jobs beyond its
+  puzzle-grammar role: hazard threat-identification
+  (`HazardScanOverlay` — outline colored by structure/energy cost plus a
+  name label) and driving `HudOverlay`'s off-screen objective marker (see
+  that bullet below). `teleport` has a fixed `maxRange`/flat cost, an
+  arm/left-click-confirm input (originally right-click, switched after
+  playtesting showed the browser's native context menu made right-click
+  unreliable to actually use — see `TeleportRangeRing`'s range-ring/
+  reticle visual), and passes through `blocksMovement: true` hazards via a
+  plain `setPosition()` call. `rocketBoost` is a straight-line burst along
+  the ship's current facing (`ship.rotation`, corrected for
+  `shipConfig.spriteFacingOffsetRadians`), overriding click-to-move for
+  its duration via `ExplorationController`'s `boosting` state, and does
+  *not* pass through solid colliders — that asymmetry with `teleport` is
+  deliberate (§7) and confirmed in playtesting (a boost into a Debris
+  Field stops dead, no refund). Puzzle elements query `isUnlocked()`
+  before allowing gated interactions — only `PushPullObjectElement` does
+  so today, and it's unaffected by any of the above (`tractorBeam`
+  mechanically unchanged).
 - **`ProgressionManager`** — **built 2026-08-10 (Phase 2a).** Durable
   `SystemRegistry` singleton owning `unlockedAbilities`; its `init()` is a
   deliberate no-op so unlocks survive a hard-fail `GameScene` restart (only
@@ -287,10 +314,13 @@ imports; **nobody hand-edits `create()`.**
   2026-08-10 decision, not a placeholder for one. Endurance-upgrade half
   (efficiency/recharge/capacity stats) is still **deferred**, not
   implemented, for the initial build. Hard rule: never modifies fixed
-  hazard costs or fixed puzzle costs. **`abilityUnlockOrder` changes from
-  four entries to three, decided 2026-08-14, not yet implemented:**
+  hazard costs or fixed puzzle costs. **`abilityUnlockOrder` changed from
+  four entries to three (2026-08-14 ability rework, implemented):**
   `scan → teleport → rocketBoost` — `tractorBeam` is never granted through
-  this sequence (see `AbilityComponent` above).
+  this sequence (see `AbilityComponent` above). Test Level
+  (`config/levelOrder.ts`'s `TEST_LEVEL_ID`) force-grants all three on
+  entry via a `GameScene.create()` loop over `abilityUnlockOrder`, so its
+  full ability surface is testable without first completing real levels.
 - **`ResupplyPoint`** (AsteroidField only) — Arcade overlap → repair
   structure. No longer covers energy (passive regen instead) and no longer
   registers a checkpoint (deferred). The Star variant is retired as a
@@ -312,13 +342,15 @@ imports; **nobody hand-edits `create()`.**
   `GameScene` (parameterized by `levelId` only — always starts at the
   level's beginning, no mid-level resume) → `WinScene` when `levelOrder` is
   exhausted; `PauseScene` as a stacked overlay, not a Scene swap.
-  **`AbilityUnlockScene`, decided 2026-08-14, not yet implemented** (GDD
-  §11.8): a fifth Scene, same stacked-overlay convention as `PauseScene`,
-  launched from `GameScene`'s level-completion handler whenever
-  `grantNextAbility()` actually grants something — paused, dismissed only
-  by an explicit close button, whose close action performs the level
-  transition `GameScene` would otherwise have made immediately (next
-  level, or `WinScene`). Never launched for `tractorBeam`.
+  **`AbilityUnlockScene`, implemented 2026-08-14** (GDD §11.8): a fifth
+  Scene, same stacked-overlay convention as `PauseScene`, launched from
+  `GameScene.handleLevelComplete()` whenever `grantNextAbility()` actually
+  grants something — paused, dismissed only by an explicit close button,
+  whose `onClose` callback performs the level transition
+  `handleLevelComplete()` would otherwise have made immediately (next
+  level, or `WinScene`). Never launched for `tractorBeam` (it isn't in
+  `abilityUnlockOrder`, so `grantNextAbility()` can never return it). Copy
+  per ability lives in `abilityUnlockContent.ts`.
 - **`SaveManager`** — **built 2026-08-10 (Phase 2a).** Thin `localStorage`
   wrapper (module functions, not a class — encapsulation is the hard rule,
   not a `private` field), simplified to level-completion saves only (no
@@ -335,15 +367,15 @@ imports; **nobody hand-edits `create()`.**
   puzzle-site-active indicator (via `PuzzleSite.solved`, registered through
   `setPuzzleSites()`); no gameplay logic lives here.
   **Energy/structure bars moved out 2026-08-10** — see `ShipStatusArcs`
-  below. **Two changes decided 2026-08-14, not yet implemented** (GDD
-  §11.10): ability icons should source from `abilityUnlockOrder` (three
-  entries) rather than every key of `abilityConfig` — currently
-  `HudOverlay.ts` line 10 does the latter (`Object.keys(abilityConfig)`),
-  which would surface `tractorBeam` if left unchanged. And the off-screen
-  objective marker stops being unconditionally visible: it shows only
-  while `scan`'s duration window is active, plus free one-shot reveals at
-  level start and on every `LevelObjectiveTracker` target change — see
-  Open design questions below.
+  below. **Two changes from the 2026-08-14 ability rework, implemented**
+  (GDD §11.10): ability icons now source from `abilityUnlockOrder` (three
+  entries) rather than every key of `abilityConfig`, so `tractorBeam` no
+  longer appears in the icon row. And the off-screen objective marker is
+  no longer unconditionally visible: it shows only while `scan`'s duration
+  window is active (`AbilityComponent.isActive('scan', ...)`), plus a
+  `flashObjectiveMarker()`-driven one-shot reveal at level start and on
+  every `LevelObjectiveTracker` target change (`ProbeFound`/
+  `BeaconReached`) — see Open design questions below.
 - **`ShipStatusArcs`** — world-space, ship-relative resource readout (added
   2026-08-10): a curved structure arc above the ship, a straight energy bar
   below it, both tracking the ship's position every frame without rotating
@@ -352,7 +384,28 @@ imports; **nobody hand-edits `create()`.**
   `Phaser.GameObjects.Graphics` — no art asset required or planned; this is
   a deliberate style choice validated via an in-browser prototype, not a
   placeholder awaiting real art. Coexists with `HudOverlay`, doesn't replace
-  it.
+  it. **Structure switched from a curved dome arc to a horizontal bar
+  2026-08-14** — the arc read as a shield to playtesters, misrepresenting
+  structure as absorbing damage rather than being consumed by it;
+  structure now occupies the position/width the energy bar used to have,
+  energy sits directly beneath it, thinner.
+- **`HazardScanOverlay`** — world-space, display-only (2026-08-14 ability
+  rework, implemented). While `AbilityComponent.isActive('scan', ...)`,
+  draws an outline (orange = `resourceCost.structure > 0`, blue =
+  `resourceCost.energy > 0`, gray = neither, i.e. `blocksMovement` hazards
+  like Debris Field) plus a name label over every `HazardZoneElement`
+  within `scanConfig.scanRadius` of the ship. Reuses
+  `shipStatusArcConfig`'s structure/energy colors so the color language
+  means the same thing everywhere in the HUD. One `Text` label per hazard
+  is created once and reused every frame rather than destroyed/recreated,
+  since `GameScene` never adds or removes hazards mid-level.
+- **`TeleportRangeRing`** — world-space, display-only (2026-08-14 ability
+  rework, implemented). A ring at `abilityConfig.teleport.maxRange`
+  centered on the ship plus a reticle at the live clamped aim point,
+  visible only while `ExplorationController.isTeleportArmed()`. Polled
+  every frame via `getTeleportAimPoint()`, same reasoning
+  `ShipStatusArcs.update()` already uses for continuous ship-relative
+  tracking.
 
 ## Development plan shape (GDD §12)
 
@@ -489,16 +542,16 @@ the loop strictly linearly, so there's only ever one current objective to
 point at. Implemented in `HudOverlay` via
 `LevelObjectiveTracker.getCurrentObjectiveTarget()`. Revisit if a future
 level needs multiple simultaneous objective/hazard markers at once — a
-minimap may become warranted then. **Amended 2026-08-14, not yet
-implemented:** the marker's *visibility rule* changes — see the
-`HudOverlay` bullet in Architecture contract above — but the underlying
-"one current objective, edge-pinned arrow, no minimap" design this entry
-resolved is unchanged.
+minimap may become warranted then. **Amended 2026-08-14, implemented:**
+the marker's *visibility rule* changed — see the `HudOverlay` bullet in
+Architecture contract above — but the underlying "one current objective,
+edge-pinned arrow, no minimap" design this entry resolved is unchanged.
 
 **Not resolved by `scan`'s 2026-08-14 rework (flagging explicitly, don't
-read the item below as closed):** the reworked `scan` ability gives players
-an *active, on-demand* way to identify a hazard's type and which resource
-it threatens (`docs/ability-rework-brainstorm-2026-08-14.md`, GDD §7).
+read the item below as closed):** the reworked `scan` ability now gives
+players an *active, on-demand* way to identify a hazard's type and which
+resource it threatens (`docs/ability-rework-brainstorm-2026-08-14.md`,
+GDD §7).
 That's a mitigation layered on top of the Ion Storm/Nebula Field and
 structure-vs-energy items below, not a resolution of either — both stay
 open for the passive, no-ability case (an early level before `scan`

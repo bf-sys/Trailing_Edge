@@ -75,20 +75,20 @@ Fixed set. Needed once, regardless of how many levels ship. This is what Phase 1
 
 §11.10 specifies HUD icons only (unlock/cooldown state). It does not specify what an ability looks like when activated in the world — that's a separate, currently unaddressed asset need.
 
-- Scan — beam or pulse effect
-- Tractor / Repulsor — beam effect; distinct pull vs. push if both exist as separate abilities
-- Teleport — effect at origin and/or destination
-- Rocket boost — thruster/trail effect
+- Scan — beam or pulse effect (mechanically implemented 2026-08-14 as `HazardScanOverlay`'s procedural outline/label, but that's a readability overlay, not activation VFX for the ability itself)
+- Tractor / Repulsor — beam effect; distinct pull vs. push if both exist as separate abilities. **De-scoped from further investment 2026-08-14** — `tractorBeam` is intentionally minor/support now (de-scoped from all player-facing UI, per the ability rework), so this is a low-priority ask, not a gap blocking anything.
+- Teleport — effect at origin and/or destination (mechanically implemented 2026-08-14 as `TeleportRangeRing`'s aim-time ring/reticle, but no blink-moment VFX)
+- Rocket boost — thruster/trail effect (mechanically implemented 2026-08-14 as a straight-line speed burst, but no thruster/trail VFX)
 
-**Flag:** None of these four are named as art requirements anywhere in §7 or §11 — they're implied by the ability existing at all. Worth confirming before Phase 2a closes, since §6 already flags PushPullObjectElement/TractorBeam as the one ability most likely to need rework if it doesn't feel clean in Arcade physics (§11) — a placeholder VFX here could mask or exaggerate that feel during prototyping.
+**Flag:** None of these four are named as art requirements anywhere in §7 or §11 — they're implied by the ability existing at all. Still open as of the 2026-08-14 ability rework: that rework built each ability's *mechanical* in-world effect (see `docs/ability-rework-brainstorm-2026-08-14.md`), not dedicated activation VFX — the two are separate asset needs, and this section tracks only the latter.
 
 ### 1.6 UI / HUD (§11.10, §11.10a)
 
 | Asset | Notes |
 |---|---|
 | Energy bar | **Resolved 2026-08-10 — no art asset needed.** Implemented as `ShipStatusArcs`'s ship-relative straight bar, procedurally drawn via `Phaser.GameObjects.Graphics`, not a sprite. Previously sourced `ui/bar_energy_PLACEHOLDER.png` (Kenney UI Pack - Sci-Fi) is now unused. |
-| Structure bar | **Resolved 2026-08-10 — no art asset needed.** Implemented as `ShipStatusArcs`'s ship-relative curved arc, procedurally drawn the same way. Previously sourced `ui/bar_structure_PLACEHOLDER.png` is now unused. |
-| Ability icons × 4 | Scan, Tractor/Repulsor, Teleport, Rocket boost — reflect `isUnlocked()` / cooldown state. |
+| Structure bar | **Resolved 2026-08-10 — no art asset needed.** Implemented as `ShipStatusArcs`'s ship-relative bar, procedurally drawn the same way (**switched from a curved arc to a horizontal bar 2026-08-14** — the arc read as a shield to playtesters). Previously sourced `ui/bar_structure_PLACEHOLDER.png` is now unused. |
+| Ability icons × 3 | Scan, Teleport, Rocket boost — reflect `isUnlocked()` / cooldown state. **Tractor/Repulsor dropped from the icon row 2026-08-14** — de-scoped from all player-facing ability UI, always unlocked with no ceremony. |
 | Puzzle-site-active indicator | GDD explicitly allows this to be minimal — "even just a highlight or icon." Low sourcing cost, don't over-invest. |
 
 **Note (2026-08-10):** the on-screen resource display was replaced with a

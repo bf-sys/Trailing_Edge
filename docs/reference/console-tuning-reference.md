@@ -7,10 +7,9 @@ objects on window in dev builds for live console tuning" convention from
 (`shipConfig.ts`, `survivalConfig.ts`, ...) registers itself here so you can
 tweak feel without editing a file or reloading the page.
 
-**This list reflects the config modules that exist right now (Phase 1). As
-more get added (e.g. `abilityConfig.ts`, per-hazard cost tuning), this file
-will need updating — check `src/config/` directly if something here looks
-out of date.**
+**This list reflects the config modules that exist right now. As more get
+added, this file will need updating — check `src/config/` directly if
+something here looks out of date.**
 
 ## Opening the console
 
@@ -268,12 +267,95 @@ only read once, when `GameScene.create()` constructs that hazard's
 restart (hard-fail restart or a fresh `Start`) to take effect, same
 next-restart-only caveat as `backgroundSetPieces`.
 
+## `window.tuning.ability` (`src/config/abilityConfig.ts`)
+
+Per-ability dual/triple gate (`energyCost`, `cooldownSeconds`, plus
+per-type extras added by the 2026-08-14 ability rework) — has been live
+since `AbilityComponent` was built in Phase 2a (2026-08-10), just not
+previously documented here. Keyed by `AbilityType`: `scan`, `tractorBeam`,
+`teleport`, `rocketBoost`.
+
+| Field | Default | What it does |
+|---|---|---|
+| `energyCost` | per ability | Energy spent on a successful `tryActivate` — `0` no-ops this gate |
+| `cooldownSeconds` | per ability | Time before the next `tryActivate` succeeds — `0` no-ops this gate |
+| `hotkey` | per ability | Phaser `keydown-<KEY>` suffix bound in `ExplorationController` |
+| `durationSeconds` | `scan: 4` | How long `AbilityComponent.isActive(type, ...)` reports `true` after a successful activation — drives `HazardScanOverlay` and `HudOverlay`'s objective-marker visibility. Unset for the other three types. |
+| `maxRange` | `teleport: 350` | Fixed max blink distance (px) — **not** distance-scaled cost, see `ExplorationController.clampToTeleportRange()` |
+| `boostSpeed` | `rocketBoost: 520` | px/s during the burst |
+| `boostDurationSeconds` | `rocketBoost: 0.6` | Burst length |
+
+```js
+window.tuning.ability.scan.durationSeconds = 8      // longer hazard-ID/objective-marker window
+window.tuning.ability.teleport.maxRange = 600       // longer blink
+window.tuning.ability.rocketBoost.boostSpeed = 800  // faster burst
+```
+
+**Note:** all fields are read fresh at activation time (`tryActivate()`)
+or every frame (`isActive()`/`ExplorationController`'s boost/teleport
+math), so console edits apply to the next activation with no restart
+needed. `hotkey` is read once, in `ExplorationController.init()` — a
+console edit needs a level restart (or fresh `Start`) to rebind.
+
+## `window.tuning.scan` (`src/config/scanConfig.ts`)
+
+`HazardScanOverlay`'s hazard-ID visual (2026-08-14 ability rework) — while
+`scan` is active, hazards within `scanRadius` get an outline colored by
+resource type plus a name label.
+
+| Field | Default | What it does |
+|---|---|---|
+| `scanRadius` | `500` | px from ship — hazards farther than this stay unrevealed |
+| `outlineThickness` | `3` | Outline line width (px) |
+| `outlineMargin` | `6` | px beyond the hazard's own radius the outline is drawn at |
+| `neutralColor` | `0xaaaaaa` | Outline color for `blocksMovement` hazards with zero resource cost (Debris Field) |
+| `labelFontSize` | `13` | Name label font size (px) |
+| `labelColorCss` | `'#ffffff'` | Name label color |
+| `labelOffsetY` | `10` | px above the outline's top edge the label sits at |
+| `depth` | `16` | Render depth — above `ShipStatusArcs` (`15`), below `HudOverlay`'s screen-pinned depth (`2000`) |
+
+```js
+window.tuning.scan.scanRadius = 800        // reveal hazards from further away
+window.tuning.scan.neutralColor = 0xffffff // brighter Debris Field outline
+```
+
+**Note:** structure/energy outline colors aren't fields here — they're
+read live from `window.tuning.shipStatusArc.structureColor`/`energyColor`
+so the color language stays in sync with the rest of the HUD; tune those
+instead if you want to change them. All fields above are read fresh every
+frame in `update()`, so edits apply instantly next time `scan` is active.
+
+## `window.tuning.teleportRangeRing` (`src/config/teleportRangeRingConfig.ts`)
+
+`TeleportRangeRing`'s visual (2026-08-14 ability rework) — a ring at
+`teleport`'s max range centered on the ship, plus a reticle at the live
+clamped aim point, shown only while teleport is armed.
+
+| Field | Default | What it does |
+|---|---|---|
+| `ringThickness` | `2` | Range-ring line width (px) |
+| `ringColor` | `0xd88fff` | Range-ring color (matches `hudConfig.abilityIconColors.teleport`) |
+| `ringAlpha` | `0.6` | Range-ring opacity |
+| `reticleRadius` | `10` | Reticle circle radius (px) |
+| `reticleThickness` | `2` | Reticle line width (px) |
+| `reticleColor` | `0xffffff` | Reticle color |
+| `depth` | `16` | Render depth — same layer as `HazardScanOverlay` |
+
+```js
+window.tuning.teleportRangeRing.ringColor = 0x00ffcc  // recolor the range ring
+```
+
+**Note:** the ring's radius itself isn't a field here — it's
+`window.tuning.ability.teleport.maxRange`, so the ring always reflects the
+real range rather than a display-only copy that could drift out of sync.
+All fields above are read fresh every frame, applying instantly the next
+time teleport is armed.
+
 ## Not tunable from the console yet
 
-- **Ability costs/cooldowns** — `AbilityComponent` doesn't exist yet.
 - **Camera/parallax settings** (scroll factors, level size) — level/scene
   setup, not treated as a tunable-feel config module.
 
-If you need to tune one of these, it's a code edit for now, not a console
+If you need to tune this, it's a code edit for now, not a console
 command — worth asking to have it promoted to a `window.tuning`-exposed
 config module if it turns out to need frequent iteration.

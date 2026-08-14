@@ -5,8 +5,9 @@ import { shipStatusArcConfig } from '../config/shipStatusArcConfig';
 
 // World-space resource readout that follows the ship — a style experiment
 // alongside HudOverlay's screen-pinned straight bars, not a replacement
-// (2026-08-10). Structure renders as a curved arc above the ship, energy as
-// a straight bar below it. Display-only: reacts to
+// (2026-08-10). Structure and energy both render as straight bars below the
+// ship, structure above energy (switched from a curved dome arc 2026-08-14 —
+// the arc read as a shield to playtesters). Display-only: reacts to
 // ShipSurvivalComponent.onResourceChanged, same pattern HudOverlay already
 // uses, no gameplay logic lives here. Procedurally drawn via Graphics rather
 // than sprites, so no art asset is required (same precedent as HudOverlay's
@@ -39,29 +40,30 @@ export class ShipStatusArcs {
     const structurePct = Phaser.Math.Clamp(snapshot.currentStructure / snapshot.maxStructure, 0, 1);
 
     this.graphics.clear();
-    this.drawArc(structurePct);
+    this.drawStructureBar(structurePct);
     this.drawEnergyBar(energyPct);
-  }
-
-  // Sweeps left (180°) -> top (270°) -> right (360°) as pct goes 0->1, i.e.
-  // a dome over the ship rather than a full ring. Drawn relative to the
-  // Graphics object's own local origin (0,0) — update() moves that origin
-  // to the ship's world position every frame, so points here never need the
-  // ship's coordinates baked in.
-  private drawArc(pct: number): void {
-    if (pct <= 0) return;
-    const startAngle = Math.PI;
-    const endAngle = Math.PI + pct * Math.PI;
-
-    this.graphics.lineStyle(shipStatusArcConfig.arcThickness, shipStatusArcConfig.structureColor, 1);
-    this.graphics.beginPath();
-    this.graphics.arc(0, 0, shipStatusArcConfig.arcRadius, startAngle, endAngle, false);
-    this.graphics.strokePath();
   }
 
   // Straight bar beneath the ship, left-aligned fill. A dark track is drawn
   // first since there's nothing else here to show the bar's full-width
-  // extent once it's mostly depleted.
+  // extent once it's mostly depleted. Drawn relative to the Graphics
+  // object's own local origin (0,0) — update() moves that origin to the
+  // ship's world position every frame, so points here never need the ship's
+  // coordinates baked in.
+  private drawStructureBar(pct: number): void {
+    const { structureBarWidth: width, structureBarHeight: height, structureBarOffsetY: y } = shipStatusArcConfig;
+    const x = -width / 2;
+
+    this.graphics.fillStyle(shipStatusArcConfig.structureBarTrackColor, shipStatusArcConfig.structureBarTrackAlpha);
+    this.graphics.fillRect(x, y, width, height);
+
+    if (pct <= 0) return;
+    this.graphics.fillStyle(shipStatusArcConfig.structureColor, 1);
+    this.graphics.fillRect(x, y, width * pct, height);
+  }
+
+  // Same pattern as drawStructureBar, positioned directly beneath it and
+  // drawn thinner so the two stay easy to tell apart at a glance.
   private drawEnergyBar(pct: number): void {
     const { energyBarWidth: width, energyBarHeight: height, energyBarOffsetY: y } = shipStatusArcConfig;
     const x = -width / 2;

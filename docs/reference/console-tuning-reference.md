@@ -166,27 +166,33 @@ by editing `BackgroundSetPieces.ts` or swapping in real sourced art.
 ## `window.tuning.shipStatusArc` (`src/config/shipStatusArcConfig.ts`)
 
 Ship-relative energy/structure readout (`ShipStatusArcs`, added 2026-08-10
-as a replacement for `HudOverlay`'s old screen-pinned bars) — a curved
-structure arc above the ship, a straight energy bar below it, both
-following the ship in world space.
+as a replacement for `HudOverlay`'s old screen-pinned bars) — a straight
+structure bar below the ship, a thinner straight energy bar directly below
+that, both following the ship in world space. **Structure switched from a
+curved dome arc to a horizontal bar 2026-08-14** — the arc read as a shield
+to playtesters, which misrepresented structure as absorbing damage rather
+than being consumed by it.
 
 | Field | Default | What it does |
 |---|---|---|
-| `arcRadius` | `42` | Distance (px) from ship center to the structure arc |
-| `arcThickness` | `5` | Structure arc line width (px) |
-| `structureColor` | `0xff8a4c` | Structure arc color |
+| `structureBarWidth` | `56` | Structure bar width (px) |
+| `structureBarHeight` | `8` | Structure bar height (px) |
+| `structureBarOffsetY` | `34` | Distance (px) below ship center to the structure bar |
+| `structureBarTrackColor` | `0x1a1a22` | Structure bar's empty-track background color |
+| `structureBarTrackAlpha` | `0.7` | Structure bar track opacity |
+| `structureColor` | `0xff8a4c` | Structure bar fill color |
 | `energyBarWidth` | `56` | Energy bar width (px) |
-| `energyBarHeight` | `6` | Energy bar height (px) |
-| `energyBarOffsetY` | `34` | Distance (px) below ship center to the energy bar |
+| `energyBarHeight` | `4` | Energy bar height (px) |
+| `energyBarOffsetY` | `45` | Distance (px) below ship center to the energy bar |
 | `energyBarTrackColor` | `0x1a1a22` | Energy bar's empty-track background color |
 | `energyBarTrackAlpha` | `0.7` | Energy bar track opacity |
 | `energyColor` | `0x4fc3f7` | Energy bar fill color |
 | `depth` | `15` | Render depth — above `PlayerShip`'s depth of `10` |
 
 ```js
-window.tuning.shipStatusArc.arcRadius = 60        // more clearance between the arc and the ship
-window.tuning.shipStatusArc.energyBarWidth = 80   // longer energy bar
-window.tuning.shipStatusArc.structureColor = 0xff3344  // redder structure arc
+window.tuning.shipStatusArc.structureBarHeight = 12  // thicker structure bar
+window.tuning.shipStatusArc.energyBarWidth = 80      // longer energy bar
+window.tuning.shipStatusArc.structureColor = 0xff3344  // redder structure bar
 ```
 
 **Note:** all fields except `depth` are read fresh inside `render()`, which

@@ -21,13 +21,15 @@ export interface AbilityCostData {
 // capability-spend case (energy only, 0 cooldown). teleport lands in
 // between. tractorBeam is deliberately de-scoped (2026-08-14 ability
 // rework) -- always unlocked (see AbilityComponent.isUnlocked), no
-// player-facing UI, driven entirely by PushPullObjectElement's own
-// held-key check rather than a hotkey bound here.
+// player-facing UI, no ExplorationController binding -- its hotkey field
+// is read only by PushPullObjectElement's own held-key check. Kept on
+// FOUR (2026-08-15) so numbered slots 1-3 can match abilityUnlockOrder
+// (scan/teleport/rocketBoost) without colliding with tractorBeam's key.
 export const abilityConfig: Record<AbilityType, AbilityCostData> = {
   scan: { energyCost: 0, cooldownSeconds: 3, hotkey: 'ONE', durationSeconds: 4 },
-  tractorBeam: { energyCost: 0, cooldownSeconds: 0, hotkey: 'TWO' },
-  teleport: { energyCost: 30, cooldownSeconds: 8, hotkey: 'THREE', maxRange: 350 },
-  rocketBoost: { energyCost: 20, cooldownSeconds: 0, hotkey: 'FOUR', boostSpeed: 520, boostDurationSeconds: 0.6 },
+  tractorBeam: { energyCost: 0, cooldownSeconds: 0, hotkey: 'FOUR' },
+  teleport: { energyCost: 30, cooldownSeconds: 8, hotkey: 'TWO', maxRange: 350 },
+  rocketBoost: { energyCost: 20, cooldownSeconds: 0, hotkey: 'THREE', boostSpeed: 520, boostDurationSeconds: 0.6 },
 };
 
 // Fixed unlock order (2026-08-10 decision: ProgressionManager auto-grants

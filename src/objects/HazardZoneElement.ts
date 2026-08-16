@@ -29,6 +29,11 @@ export interface HazardZoneConfig {
   // onHazardContact()-equivalent call happens for these: a collider has no
   // "contact cost" to report, it just physically prevents entry.
   blocksMovement?: boolean;
+  // Per-placement visual rotation (HazardPlacement.rotationRadians, added
+  // 2026-08-15) -- purely cosmetic, applied to the sprite only; doesn't
+  // touch the Arcade body (a circle body is rotation-invariant, and
+  // rectangle-shape hazards don't use this today).
+  rotationRadians?: number;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
@@ -46,6 +51,7 @@ export class HazardZoneElement {
     this.config = config;
 
     this.zone = scene.physics.add.image(config.x, config.y, config.textureKey);
+    if (config.rotationRadians) this.zone.setRotation(config.rotationRadians);
     this.applyShape();
     this.applyMovement();
 

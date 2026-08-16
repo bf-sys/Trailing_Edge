@@ -9,6 +9,16 @@ export interface HazardPlacement {
   type: HazardType;
   x: number;
   y: number;
+  // Per-instance overrides, both optional -- fall back to hazardConfig.ts's
+  // type-level textureKey/no-rotation default when omitted. Added so a
+  // single hazard type (e.g. Debris Field's three sourced art variants) can
+  // vary per placement -- e.g. chaining several instances into a wall reads
+  // as repeated content without it. Purely visual: neither affects
+  // HazardZoneElement's collision shape (its Arcade body is sized from
+  // config.shape, not the texture, per CLAUDE.md's asset/gameplay-size
+  // decoupling rule; a circle body is rotation-invariant regardless).
+  textureKey?: string;
+  rotationRadians?: number;
 }
 
 export interface ResupplyPlacement {

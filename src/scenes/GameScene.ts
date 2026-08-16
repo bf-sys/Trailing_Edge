@@ -26,6 +26,7 @@ import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
 import { PuzzleSite } from '../objects/PuzzleSite';
 import { getLevelConfig } from '../levels';
+import type { HazardPlacement } from '../levels/levelTypes';
 import { createPuzzleElement, puzzleSiteMarkerPosition } from '../levels/puzzleElementFactory';
 import { ABILITY_UNLOCK_SCENE_KEY } from './AbilityUnlockScene';
 import type { AbilityType } from '../config/abilityConfig';
@@ -115,7 +116,7 @@ export class GameScene extends Phaser.Scene {
     // content; shape/movement/cost per hazard type stays in hazardConfig.ts
     // (CLAUDE.md's "hazard ... costs" config-module convention).
     config.hazards.forEach((placement) => {
-      this.placeHazard(placement.x, placement.y, hazardConfig[placement.type]);
+      this.placeHazard(placement, hazardConfig[placement.type]);
     });
 
     // Resupply points (AsteroidField -- structure repair only).
@@ -305,7 +306,7 @@ export class GameScene extends Phaser.Scene {
   // config carries one (Solar Flare/Ion Storm/Nebula Field/Meteoroid have
   // no sourced art yet, docs/STATUS.md); Debris Field skips this since it
   // already has final sourced art loaded by BootScene.
-  private placeHazard(x: number, y: number, config: HazardTypeConfig): void {
+  private placeHazard(placement: HazardPlacement, config: HazardTypeConfig): void {
     if (config.placeholderTexture && config.shape.kind === 'circle') {
       this.createHazardPlaceholderTexture(
         config.textureKey,
@@ -315,7 +316,15 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    this.hazards.push(new HazardZoneElement(this, { x, y, ...config }));
+    this.hazards.push(
+      new HazardZoneElement(this, {
+        ...config,
+        x: placement.x,
+        y: placement.y,
+        textureKey: placement.textureKey ?? config.textureKey,
+        rotationRadians: placement.rotationRadians,
+      }),
+    );
   }
 
   // Placeholder texture for the four hazardConfig.ts entries with no

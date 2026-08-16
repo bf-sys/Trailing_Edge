@@ -12,7 +12,13 @@
 // puzzle-taxonomy content) meant as the actual first level and as a base
 // for level-design iteration; growing LEVEL_ORDER beyond it is Phase 2b's
 // job, not this file's.
-export const LEVEL_ORDER: string[] = ['level-001'];
+//
+// 2026-08-15: level-002 appended, 1.5x level-001's footprint -- same
+// objective-spacing/Debris-Field-wall rules as level-001's redesign, with
+// Nebula Field reintroduced deliberately (bypass-route tolls, not a third
+// hazard type sprinkled in). Player reaches it with scan already unlocked
+// (granted on level-001 completion, abilityUnlockOrder in abilityConfig.ts).
+export const LEVEL_ORDER: string[] = ['level-001', 'level-002'];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through
 // LEVEL_ORDER progression -- GameScene.handleLevelComplete() special-cases

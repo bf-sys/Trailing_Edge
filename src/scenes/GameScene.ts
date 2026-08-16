@@ -35,6 +35,11 @@ export const GAME_SCENE_KEY = 'GameScene';
 
 interface GameSceneData {
   levelId: string;
+  // Set by the previous level's handleLevelComplete() when it granted an
+  // ability (2026-08-15 rework -- see the AbilityUnlockScene launch at the
+  // end of create() below for why this moved here instead of firing at the
+  // completed level, before the transition).
+  unlockedAbility?: AbilityType;
 }
 
 // Parameterized by levelId only — always starts at the level's beginning,
@@ -53,6 +58,7 @@ export class GameScene extends Phaser.Scene {
   private levelId!: string;
   private levelWidth!: number;
   private levelHeight!: number;
+  private pendingAbilityUnlock: AbilityType | undefined;
   private hazards: HazardZoneElement[] = [];
   private resupplyPoints: ResupplyPoint[] = [];
   private puzzleElements: PuzzleElementBase[] = [];
@@ -67,6 +73,7 @@ export class GameScene extends Phaser.Scene {
 
   init(data: GameSceneData): void {
     this.levelId = data.levelId;
+    this.pendingAbilityUnlock = data.unlockedAbility;
   }
 
   create(): void {
@@ -196,6 +203,23 @@ export class GameScene extends Phaser.Scene {
       this.scene.launch('PauseScene');
       this.scene.pause();
     });
+
+    // 2026-08-15: show the previous level's ability-unlock popup here, at
+    // the start of the level where it's actually usable, instead of at the
+    // end of the level that granted it (where the old 2026-08-14 rework
+    // put it). Only fires once -- handleLevelComplete() only sets
+    // unlockedAbility on the scene.start() data for a fresh arrival, and a
+    // hard-fail scene.restart() never passes it, so restarting a level
+    // never re-shows this.
+    if (this.pendingAbilityUnlock) {
+      const abilityType = this.pendingAbilityUnlock;
+      this.pendingAbilityUnlock = undefined;
+      this.scene.pause();
+      this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
+        abilityType: abilityType as Exclude<AbilityType, 'tractorBeam'>,
+        onClose: () => this.scene.resume(GAME_SCENE_KEY),
+      });
+    }
   }
 
   update(time: number, delta: number): void {
@@ -218,16 +242,20 @@ export class GameScene extends Phaser.Scene {
   // TitleScene with no ability grant and no save, since it's a sandbox, not
   // part of the real playthrough.
   //
-  // 2026-08-14 ability rework ("Ability-unlock info popup"): the level
-  // transition below is no longer immediate whenever an ability is actually
-  // granted -- AbilityUnlockScene interposes a paused, explicit-close-only
-  // popup first, and its close button performs the (identical) transition
-  // via the performTransition closure. grantNextAbility() returns null
-  // once every entry in abilityUnlockOrder is already unlocked, in which
-  // case the transition still happens immediately, same as before this
-  // rework. tractorBeam is never in abilityUnlockOrder, so grantNextAbility()
-  // can never return it -- the cast below documents that rather than
-  // guarding against a case that can't happen.
+  // 2026-08-15 (superseding the 2026-08-14 "Ability-unlock info popup"
+  // rework): when there IS a next level, the popup no longer interposes
+  // here at all -- it's handed off via scene.start()'s data (unlockedAbility)
+  // and shown at the START of that next level instead (end of create()
+  // above), since that's the level the new ability is actually usable in,
+  // not the one being left. The one case that still shows it here is the
+  // terminal one: the last ability granted on the last LEVEL_ORDER entry
+  // has no "next level" to attach the popup to (completion goes straight to
+  // WinScene) -- kept as the pre-2026-08-15 fallback rather than dropping
+  // the announcement entirely. grantNextAbility() returns null once every
+  // entry in abilityUnlockOrder is already unlocked. tractorBeam is never
+  // in abilityUnlockOrder, so grantNextAbility() can never return it -- the
+  // cast below documents that rather than guarding against a case that
+  // can't happen.
   private handleLevelComplete(): void {
     if (this.levelId === TEST_LEVEL_ID) {
       this.scene.start('TitleScene');
@@ -235,25 +263,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     const nextLevelId = LEVEL_ORDER[LEVEL_ORDER.indexOf(this.levelId) + 1];
-    const performTransition = () => {
-      if (!nextLevelId) {
-        this.scene.start('WinScene');
-        return;
-      }
-      saveProgress(nextLevelId);
-      this.scene.start('GameScene', { levelId: nextLevelId });
-    };
-
     const grantedAbility = getProgressionManager().grantNextAbility();
+
+    if (nextLevelId) {
+      saveProgress(nextLevelId);
+      this.scene.start('GameScene', {
+        levelId: nextLevelId,
+        unlockedAbility: grantedAbility ?? undefined,
+      });
+      return;
+    }
+
+    // No next level -- fallback (see comment above): show the popup here,
+    // before WinScene, same as every level did pre-2026-08-15.
     if (!grantedAbility) {
-      performTransition();
+      this.scene.start('WinScene');
       return;
     }
 
     this.scene.pause();
     this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
       abilityType: grantedAbility as Exclude<AbilityType, 'tractorBeam'>,
-      onClose: performTransition,
+      onClose: () => this.scene.start('WinScene'),
     });
   }
 

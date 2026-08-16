@@ -136,6 +136,15 @@ Core-Contract Agent's existing remit (GDD §12.1); a pre-existing stale
 `HomeMarker` reference in `.claude/agents/core-contract-agent.md` was
 also corrected while checking that.
 
+**`AbilityUnlockScene`'s timing retimed 2026-08-15** (a follow-up to the
+ability rework above, not part of it originally): the popup now shows at
+the *start* of the level an ability is actually usable in, not the end of
+the level that granted it — see the `AbilityUnlockScene` bullet in
+Architecture contract below for the mechanism (`GameSceneData.unlockedAbility`
+handed through `scene.start()`) and its one fallback case (the last
+ability granted on the last `LEVEL_ORDER` entry, with no next level to
+attach the popup to).
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
 but not yet sourced, see its 2026-08-08 entry). Other reference docs live
@@ -342,15 +351,27 @@ imports; **nobody hand-edits `create()`.**
   `GameScene` (parameterized by `levelId` only — always starts at the
   level's beginning, no mid-level resume) → `WinScene` when `levelOrder` is
   exhausted; `PauseScene` as a stacked overlay, not a Scene swap.
-  **`AbilityUnlockScene`, implemented 2026-08-14** (GDD §11.8): a fifth
-  Scene, same stacked-overlay convention as `PauseScene`, launched from
-  `GameScene.handleLevelComplete()` whenever `grantNextAbility()` actually
-  grants something — paused, dismissed only by an explicit close button,
-  whose `onClose` callback performs the level transition
-  `handleLevelComplete()` would otherwise have made immediately (next
-  level, or `WinScene`). Never launched for `tractorBeam` (it isn't in
-  `abilityUnlockOrder`, so `grantNextAbility()` can never return it). Copy
-  per ability lives in `abilityUnlockContent.ts`.
+  **`AbilityUnlockScene`, implemented 2026-08-14, retimed 2026-08-15**
+  (GDD §11.8): a fifth Scene, same stacked-overlay convention as
+  `PauseScene`, paused, dismissed only by an explicit close button. **When
+  is it shown changed 2026-08-15:** originally launched from
+  `GameScene.handleLevelComplete()` at the completed level, before the
+  transition (2026-08-14's timing); now, whenever there's a next level to
+  go to, `handleLevelComplete()` hands the granted ability off via
+  `scene.start()`'s data (`GameSceneData.unlockedAbility`) instead of
+  launching the popup itself, and the *next* level's `create()` launches
+  it at the end, once the ship is already positioned at that level's Entry
+  Wormhole — so the popup announces an ability standing in the level it's
+  actually usable in, not the one just left. Only fires once: a hard-fail
+  `scene.restart()` never passes `unlockedAbility`, so restarting a level
+  never re-shows it. The pre-2026-08-15 timing survives as a fallback for
+  the one case with no "next level" to hand off to — the last ability
+  granted on the last `LEVEL_ORDER` entry, where completion goes straight
+  to `WinScene` — `handleLevelComplete()` still shows the popup at the
+  completed level there, `onClose` starting `WinScene` directly. Never
+  launched for `tractorBeam` (it isn't in `abilityUnlockOrder`, so
+  `grantNextAbility()` can never return it). Copy per ability lives in
+  `abilityUnlockContent.ts`.
 - **`SaveManager`** — **built 2026-08-10 (Phase 2a).** Thin `localStorage`
   wrapper (module functions, not a class — encapsulation is the hard rule,
   not a `private` field), simplified to level-completion saves only (no

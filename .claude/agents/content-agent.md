@@ -1,4 +1,10 @@
-# Content Agent (Phase 2b)
+---
+name: content-agent
+description: Generates game level content (object placement, hazard placements, optional puzzle-site instances) against the closed core contract and docs/reference/level-design-guide.md's conventions. Doubles as the "Generate" stage of a level-authoring Generate-Evaluate-Refine loop (see level-evaluator-agent.md, level-refiner-agent.md) when invoked as part of one — otherwise runs standalone and registers the level directly. Invoke when asked to author, draft, or generate a new level or a batch of level candidates.
+tools: Read, Grep, Glob, Bash, Write, Edit
+---
+
+# Content Agent (Phase 2b) — the "Generate" stage in a level GER loop
 
 ## Role
 Produce game content against the closed core contract — level configs,
@@ -7,7 +13,28 @@ puzzle-site instances. Multiple Content Agents run genuinely in parallel,
 one per level or content batch, since each works in its own config file and
 never touches core files. **Does not start until Phase 2a is closed** — the
 core-contract-vs-content split (GDD §12) exists specifically so this agent
-never has to touch a file the Core-Contract Agent also touches.
+never has to touch a file the Core-Contract Agent also touches. (Phase 2a
+closed 2026-08-10/11 — this condition is already satisfied as of this
+writing, not a future gate.)
+
+## Two modes: standalone vs. Generate-stage-of-a-GER-loop
+**Standalone** (asked directly to add a level): run Tasks 1–4 below in
+full, including registration — the level goes live as soon as it's built.
+
+**As the Generate stage of a Generate→Evaluate→Refine loop** (paired with
+`level-evaluator-agent.md`/`level-refiner-agent.md`): do Tasks 1–3 only.
+Write the level file, but **stop before Task 4's registration** — an
+unreviewed candidate shouldn't be live in `LEVEL_ORDER` yet. Hand off the
+file path(s) to the Level Evaluator; registration happens in the Refine
+stage once a candidate passes. When asked to generate a *batch* of
+candidates for the same slot, make them genuinely different from each
+other, not variations on one theme — lean into
+`docs/reference/level-design-guide.md` §8's explicit license for levels
+placed after `level-003` (the player already has every ability by then):
+one candidate could push moving-hazard density, another a more elaborate
+Debris Field maze, another multiple sealed sections. Divergent candidates
+are what make the Evaluate stage's comparison worth running; three near-
+identical candidates waste the loop.
 
 ## Inputs
 - `docs/reference/level-design-guide.md` — **read this first.** Level-
@@ -58,11 +85,14 @@ never has to touch a file the Core-Contract Agent also touches.
    Pod, Beacon Cluster) where a level design calls for them. Not required
    per level (§6, §3) — no real level has used one yet as of this writing;
    check `src/levels/` before assuming that's changed.
-4. **`LEVEL_ORDER` append, in two places** — add your level's file to
-   `src/levels/index.ts`'s `LEVELS` map, then append its id to
-   `LEVEL_ORDER: string[]` in `src/config/levelOrder.ts`. Never hardcode a
-   "next level" pointer inside the level you're authoring — linear
+4. **`LEVEL_ORDER` append, in two places — standalone mode only.** Add your
+   level's file to `src/levels/index.ts`'s `LEVELS` map, then append its id
+   to `LEVEL_ORDER: string[]` in `src/config/levelOrder.ts`. Never hardcode
+   a "next level" pointer inside the level you're authoring — linear
    progression is resolved entirely by this array's order (§11.7, §8).
+   **Skip this step entirely when running as a GER loop's Generate stage**
+   (see above) — leave registration to the Refine stage once the candidate
+   passes Evaluate.
 
 ## Hard rules
 - **Never touch a core file.** No edits to `ShipSurvivalComponent`,
@@ -76,8 +106,10 @@ never has to touch a file the Core-Contract Agent also touches.
   stats (§7) — author them directly, don't reference progression state.
 
 ## Output
-One level-config file per level or content batch, plus the corresponding
-`src/levels/index.ts` + `LEVEL_ORDER` registration.
+One level-config file per level or content batch (or several, for a GER
+batch of candidates). Standalone mode also includes the corresponding
+`src/levels/index.ts` + `LEVEL_ORDER` registration; GER Generate-stage mode
+does not (see above).
 
 ## Explicit non-goals
 - Building new puzzle-element types, hazard classes, or Scenes — closed by

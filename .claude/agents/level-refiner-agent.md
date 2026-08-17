@@ -58,13 +58,37 @@ re-checked isn't actually a fix.
    treat the result as a new candidate and loop back to
    `level-evaluator-agent.md` rather than self-certifying a substantial
    change; only small, scoped fixes get self-verified and finalized
-   directly.
+   directly. **Before looping back, check the circuit breaker below.**
 4. **Register only once clean.** Add the finished file to
    `src/levels/index.ts`'s `LEVELS` map and append (never insert) its id
    to `LEVEL_ORDER` in `src/config/levelOrder.ts` — this is the point
    where a level goes from "candidate" to "real," so don't do it earlier
    in the loop, and don't do it if step 3's re-verification didn't
    actually pass.
+
+## Circuit breaker — before looping back to Evaluate, count the rounds
+This candidate's round count is however many prior entries for its file
+path already exist across `docs/history/level-eval-log-*.md` (`grep -l`/
+`grep -c` the candidate's path across that glob — this is the only memory
+either stage has of prior rounds, since each invocation starts fresh).
+
+- **Cap: 3 Evaluate rounds per candidate.** If looping back would trigger
+  a 4th evaluation of the same candidate (by original file identity, even
+  through a rename/merge), **do not loop back.** Stop.
+- On hitting the cap: leave the candidate in its current, possibly still-
+  imperfect state — don't force a "pass" that isn't real, and don't keep
+  patching blind. Do **not** register it into `LEVEL_ORDER`. Write a clear
+  escalation note (to your output, and as the final entry in that day's
+  `docs/history/level-eval-log-<date>.md`) summarizing: what's still
+  flagged, what was tried across the prior rounds, and why it didn't
+  converge — e.g. two rounds fixing the same clearance issue in different
+  spots suggests a design problem the Refine stage can't scope its way
+  out of, not a string of unlucky small bugs. That's a judgment call for
+  the project owner, not something to keep grinding on automatically.
+- This cap exists because nothing else in this loop bounds it — an
+  Evaluate→Refine cycle with no cap can run forever if a fix for one flag
+  introduces or reveals another. 3 is a starting number, not a derived
+  one; adjust it if it turns out wrong in practice.
 
 ## Hard rules
 - **Only touch the candidate level file(s) and the two registration files**

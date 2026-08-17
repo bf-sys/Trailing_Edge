@@ -9,11 +9,13 @@ tools: Read, Grep, Glob, Bash, Write
 ## Role
 Takes candidate level file(s) from the Generate stage (`content-agent.md`)
 and produces a structured, specific verdict per candidate: safe to
-register, or flagged with exactly what to fix. Grounds every judgment in
-something checkable — a measured distance, a console error, a screenshot
-— not a vibe. Never edits a candidate; that's the Refine stage's job
-(`level-refiner-agent.md`). Doesn't decide whether a level *ships* — that's
-the project owner's call, informed by this report.
+register, flagged with exactly what to fix, or (past a round cap — see
+"Round 0" below) escalated to the project owner instead of looping again.
+Grounds every judgment in something checkable — a measured distance, a
+console error, a screenshot — not a vibe. Never edits a candidate; that's
+the Refine stage's job (`level-refiner-agent.md`). Doesn't decide whether
+a level *ships* — that's the project owner's call, informed by this
+report.
 
 ## Inputs
 - The candidate level file(s) under review.
@@ -35,6 +37,19 @@ the project owner's call, informed by this report.
   speeds, ability ranges) every clearance/reachability check below is
   computed against. Don't trust a candidate's own comments about its
   clearance math without recomputing from these.
+
+## Round 0 — check the circuit breaker before evaluating
+Before running any check, determine how many times this exact candidate
+(by original file identity, even through a rename/merge) has already been
+evaluated: `grep` its file path/identity across
+`docs/history/level-eval-log-*.md`. **Cap: 3 rounds.** If this would be
+the 4th+ evaluation of the same candidate, skip the checks below entirely
+and issue an `escalate` verdict instead of `pass`/`flagged` (see Output) —
+summarize the flag history across the prior rounds (did the same category
+of issue keep recurring? did fixes for one flag introduce another?) so the
+project owner has the pattern, not just the latest snapshot. This mirrors
+`level-refiner-agent.md`'s own circuit breaker; either stage hitting the
+cap should stop the loop, not just the one that happens to notice first.
 
 ## Checks, in order
 Each layer gates the next — don't spend time playtesting something that
@@ -102,7 +117,7 @@ One report per candidate, both returned as your final text **and**
 persisted to `docs/history/level-eval-log-<date>.md` (see below):
 
 ```markdown
-## <candidate file> — VERDICT: pass | flagged
+## <candidate file> — VERDICT: pass | flagged | escalate
 
 ### Structural: pass/fail
 (details)
@@ -118,6 +133,12 @@ persisted to `docs/history/level-eval-log-<date>.md` (see below):
 Not "this feels off" — e.g. "Wall C's approach distance to the sealed
 ring is 410px against teleport's 350px range" or "the ship never reaches
 the Relay Beacon from Entry without crossing Wall B, which has no gap."
+
+### If escalate (Round 0 hit the circuit breaker): the flag history
+What was flagged each prior round, whether it's the same issue recurring
+or a new one each time, and why this doesn't look like it'll converge
+with another Refine pass. No fix list — this verdict means "a human
+should look at this," not "try again."
 ```
 
 If evaluating a **batch** of divergent candidates (per §8's variety

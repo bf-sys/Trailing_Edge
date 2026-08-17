@@ -36,6 +36,19 @@ re-checked isn't actually a fix.
    wall endpoint, widen a bypass gap, resize a sealed ring, etc. Don't
    take a flag as license to redesign unrelated parts of the level; the
    Evaluator scoped the problem, stay inside that scope.
+
+   **`[identity]`-labeled telegraphing findings are never something to
+   attempt.** The Evaluator's report shouldn't put these in its actionable
+   fix list at all (they're informational, not blocking — see
+   `level-evaluator-agent.md`), but if one shows up here anyway: don't try
+   to fix it, don't spend a circuit-breaker round on it, and don't loop
+   back to Evaluate over it alone. It's a hazard-*type* visual property
+   (`hazardConfig.ts` — texture/color/shape), not a placement problem this
+   candidate introduced; no level-file change resolves it. Carry it
+   through to your own output unchanged, so it stays visible to the
+   project owner, and move on to whatever `[placement]` findings actually
+   need fixing. Don't stall the whole candidate on something no level
+   author has the tools to fix.
 2. **Multi-candidate merge** (when Generate produced several divergent
    candidates per §8's variety intent). Pick the strongest overall
    candidate as the base — informed by the Evaluator's comparison
@@ -108,7 +121,10 @@ either stage has of prior rounds, since each invocation starts fresh).
 - `src/levels/index.ts` + `LEVEL_ORDER` registration.
 - A short changelog: what came from which candidate (if a merge), what was
   fixed per which Evaluator flag, and confirmation the deterministic
-  re-check (tsc + live playtest) passed.
+  re-check (tsc + live playtest) passed. Carry forward, verbatim, any
+  `[identity]` findings from the Evaluator's report — unresolved by
+  design, not by omission, and worth staying visible to the project owner
+  even though this candidate is otherwise finalized and registered.
 
 ## Explicit non-goals
 - Doesn't generate new content from scratch — that's Generate's job;

@@ -112,6 +112,32 @@ headlessly (Playwright + this game's dev-only console hooks):
 - Is any hazard's danger communicated by color alone, with no shape/
   motion/border cue backing it up?
 
+**Label every telegraphing finding `[placement]` or `[identity]` — this
+determines whether the Refine stage can act on it at all, so getting the
+label right matters more than the finding itself:**
+- **`[placement]`** — fixable with a level-file-only change: hazards
+  clustered too tightly to read individually, a moving hazard positioned
+  where its drift isn't visible before contact, too many distinct hazard
+  types crammed into one small area. Repositioning, spacing, or thinning
+  out local density genuinely solves these.
+- **`[identity]`** — a property of the hazard *type itself* — its texture,
+  color, or shape (`hazardConfig.ts`'s `textureKey`/`placeholderTexture`)
+  — not of where this candidate happened to place it. No placement choice
+  in any level file changes what color Ion Storm renders or whether it
+  has a motion cue; that's core config, off-limits to both this role and
+  the Refine stage. The Ion Storm vs. Nebula Field legibility question
+  specifically is a **known, already-open GDD item** (§9 — fallback
+  options recorded there are particle trail, border/outline treatment, or
+  reverting to two distinct phenomena; all art/code work), not a defect
+  this candidate introduced.
+- **`[identity]` findings do not block the verdict.** Record them (they're
+  real, and worth aggregating for whoever eventually picks up the GDD
+  item), but don't count them toward `flagged` and don't let them consume
+  a circuit-breaker round — there is no candidate-level fix, so treating
+  one like an actionable flag just burns rounds against something that
+  can never resolve at this layer. Only `[placement]` findings belong in
+  the actionable fix list.
+
 ## Output
 One report per candidate, both returned as your final text **and**
 persisted to `docs/history/level-eval-log-<date>.md` (see below):
@@ -127,12 +153,17 @@ persisted to `docs/history/level-eval-log-<date>.md` (see below):
 
 ### Convention alignment: notes
 
-### Telegraphing: notes
+### Telegraphing: notes, each finding labeled `[placement]` or `[identity]`
+`[identity]` findings are informational only — see above — and don't
+affect VERDICT above or appear in the fix list below.
 
 ### If flagged: the specific, actionable fix list
-Not "this feels off" — e.g. "Wall C's approach distance to the sealed
-ring is 410px against teleport's 350px range" or "the ship never reaches
-the Relay Beacon from Entry without crossing Wall B, which has no gap."
+`[placement]` findings only. Not "this feels off" — e.g. "Wall C's
+approach distance to the sealed ring is 410px against teleport's 350px
+range" or "the ship never reaches the Relay Beacon from Entry without
+crossing Wall B, which has no gap," or "Ion Storm A and the debris wall
+behind it are close enough that its drift reads as part of the wall —
+move it 200px+ clear."
 
 ### If escalate (Round 0 hit the circuit breaker): the flag history
 What was flagged each prior round, whether it's the same issue recurring

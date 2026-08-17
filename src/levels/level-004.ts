@@ -52,32 +52,59 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // spans a full map dimension, so nothing is walled off. level-000 stays
 // the fixed reference for hazard/puzzle-element testing; this file is
 // meant to be edited freely as design iterates.
+//
+// Also carries level-003's Ion Storm/Meteoroid placements -- the two
+// 'linear' movementPattern hazards, managed by MovingHazardManager
+// (2026-08-17), which wraps them back into the level with an
+// objective-biased respawn heading once they drift out of bounds instead
+// of flying off forever (GDD §9/§11.3; see that class for the design).
+// Their authored x/y below only matters for the first leg, before either
+// first wraps.
+//
+// 2026-08-17, second pass: level-004 read too "same-y" against level-003
+// (same relative layout logic, similarly sized) -- every placement below
+// is now that original layout point-reflected through the map's center,
+// (x, y) -> (width - x, height - y), the same 180-degree-flip trick used
+// on level-002 (2026-08-15) rather than two independent mirror passes.
+// Point reflection is distance-preserving, so every relationship already
+// verified pre-flip -- the far/close objective spacing, every hazard's
+// 250px+ clearance from every objective/resupply point -- carries over
+// exactly; only the comments below changed, to describe each hazard's new
+// orientation (e.g. what was Wall A's south bypass is now its north
+// bypass).
 export const LEVEL_004: LevelConfig = {
   width: 4800,
   height: 2700,
-  entryWormholeLocation: { x: 500, y: 450 },
-  exitWormholeLocation: { x: 4100, y: 1150 },
-  probeLocation: { x: 4200, y: 500 },
-  relayBeaconLocation: { x: 450, y: 2300 },
+  entryWormholeLocation: { x: 4300, y: 2250 },
+  exitWormholeLocation: { x: 700, y: 1550 },
+  probeLocation: { x: 600, y: 2200 },
+  relayBeaconLocation: { x: 4350, y: 400 },
 
-  resupplyPoints: [{ x: 2900, y: 1950, textureKey: 'asteroid_large', radius: 40 }],
+  resupplyPoints: [{ x: 1900, y: 750, textureKey: 'asteroid_large', radius: 40 }],
 
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
     // scattered: two toll the open bypass routes around Debris Field walls
-    // (A's south gap, D's south gap), one sits on Entry's early route out,
+    // (A's north gap, D's north gap), one sits on Entry's early route out,
     // one bridges the close Probe<->Exit hop.
-    { type: 'nebulaField', x: 1800, y: 1600 }, // Wall A's south bypass
-    { type: 'nebulaField', x: 3550, y: 1550 }, // Wall D's south bypass
-    { type: 'nebulaField', x: 1200, y: 800 }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 4000, y: 800 }, // bridges the close Probe<->Exit hop
+    { type: 'nebulaField', x: 3000, y: 1100 }, // Wall A's north bypass
+    { type: 'nebulaField', x: 1250, y: 1150 }, // Wall D's north bypass
+    { type: 'nebulaField', x: 3600, y: 1900 }, // early on Entry's route toward the map center
+    { type: 'nebulaField', x: 800, y: 1900 }, // bridges the close Probe<->Exit hop
+
+    // Ion Storm / Meteoroid -- managed by MovingHazardManager (see the
+    // file-level comment above). Initial positions only, clear of every
+    // wall/objective/resupply point.
+    { type: 'ionStorm', x: 2000, y: 1800 },
+    { type: 'ionStorm', x: 3400, y: 1700 },
+    { type: 'meteoroid', x: 3900, y: 700 },
 
     // Debris Field walls -- four chained barriers. None span a full map
     // dimension, so each leaves clear space at both ends to route around.
-    ...debrisWall(1800, 300, 1800, 1400), // upper-center divider
-    ...debrisWall(2200, 1550, 3400, 1550), // mid-lower divider
-    ...debrisWall(900, 1700, 2000, 2450), // lower-left diagonal, guards Relay Beacon's approach
-    ...debrisWall(3500, 350, 3500, 1300), // upper-right divider, guards the Probe/Exit corridor
+    ...debrisWall(3000, 2400, 3000, 1300), // lower-center-right divider
+    ...debrisWall(2600, 1150, 1400, 1150), // upper-mid-left divider
+    ...debrisWall(3900, 1000, 2800, 250), // upper-right diagonal, guards Relay Beacon's approach
+    ...debrisWall(1300, 2350, 1300, 1400), // lower-left divider, guards the Probe/Exit corridor
   ],
 
   puzzleElements: [],

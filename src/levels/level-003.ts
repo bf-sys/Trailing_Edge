@@ -93,6 +93,18 @@ const PROBE_RING_COUNT = 9; // chord between neighbors ~103px at this radius/cou
 // nothing besides the Probe itself is walled off. level-000 stays the
 // fixed reference for hazard/puzzle-element testing; this file is meant
 // to be edited freely as design iterates.
+//
+// Also new this level: the first real placements of Ion Storm and
+// Meteoroid, the two 'linear' movementPattern hazards -- proving out
+// MovingHazardManager (2026-08-17), which wraps them back into the level
+// via an objective-biased respawn once they drift out of bounds instead of
+// letting them fly off forever (GDD §9/§11.3; see that class for the
+// design). Placed on level-003/004 rather than 001/002 since the player
+// has more abilities to handle a moving threat by this point (scan,
+// teleport, and -- once level-003 is complete -- rocketBoost). Their
+// authored x/y below only matters for the first leg, before either first
+// wraps; every respawn after that is chosen by MovingHazardManager, not
+// this file.
 export const LEVEL_003: LevelConfig = {
   width: 5400,
   height: 3038,
@@ -112,6 +124,13 @@ export const LEVEL_003: LevelConfig = {
     { type: 'nebulaField', x: 3900, y: 1750 }, // Wall D's south bypass
     { type: 'nebulaField', x: 1200, y: 900 }, // early on Entry's route toward the map center
     { type: 'nebulaField', x: 4550, y: 950 }, // tolls the approach to the Probe's ring, between it and Exit
+
+    // Ion Storm / Meteoroid -- managed by MovingHazardManager (see the
+    // file-level comment above). Initial positions only, clear of every
+    // wall/ring/objective/resupply point.
+    { type: 'ionStorm', x: 3200, y: 900 },
+    { type: 'ionStorm', x: 1600, y: 1100 },
+    { type: 'meteoroid', x: 900, y: 2200 },
 
     // Debris Field walls -- four chained barriers, same as level-001/002.
     // None span a full map dimension, so each leaves clear space at both

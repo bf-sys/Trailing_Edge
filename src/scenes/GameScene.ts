@@ -3,6 +3,7 @@ import { SystemRegistry } from '../systems/SystemRegistry';
 import '../systems'; // side-effect import: registers any systems that exist so far
 import { getPlayerShip } from '../systems/ExplorationController';
 import { HazardZoneElement } from '../objects/HazardZoneElement';
+import { MovingHazardManager } from '../objects/MovingHazardManager';
 import { HazardScanOverlay } from '../objects/HazardScanOverlay';
 import { TeleportRangeRing } from '../objects/TeleportRangeRing';
 import { ResupplyPoint } from '../objects/ResupplyPoint';
@@ -60,6 +61,8 @@ export class GameScene extends Phaser.Scene {
   private levelHeight!: number;
   private pendingAbilityUnlock: AbilityType | undefined;
   private hazards: HazardZoneElement[] = [];
+  private movingHazards: HazardZoneElement[] = [];
+  private movingHazardManager!: MovingHazardManager;
   private resupplyPoints: ResupplyPoint[] = [];
   private puzzleElements: PuzzleElementBase[] = [];
   private hudOverlay!: HudOverlay;
@@ -78,6 +81,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.hazards = [];
+    this.movingHazards = [];
     this.resupplyPoints = [];
     this.puzzleElements = [];
 
@@ -122,8 +126,13 @@ export class GameScene extends Phaser.Scene {
     // Hazard placements (GDD §9/§11.3): x/y is this level's authored
     // content; shape/movement/cost per hazard type stays in hazardConfig.ts
     // (CLAUDE.md's "hazard ... costs" config-module convention).
+    // 'linear' movement hazards (Ion Storm, Meteoroid) additionally get
+    // tracked in movingHazards -- see MovingHazardManager, constructed
+    // below once the tracker it needs exists.
     config.hazards.forEach((placement) => {
-      this.placeHazard(placement, hazardConfig[placement.type]);
+      const typeConfig = hazardConfig[placement.type];
+      const hazard = this.placeHazard(placement, typeConfig);
+      if (typeConfig.movementPattern === 'linear') this.movingHazards.push(hazard);
     });
 
     // Resupply points (AsteroidField -- structure repair only).
@@ -154,6 +163,12 @@ export class GameScene extends Phaser.Scene {
       relayBeacon: config.relayBeaconLocation,
       exitWormhole: config.exitWormholeLocation,
     });
+
+    // Wraps 'linear' hazards (movingHazards, collected above) back into the
+    // level instead of letting them drift off into the world bounds forever
+    // -- needs the tracker for its objective-biased respawn heading, so
+    // constructed here rather than alongside the hazard-placement loop.
+    this.movingHazardManager = new MovingHazardManager(this.movingHazards, tracker, this.levelWidth, this.levelHeight);
 
     new ProbeObject(this, { ...config.probeLocation, textureKey: 'probe', radius: 27 }, tracker);
 
@@ -225,6 +240,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     SystemRegistry.all().forEach((system) => system.update?.(time, delta));
     this.hazards.forEach((hazard) => hazard.update(time, delta));
+    this.movingHazardManager.update();
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
     this.puzzleElements.forEach((element) => element.update(time, delta));
     this.hudOverlay.update();
@@ -337,7 +353,7 @@ export class GameScene extends Phaser.Scene {
   // config carries one (Solar Flare/Ion Storm/Nebula Field/Meteoroid have
   // no sourced art yet, docs/STATUS.md); Debris Field skips this since it
   // already has final sourced art loaded by BootScene.
-  private placeHazard(placement: HazardPlacement, config: HazardTypeConfig): void {
+  private placeHazard(placement: HazardPlacement, config: HazardTypeConfig): HazardZoneElement {
     if (config.placeholderTexture && config.shape.kind === 'circle') {
       this.createHazardPlaceholderTexture(
         config.textureKey,
@@ -347,15 +363,15 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    this.hazards.push(
-      new HazardZoneElement(this, {
-        ...config,
-        x: placement.x,
-        y: placement.y,
-        textureKey: placement.textureKey ?? config.textureKey,
-        rotationRadians: placement.rotationRadians,
-      }),
-    );
+    const hazard = new HazardZoneElement(this, {
+      ...config,
+      x: placement.x,
+      y: placement.y,
+      textureKey: placement.textureKey ?? config.textureKey,
+      rotationRadians: placement.rotationRadians,
+    });
+    this.hazards.push(hazard);
+    return hazard;
   }
 
   // Placeholder texture for the four hazardConfig.ts entries with no

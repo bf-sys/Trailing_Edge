@@ -282,6 +282,32 @@ imports; **nobody hand-edits `create()`.**
     already-established `AsteroidField` resupply object below. **Implemented
     2026-08-07** — Phase 1's `HazardZoneElement` config now sets
     `blocksMovement: true` with zero resource cost.
+  - **`MovingHazardManager`, added 2026-08-17** — keeps `movementPattern:
+    'linear'` hazards (Ion Storm, Meteoroid — the only two entries using
+    it) from drifting off into the world bounds and never coming back,
+    which is what `HazardZoneElement`'s own movement code alone would do
+    (nothing calls `setCollideWorldBounds` on a hazard's body). One
+    `GameScene`-owned instance per level (reset each `create()`, like
+    `this.hazards`/`this.resupplyPoints` — **not** a `SystemRegistry`
+    singleton; moving-hazard state has no reason to survive a hard-fail
+    restart the way `ProgressionManager`'s unlocks do). Design: **wrap, not
+    destroy-and-respawn** — chosen specifically so `HazardScanOverlay`'s
+    "one label per hazard, created once" assumption (see its class
+    comment) never has to change. Each managed `HazardZoneElement` is a
+    fixed instance for the whole level; once its position drifts past the
+    level bounds by more than its own radius, `HazardZoneElement.reposition()`
+    (a new mutation method, the only one on that otherwise read-only-getter
+    class) jumps it to a fresh point on the level's perimeter with a new
+    heading, at its already-configured speed. That new heading is
+    objective-biased, not uniformly random: aimed through a point near
+    `LevelObjectiveTracker.getCurrentObjectiveTarget()` (the same read-only
+    getter `HudOverlay`'s off-screen marker already polls), offset by a
+    random jitter (`movingHazardConfig.objectiveJitterRadius`, 350px) so
+    it's not a deterministic beeline. First proven out on `level-003`/
+    `level-004` (`src/levels/`) — placed there rather than `level-001`/
+    `level-002` since the player has more abilities to handle a moving
+    threat by that point. A hazard's authored level-file `x`/`y` only
+    governs its first leg, before it first wraps.
 - **`AbilityComponent`** — **built 2026-08-10 (Phase 2a); ability rework
   implemented 2026-08-14** (GDD §7, §11.4, §11.4a — full rationale in
   `docs/ability-rework-brainstorm-2026-08-14.md`). Per-ability dual gate

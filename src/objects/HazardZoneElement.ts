@@ -94,6 +94,20 @@ export class HazardZoneElement {
     return this.config.blocksMovement ?? false;
   }
 
+  // Mutation surface for MovingHazardManager (2026-08-17) only -- every
+  // other consumer above is read-only. Jumps this instance to a fresh
+  // position and re-derives its velocity from headingRadians at the
+  // config's already-authored speed, same formula applyMovement() used for
+  // the initial heading. Used to wrap a 'linear' hazard back into the level
+  // once it's drifted out of bounds, instead of destroying/recreating it
+  // (GDD §9/§11.3 -- keeps HazardScanOverlay's one-label-per-hazard,
+  // built-once assumption valid, since the hazard count never changes).
+  reposition(x: number, y: number, headingRadians: number): void {
+    this.zone.setPosition(x, y);
+    const body = this.zone.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(Math.cos(headingRadians) * this.config.speed, Math.sin(headingRadians) * this.config.speed);
+  }
+
   update(_time: number, delta: number): void {
     const dt = delta / 1000;
 

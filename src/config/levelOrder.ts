@@ -24,7 +24,20 @@
 // Field (level-003.ts's debrisRing()), reachable only via teleport. Safe
 // to require here since teleport is already unlocked by this point
 // (granted on level-002's completion).
-export const LEVEL_ORDER: string[] = ['level-001', 'level-002', 'level-003'];
+//
+// 2026-08-17: level-004 appended, 2x level-001's footprint (not 1.5x
+// level-003 -- anchored back to level-001's size, no size continuity
+// intended with 002/003). Same objective-spacing/Debris-Field-wall/
+// Nebula-Field rules as 002/003; deliberately skips level-003's sealed
+// debrisRing() (that was reinforcing a just-granted ability, not a
+// running pattern). Also the first level whose start shows an
+// ability-unlock popup for the *last* abilityUnlockOrder entry
+// (rocketBoost, granted on level-003's completion) -- previously that
+// grant hit handleLevelComplete()'s no-next-level fallback timing since
+// level-003 was LEVEL_ORDER's last entry; now it takes the normal
+// start-of-next-level path like scan/teleport did (GameScene.ts,
+// AbilityUnlockScene bullet in CLAUDE.md's Architecture contract).
+export const LEVEL_ORDER: string[] = ['level-001', 'level-002', 'level-003', 'level-004'];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through
 // LEVEL_ORDER progression -- GameScene.handleLevelComplete() special-cases

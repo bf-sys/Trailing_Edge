@@ -18,7 +18,13 @@
 // Nebula Field reintroduced deliberately (bypass-route tolls, not a third
 // hazard type sprinkled in). Player reaches it with scan already unlocked
 // (granted on level-001 completion, abilityUnlockOrder in abilityConfig.ts).
-export const LEVEL_ORDER: string[] = ['level-001', 'level-002'];
+//
+// 2026-08-17: level-003 appended, 1.5x level-002's footprint, same rules
+// again -- plus a first: the Probe sits inside a sealed ring of Debris
+// Field (level-003.ts's debrisRing()), reachable only via teleport. Safe
+// to require here since teleport is already unlocked by this point
+// (granted on level-002's completion).
+export const LEVEL_ORDER: string[] = ['level-001', 'level-002', 'level-003'];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through
 // LEVEL_ORDER progression -- GameScene.handleLevelComplete() special-cases

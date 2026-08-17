@@ -12,6 +12,16 @@ audit.
   this role reviews what a player actually sees, not code or config files.
 - `docs/trailing_edge_gdd_draft_31.md` §9 (open questions) and §5 (survival
   systems, stakes asymmetry).
+- **Real placements now exist to check, as of 2026-08-17** — `level-003`/
+  `level-004` (`src/levels/`) each place Ion Storm and Meteoroid instances,
+  managed by `MovingHazardManager`, so this is checkable in an actual level
+  rather than only the Phase 1 vertical slice. Note also: `scan`'s
+  hazard-ID overlay (`HazardScanOverlay`, 2026-08-14) gives a player an
+  *active, on-demand* way to identify a hazard's type/threatened resource
+  — real mitigation, but explicitly not a resolution of this role's checks
+  (CLAUDE.md is direct about this): it doesn't help a player without
+  `scan` unlocked yet, on cooldown, or simply not using it, who still needs
+  to read hazards passively. Keep evaluating the no-ability case.
 
 ## Checks
 1. **Ion Storm vs. Nebula Field:** does Ion Storm (slow-moving) actually

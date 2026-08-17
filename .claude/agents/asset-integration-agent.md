@@ -46,9 +46,13 @@ sequence per new asset need, don't invent a new sourcing method here.
 2. **Broken-path / integration checks** — verify every asset a level config
    references actually resolves to a real file in the loading manifest.
 3. **Cross-pack consistency** — flag resolution/palette mismatches the way
-   the existing pipeline already has (e.g. the Home Marker/ship style
-   mismatch, accepted as-is but recorded) — a judgment call to surface to
-   the project owner, not to silently normalize or silently ignore.
+   the existing pipeline already has (e.g. the wormhole/ship style
+   mismatch — `objectives/wormhole.png`, shared by `EntryWormhole`/
+   `ExitWormhole` and reassigned from the old Star asset, was originally
+   noted as a "Home Marker/ship style mismatch" before the 2026-07-31
+   HomeMarker split; same underlying note, current naming — accepted
+   as-is but recorded) — a judgment call to surface to the project owner,
+   not to silently normalize or silently ignore.
 4. **License terms per pack** — maintain `docs/ATTRIBUTION.md` for every
    newly integrated asset; flag CC-BY/CC-BY-SA obligations the way the
    existing ledger already does.

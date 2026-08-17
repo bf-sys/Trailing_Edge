@@ -8,6 +8,12 @@ record of what any specific level currently contains — read the level file
 itself for that. If this guide and a level file disagree, the level file
 is right and this guide is stale; update it.
 
+**If you're building one of the new parallel-agent levels specifically,
+read §8 first** — every level from `level-004` onward starts with the
+player's full ability set already unlocked, and §8 is the explicit policy
+for that: push complexity/variety rather than staying conservative,
+verification discipline (§11) permitting.
+
 Companion docs: `CLAUDE.md`'s Architecture contract (`HazardZoneElement`,
 `MovingHazardManager`, `LevelObjectiveTracker`, etc. — the code contract
 this guide's conventions sit on top of) and the GDD (`docs/trailing_edge_gdd_draft_31.md`,
@@ -100,14 +106,17 @@ next escalation point in the design makes sense.
 General principle carried through every level so far: match a level's
 hazard complexity/threat to the abilities the player actually has by the
 time they reach it. Don't require an ability the player can't yet have
-(`LEVEL_ORDER`'s position is what guarantees this — see §7).
+(`LEVEL_ORDER`'s position is what guarantees this — see §7). **This
+constraint has nothing left to gate once a level is past the point where
+every ability is unlocked — see §8, which is exactly that situation and
+is the deliberate target zone for the next level-authoring phase.**
 
 No puzzle-taxonomy element (`PuzzleElementBase` and its five subtypes) has
 been placed in any real level yet — every level's `puzzleElements` is
 still `[]`. That's still Phase 2b-deferred work; `level-000` (Test Level)
 remains the only place they're exercised. See the GDD open question this
 guide doesn't try to resolve: whether/how a puzzle site should ever gate
-the mandatory loop (§9's "Sequential mandatory puzzle gating" item).
+the mandatory loop (GDD §9's "Sequential mandatory puzzle gating" item).
 
 ## 5. Debris Field — the primary hazard
 
@@ -179,7 +188,10 @@ function debrisRing(cx: number, cy: number, radius: number, count: number): Haza
 just-granted ability the level right after it was earned — not a running
 pattern to repeat in every level.** Reuse it only when there's an
 equally deliberate reason (e.g. reinforcing a different ability the same
-way, right after it's granted).
+way, right after it's granted) — **that restriction is about levels still
+inside the unlock sequence (roughly 001–004). Once a level is past that
+point and every ability is already unlocked, §8 explicitly lifts it: a
+sealed section is fair game as a recurring device, not a one-off.**
 
 If you do reuse it, the range math has to hold:
 
@@ -242,7 +254,9 @@ No other wiring needed. What to know as a level author:
   threat.** Ion Storm/Meteoroid first appeared at `level-003` (by which
   point `scan` and `teleport` are both unlocked). Don't place one on an
   early level where `LEVEL_ORDER`'s position means the player has few or
-  no abilities yet.
+  no abilities yet. Once past that point, though, the count used so far
+  (2–3 per level) was a "prove the mechanic works" number, not a ceiling —
+  see §8 for using more of them deliberately.
 - Give the initial placement the same 250px+ clearance from every
   wall/objective/resupply point as any other hazard.
 - Not yet an explicitly designed interaction (flagging so it's not
@@ -250,13 +264,65 @@ No other wiring needed. What to know as a level author:
   own, so its path can freely overlap a Debris Field wall visually. Not
   identified as a problem, just never deliberately designed either way.
 
-## 8. Resupply points
+## 8. The post-full-unlock era: this is where the next levels should experiment
+
+`abilityUnlockOrder` (`abilityConfig.ts`) has exactly three entries —
+`scan`, `teleport`, `rocketBoost` — and `ProgressionManager` grants the
+next one on every level completion. `level-003`'s completion grants the
+last of the three, so **every level from `level-004` onward starts with
+the entire toolkit already unlocked, permanently.** There's no ability
+left to wait for. §4's "match hazard complexity to the abilities the
+player has" and §7's "introduce only once the player can cope" both stop
+being a gating constraint at that point — not because they were wrong, but
+because they've got nothing left to gate against.
+
+**Decided (2026-08-17): treat that as an opportunity for the upcoming
+parallel-agent level-authoring phase, not a plateau.** Levels built from
+`level-004` onward can genuinely push past what `level-001`–`level-004`
+did:
+
+- **More instances of moving hazards** than any level built so far — 2–3
+  Ion Storm/Meteoroid was a "prove `MovingHazardManager` works" count, not
+  a target to keep hitting.
+- **More complicated Debris Field layouts** — mazes, multiple interlocking
+  walls, more than one sealed section in the same level — rather than the
+  handful of simple straight-line dividers every level so far has used.
+- **Walled-off sections reused more freely.** §5's sealed ring was
+  deliberately restricted to one narrative use (reinforcing `teleport`
+  right after level-003 granted it) precisely because it was written for
+  levels still inside the unlock sequence. That restriction doesn't apply
+  here — with every ability already unlocked, a section gated behind any
+  one of them is fair game as a recurring device.
+- "And the like" — anything in the same spirit that a full toolkit makes
+  viable and earlier levels genuinely couldn't attempt.
+
+**The point of this phase is variety, not convergence.** Different levels
+landing at different points on the difficulty/complexity spectrum is the
+useful outcome, not a problem to smooth out — it's what generates the
+signal a playtesting pass needs to find which combinations (hazard
+density, how often a sealed section shows up, how many moving hazards at
+once, ...) actually feel best. Once that signal exists, a follow-up pass
+is expected to *conform* the level set toward whatever's discovered —
+meaning §2 through §7's specific numbers (spacing, instance counts,
+clearance margins) are this guide's pre-experimentation baseline, not a
+ceiling on what comes next. Update those sections once the conforming
+pass happens.
+
+**What doesn't relax:** §11's verification discipline, unchanged. An
+experimental level still has to type-check, load with zero console
+errors, and — especially now that sealed sections are meant to recur
+rather than being a single deliberate exception — every gated area's
+approach-range math (§5) has to actually be checked, not eyeballed.
+Pushing the design further is the goal; shipping something that's
+secretly unreachable or soft-locked is not a version of that.
+
+## 9. Resupply points
 
 One `AsteroidField` per level so far (structure repair only — energy
 regenerates passively, no dedicated object). Placed centrally/accessibly,
 kept 250–300px+ clear of any wall or ring.
 
-## 9. Visual variety: the 180° flip
+## 10. Visual variety: the 180° flip
 
 When a new level's design logic closely echoes an earlier one — same
 rules applied the same way, similar size — consider point-reflecting every
@@ -278,7 +344,7 @@ Precedent: `level-002` was flipped relative to how closely it echoed
 to `level-003` for the same reason (2026-08-17). Both read as genuinely
 different levels afterward, confirmed in-browser, not just on paper.
 
-## 10. Verification checklist for a new or edited level
+## 11. Verification checklist for a new or edited level
 
 1. `npx tsc --noEmit -p .` — catches placement/type errors immediately.
 2. Confirm registration: the level id is in both `src/levels/index.ts`'s
@@ -306,14 +372,17 @@ different levels afterward, confirmed in-browser, not just on paper.
    confirm normal movement is genuinely blocked; force a moving hazard's
    position out of bounds and confirm it respawns correctly.
 
-## 11. Open / not yet decided
+## 12. Open / not yet decided
 
 - Solar Flare has no placement precedent.
 - No fixed target for exactly how many Nebula/Debris instances "feels
   right" relative to map size — eyeballed per level so far (roughly 3–4
   Nebula instances; wall count falls out of `debrisWall()`'s automatic
-  segment count for whatever length is chosen).
+  segment count for whatever length is chosen). **This is exactly what §8's
+  experimentation phase is meant to resolve** — expect this bullet to
+  become a stated convention once a conforming pass happens, not to stay
+  open forever.
 - The GDD's open question on sequential mandatory puzzle-site gating
-  (§9) is unrelated to hazard design but affects the same files if it's
-  ever decided — check that item before assuming `puzzleElements: []` is
-  permanent for every level.
+  (GDD §9) is unrelated to hazard design but affects the same files if
+  it's ever decided — check that item before assuming `puzzleElements: []`
+  is permanent for every level.

@@ -39,7 +39,22 @@
 // level-003 was LEVEL_ORDER's last entry; now it takes the normal
 // start-of-next-level path like scan/teleport did (GameScene.ts,
 // AbilityUnlockScene bullet in CLAUDE.md's Architecture contract).
-export const LEVEL_ORDER: string[] = ['level-001', 'level-002', 'level-003', 'level-004'];
+//
+// 2026-08-17: level-005 and level-006 appended, in that order. Both sit in
+// level-design-guide.md §8's post-full-unlock experimentation zone -- the
+// player already has scan/teleport/rocketBoost (and tractorBeam,
+// unlocked-by-default) by the time they reach either, so §4/§7's
+// ability-gating constraints no longer apply. Registered here only after
+// each passed the Evaluate/Refine GER loop individually (see each level
+// file's header comment for its candidate/evaluation history).
+export const LEVEL_ORDER: string[] = [
+  'level-001',
+  'level-002',
+  'level-003',
+  'level-004',
+  'level-005',
+  'level-006',
+];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through
 // LEVEL_ORDER progression -- GameScene.handleLevelComplete() special-cases

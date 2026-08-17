@@ -25,13 +25,15 @@
 // to require here since teleport is already unlocked by this point
 // (granted on level-002's completion).
 //
-// 2026-08-17: level-004 appended, 2x level-001's footprint (not 1.5x
-// level-003 -- anchored back to level-001's size, no size continuity
-// intended with 002/003). Same objective-spacing/Debris-Field-wall/
-// Nebula-Field rules as 002/003; deliberately skips level-003's sealed
-// debrisRing() (that was reinforcing a just-granted ability, not a
-// running pattern). Also the first level whose start shows an
-// ability-unlock popup for the *last* abilityUnlockOrder entry
+// 2026-08-17: level-004 appended, originally 2x level-001's footprint
+// (deliberately not matching level-003's size); **recalibrated the same
+// day to match level-003's footprint exactly (5400x3038)** -- the size
+// discontinuity was a miscommunication, not an intended design point, see
+// level-004.ts's file comment for the rescale math. Same objective-spacing/
+// Debris-Field-wall/Nebula-Field rules as 002/003; deliberately skips
+// level-003's sealed debrisRing() (that was reinforcing a just-granted
+// ability, not a running pattern). Also the first level whose start shows
+// an ability-unlock popup for the *last* abilityUnlockOrder entry
 // (rocketBoost, granted on level-003's completion) -- previously that
 // grant hit handleLevelComplete()'s no-next-level fallback timing since
 // level-003 was LEVEL_ORDER's last entry; now it takes the normal

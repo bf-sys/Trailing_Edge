@@ -166,6 +166,7 @@ from the process/state docs above) live in `docs/reference/`:
 - `docs/reference/console-tuning-reference.md` — `window.tuning` fields exposed for live console tuning while playtesting
 - `docs/reference/art-production-guidelines.md` — format/resolution/style/naming parameters for producing new art
 - `docs/reference/phaser-vfx-notes.md` — how Phaser handles VFX (particles/tweens/postFX/flipbooks), mapped to planned effects (thrusters, scanner, damage)
+- `docs/reference/level-design-guide.md` — level-authoring conventions distilled from `level-001`–`level-004` (sizing, objective spacing, Debris/Nebula Field placement, `MovingHazardManager`, the 180°-flip variety trick, a verification checklist) — read before authoring a new level, especially for parallel/agent-driven content work
 
 ## Tech stack (confirmed, GDD §11)
 

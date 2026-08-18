@@ -47,6 +47,28 @@
 // ability-gating constraints no longer apply. Registered here only after
 // each passed the Evaluate/Refine GER loop individually (see each level
 // file's header comment for its candidate/evaluation history).
+//
+// 2026-08-17: level-007 appended. Also sits in the post-full-unlock
+// experimentation zone; its axis is three simultaneous debrisRing()-sealed
+// pockets (Probe, the AsteroidField resupply point, and the mandatory
+// Relay Beacon), structurally distinct from level-005's moving-hazard
+// density push and level-006's single serpentine maze. Registered after
+// passing Evaluate on round 2 of at most 3 (round 1 flagged one
+// [placement] clearance issue, fixed and re-verified) -- see
+// level-007.ts's header comment and docs/history/level-eval-log-2026-08-17.md
+// for the full evaluation history.
+//
+// 2026-08-17: level-008 appended. Also sits in the post-full-unlock
+// experimentation zone; its axis is Nebula Field density (a three-wall
+// "Drift Expanse" gauntlet the player has to cross twice, plus four other
+// intent-placed formations), with Debris Field deliberately kept minimal --
+// structurally distinct from level-005's moving-hazard density push,
+// level-006's single serpentine maze, and level-007's triple sealed ring.
+// Registered after passing Evaluate on round 2 of at most 3 (round 1
+// flagged two [placement] clearance issues -- the bridging toll's near end
+// and the SW Ion Storm placement, both fixed and re-verified) -- see
+// level-008.ts's header comment and docs/history/level-eval-log-2026-08-17.md
+// for the full evaluation history.
 export const LEVEL_ORDER: string[] = [
   'level-001',
   'level-002',
@@ -54,6 +76,8 @@ export const LEVEL_ORDER: string[] = [
   'level-004',
   'level-005',
   'level-006',
+  'level-007',
+  'level-008',
 ];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through

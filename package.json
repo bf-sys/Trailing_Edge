@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "level-viewer": "vite --config tools/level-viewer/vite.config.ts",
+    "level-viewer:typecheck": "tsc --noEmit -p tools/level-viewer"
   },
   "dependencies": {
     "phaser": "^3.90.0"

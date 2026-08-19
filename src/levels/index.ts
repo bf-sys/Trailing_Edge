@@ -32,3 +32,15 @@ export function getLevelConfig(levelId: string): LevelConfig {
   }
   return config;
 }
+
+// Canonical enumerable list of every registered level id, derived from the
+// same LEVELS map getLevelConfig() reads -- added for read-only dev tooling
+// (tools/level-viewer) that needs to list every level without scanning the
+// filesystem for level-*.ts files (a level's registration here, not its
+// filename, is what makes it real). Not used by any runtime game code --
+// GameScene/ProgressionManager/TitleScene always resolve a specific,
+// already-known levelId (LEVEL_ORDER/TEST_LEVEL_ID) through getLevelConfig()
+// directly.
+export function getAllLevelIds(): string[] {
+  return Object.keys(LEVELS);
+}

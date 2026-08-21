@@ -252,20 +252,23 @@ per-level authored content (GDD §11.7), not a global tunable, and stays in
 | `resourceCost` | `{ energy, structure }` per second (continuous), per pulse (pulsed), or per hit (impact) |
 | `blocksMovement` | Solid collider — ship physically bounces off instead of passing through. No longer implies zero cost (decoupled 2026-08-21): Debris Field is `blocksMovement` with zero cost, Meteoroid is `blocksMovement` *and* charges an impact hit — the two are independent flags now, not one implying the other |
 | `cancelTargetOnContact` | Experimental, added 2026-08-21, Meteoroid only. On contact, clears the player's click-to-move destination so `ExplorationController` stops re-steering into the hazard every frame and fighting Arcade's collision separation — see the `cancelTargetOnContact` bullet in `CLAUDE.md`'s Architecture contract for the measured before/after. Only meaningful alongside `blocksMovement` |
+| `knockbackSpeed` | Added 2026-08-21, Meteoroid only (`260`, the effective ceiling — `shipConfig.maxSpeed` clamps anything higher). On the same `hitCooldownSeconds`-gated hit as `resourceCost`, sets the ship's velocity to this speed — the deliberate bounce Arcade's zero-restitution separation doesn't provide on its own. Direction is perpendicular to the hazard's `headingRadians` (whichever side the ship's already offset toward), not radially outward from its center — a same-day revision after playtesting found the radial version still felt sticky on a straight-on hit, since that direction just points back the way the ship came, which a moving hazard catches back up to. Velocity-only, by request — see the `knockbackSpeed` bullet in `CLAUDE.md`'s Architecture contract for the measured before/after, a known remaining edge case, and an instant-position-snap fix for it that was tried, worked, and was stepped back (not committed) so more time could be spent with this plain version first |
 | `placeholderTexture` | `{ color, alpha }` for the four hazards with no sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid, `docs/STATUS.md`) — `GameScene` bakes this into a flat circle texture under `textureKey`. Debris Field omits this since it has final sourced art. |
 
 ```js
 window.tuning.hazard.meteoroid.resourceCost.structure = 40  // meaner Meteoroid hits
+window.tuning.hazard.meteoroid.knockbackSpeed = 150          // gentler shove (default 260 is already the clamp ceiling)
 window.tuning.hazard.ionStorm.speed = 40                    // faster drift
 window.tuning.hazard.solarFlare.pulseIntervalSeconds = 1    // more frequent bursts
 ```
 
-**Note:** like `survival`/`ship`, most fields are read fresh by
-`HazardZoneElement` each frame or each pulse, so cost/speed/pulse-interval
-edits apply live. `shape`, `placeholderTexture`, `blocksMovement`, and
-`cancelTargetOnContact` are only read once, when `GameScene.create()`
-constructs that hazard's `HazardZoneElement` instance — a console edit to
-those needs a level restart (hard-fail restart or a fresh `Start`) to take
+**Note:** like `survival`/`ship`, most fields — including `knockbackSpeed`
+— are read fresh by `HazardZoneElement` each frame or each pulse/hit, so
+cost/speed/pulse-interval/knockback edits apply live. `shape`,
+`placeholderTexture`, `blocksMovement`, and `cancelTargetOnContact` are
+only read once, when `GameScene.create()` constructs that hazard's
+`HazardZoneElement` instance — a console edit to those needs a level
+restart (hard-fail restart or a fresh `Start`) to take
 effect, same next-restart-only caveat as `backgroundSetPieces`.
 
 ## `window.tuning.ability` (`src/config/abilityConfig.ts`)

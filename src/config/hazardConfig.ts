@@ -41,6 +41,7 @@ export interface HazardTypeConfig {
   resourceCost: { energy: number; structure: number };
   blocksMovement?: boolean;
   cancelTargetOnContact?: boolean;
+  knockbackSpeed?: number;
   // Solar Flare has no sourced art yet (docs/STATUS.md) -- GameScene
   // generates a flat placeholder circle texture at this color/alpha under
   // `textureKey`. Debris Field, Ion Storm, Nebula Field, and Meteoroid all
@@ -137,6 +138,23 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     // feedback: hitting Meteoroid head-on felt "stuck" rather than bounced
     // off, because click-to-move kept re-steering into it every frame.
     cancelTargetOnContact: true,
+    // Follow-up (2026-08-21): cancelTargetOnContact alone stops the ship
+    // dead against the hazard rather than bouncing it off (Arcade
+    // separation has zero restitution, confirmed via the earlier A/B) --
+    // hard to clear by normal acceleration (700 px/s^2) while still
+    // touching the collider. shipConfig.maxSpeed (260) is the effective
+    // ceiling here -- setVelocity() gets silently clamped to it by the
+    // ship body's own setMaxVelocity() cap, so anything higher is wasted --
+    // set to that ceiling directly after playtesting asked for more
+    // distance than 220 gave. Covers ~37.6px before deceleration
+    // (900 px/s^2) brings it to rest (v^2/2a), clearing the hazard's 40px
+    // radius plus the ship's ~23-28px half-extent with real margin.
+    // Direction was also changed the same playtesting pass: perpendicular
+    // to the hazard's line of travel rather than radially outward from its
+    // center (see applyKnockback()'s comment in HazardZoneElement.ts) --
+    // a straight-on hit's radial direction is just "back the way the ship
+    // came," which a still-moving hazard simply catches back up to.
+    knockbackSpeed: 260,
   },
 };
 

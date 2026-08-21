@@ -50,6 +50,17 @@ export interface HazardZoneConfig {
   // blanket blocksMovement behavior -- scoped to Meteoroid until playtesting
   // confirms it's worth generalizing.
   cancelTargetOnContact?: boolean;
+  // Added 2026-08-21 for Meteoroid, alongside cancelTargetOnContact: on a
+  // successful 'impact' hit (same hitCooldownSeconds gate as resourceCost,
+  // applied from the same call site), sets the ship's velocity to this
+  // speed pointed directly away from this hazard's center -- a deliberate
+  // outward impulse, since Arcade's own collision separation has zero
+  // restitution and produces no bounce on its own (confirmed via the
+  // cancelTargetOnContact experiment: without an explicit kick, contact
+  // just resolves to a dead stop, which is hard to escape by normal
+  // acceleration alone while still touching the hazard's collider). Only
+  // meaningful alongside blocksMovement + activation: 'impact'.
+  knockbackSpeed?: number;
   // Per-placement visual rotation (HazardPlacement.rotationRadians, added
   // 2026-08-15) -- purely cosmetic, applied to the sprite only; doesn't
   // touch the Arcade body (a circle body is rotation-invariant, and
@@ -283,7 +294,8 @@ export class HazardZoneElement {
   // applied once per hitCooldownSeconds window regardless of how long the
   // overlap persists, so getting physically shoved out by a blocksMovement
   // collider (see constructor) doesn't re-trigger the same hit every frame
-  // while separation is still resolving.
+  // while separation is still resolving. knockbackSpeed (if set) rides the
+  // same gate -- one hit, one kick.
   private applyImpactCost(time: number): void {
     const ship = getPlayerShip();
     if (!ship) return;
@@ -295,5 +307,38 @@ export class HazardZoneElement {
     const { resourceCost } = this.config;
     if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy, 'hazard-zone');
     if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone');
+
+    if (this.config.knockbackSpeed) this.applyKnockback(ship.image, this.config.knockbackSpeed);
+  }
+
+  // Runs after ExplorationController.update() this same frame (GameScene.update()'s
+  // SystemRegistry pass, which drives ExplorationController, precedes its
+  // hazards.forEach() pass), so this velocity isn't immediately overwritten
+  // by steering before the next frame -- from there, decelerateToStop()
+  // (this.target is already null via cancelTargetOnContact) decays it
+  // naturally like coasting, the same as any other ramp-down.
+  // Perpendicular to the hazard's line of travel, not radially outward from
+  // its center -- a straight-on hit's radial direction points straight back
+  // the way the ship came, which a still-moving hazard just catches back up
+  // to (playtesting: still felt "sticky" head-on with the radial version).
+  // Deflecting sideways, out of the hazard's path, is what actually
+  // resolves a head-on hit. Static hazards have no defined line of travel;
+  // headingRadians defaults to 0 the same way applyMovement()'s does.
+  private applyKnockback(ship: Phaser.Physics.Arcade.Image, speed: number): void {
+    const heading = this.config.headingRadians ?? 0;
+    const perpX = -Math.sin(heading);
+    const perpY = Math.cos(heading);
+
+    // Pick whichever perpendicular side the ship is already offset toward
+    // (sign of its position relative to the hazard's travel line), so the
+    // kick continues a glancing deflection rather than an arbitrary
+    // left/right. A true dead-center hit has no side to prefer; default to
+    // +perp deterministically rather than leaving the ship with no lateral
+    // kick at all (Math.sign(0) is 0, which is falsy -- `|| 1` catches it).
+    const dx = ship.x - this.zone.x;
+    const dy = ship.y - this.zone.y;
+    const side = Math.sign(dx * perpX + dy * perpY) || 1;
+
+    (ship.body as Phaser.Physics.Arcade.Body).setVelocity(perpX * side * speed, perpY * side * speed);
   }
 }

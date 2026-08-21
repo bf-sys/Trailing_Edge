@@ -336,8 +336,66 @@ imports; **nobody hand-edits `create()`.**
     knockback/bounce-away impulse — the fix converts "grinds along the
     hazard forever" into "stops cleanly against it," not into a bounce.
     An actual knockback would need a deliberate velocity impulse added on
-    contact, a separate change not made here. Per-hazard-type flag, not a
-    blanket `blocksMovement` behavior -- Debris Field doesn't set it.
+    contact, a separate change not made here (see `knockbackSpeed`, next).
+    Per-hazard-type flag, not a blanket `blocksMovement` behavior -- Debris
+    Field doesn't set it.
+  - **`knockbackSpeed`, added 2026-08-21 (follow-up to
+    `cancelTargetOnContact` above, same day):** the deliberate impulse that
+    bullet flagged as missing. On a successful `'impact'` hit — same
+    `hitCooldownSeconds` gate and call site as `resourceCost`, in
+    `applyImpactCost()` — sets the ship's velocity directly (not additive)
+    to this speed, via a new `applyKnockback()` helper. Runs from
+    `HazardZoneElement.update()`, which `GameScene.update()` calls after
+    `SystemRegistry`'s pass (i.e. after `ExplorationController.update()`
+    this same frame), so the kick isn't immediately overwritten by steering
+    before the next frame — from there `decelerateToStop()` (target's
+    already null via `cancelTargetOnContact`) decays it like any other
+    coast-down. Clamped to `shipConfig.maxSpeed` for free by the ship
+    body's existing `setMaxVelocity()` cap — no extra clamping needed
+    regardless of the configured value.
+    Measured via the same synthetic-A/B method as `cancelTargetOnContact`
+    above, and it closes a problem that method's own writeup surfaced:
+    without a kick, the ship can sit close enough to the hazard's edge that
+    once `hitCooldownSeconds` elapses it takes a *second* hit without ever
+    having moved (confirmed: baseline trial's structure dropped a second
+    time at the 2s mark, still parked at the same post-collision position).
+    **Direction changed the same day, second pass, after trying it:**
+    originally radially outward from the hazard's center (speed `220`) —
+    playtesting found a straight-on hit still felt sticky, because the
+    radial direction for a dead-center hit points straight back the way the
+    ship came, which a still-*moving* hazard (Meteoroid always is) simply
+    catches back up to. Switched to perpendicular to the hazard's
+    `headingRadians` instead — `applyKnockback()` picks whichever
+    perpendicular side the ship's position is already offset toward (sign
+    of its position dotted with the perpendicular axis; a true dead-center
+    hit with no side to prefer defaults to `+`), so the kick deflects the
+    ship out of the hazard's path rather than back along it. Speed also
+    raised to `260`, the effective ceiling (`shipConfig.maxSpeed`, so
+    anything higher is silently wasted). Re-verified with a moving-hazard,
+    dead-on-the-line trial: the ship's offset from the hazard's line of
+    travel grows every frame after the hit (0 → 68px) and holds once
+    velocity settles, instead of the old version's straight
+    back-and-parked outcome. **Known edge case, not fixed:** in that same
+    trial, the still-approaching hazard clipped the ship a *second* time
+    ~1s later, because 68px landed right at the minimum clearance
+    (hazard radius 40 + ship half-extent ~23-28) and the ship had already
+    decelerated to a full stop rather than continuing to flee outward — a
+    fast hazard passing very close by can still catch a ship that stops
+    right at the margin. `shipConfig.maxSpeed` is a hard ceiling on how
+    much a single instantaneous kick can achieve.
+    **A fourth-pass instant position-snap was tried the same day and
+    stepped back (not committed) at the user's request** — playtesting
+    with velocity-only knockback found a genuine head-on hit still reads
+    as "just pushed," not knocked aside, matching the mechanism this
+    bullet's edge case already describes (the ship's ~0 initial
+    perpendicular offset means several frames of coasting are needed to
+    build real separation, during which the still-advancing hazard keeps
+    dragging it along via Arcade's own per-step collision correction). The
+    snap approach (jump the ship to just outside the hazard's collision
+    radius before the velocity kick) measurably fixed it in testing, but
+    the user wanted more time with the plain velocity version first before
+    deciding — so the current shipped behavior is velocity-only, with the
+    snap fix known and available to reapply if wanted later.
   - **Debris Field re-scoped 2026-08-07 (GDD §9):** was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship

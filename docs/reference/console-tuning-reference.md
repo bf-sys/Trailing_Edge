@@ -251,6 +251,7 @@ per-level authored content (GDD §11.7), not a global tunable, and stays in
 | `activation` / `pulseIntervalSeconds` / `hitCooldownSeconds` | `'continuous'` drains every frame while overlapping; `'pulsed'` drains once per `pulseIntervalSeconds`; `'impact'` (added 2026-08-21, Meteoroid) applies `resourceCost` as a one-time hit on contact, gated by `hitCooldownSeconds` so a lingering overlap doesn't re-trigger every frame |
 | `resourceCost` | `{ energy, structure }` per second (continuous), per pulse (pulsed), or per hit (impact) |
 | `blocksMovement` | Solid collider — ship physically bounces off instead of passing through. No longer implies zero cost (decoupled 2026-08-21): Debris Field is `blocksMovement` with zero cost, Meteoroid is `blocksMovement` *and* charges an impact hit — the two are independent flags now, not one implying the other |
+| `cancelTargetOnContact` | Experimental, added 2026-08-21, Meteoroid only. On contact, clears the player's click-to-move destination so `ExplorationController` stops re-steering into the hazard every frame and fighting Arcade's collision separation — see the `cancelTargetOnContact` bullet in `CLAUDE.md`'s Architecture contract for the measured before/after. Only meaningful alongside `blocksMovement` |
 | `placeholderTexture` | `{ color, alpha }` for the four hazards with no sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid, `docs/STATUS.md`) — `GameScene` bakes this into a flat circle texture under `textureKey`. Debris Field omits this since it has final sourced art. |
 
 ```js
@@ -261,11 +262,11 @@ window.tuning.hazard.solarFlare.pulseIntervalSeconds = 1    // more frequent bur
 
 **Note:** like `survival`/`ship`, most fields are read fresh by
 `HazardZoneElement` each frame or each pulse, so cost/speed/pulse-interval
-edits apply live. `shape`, `placeholderTexture`, and `blocksMovement` are
-only read once, when `GameScene.create()` constructs that hazard's
-`HazardZoneElement` instance — a console edit to those needs a level
-restart (hard-fail restart or a fresh `Start`) to take effect, same
-next-restart-only caveat as `backgroundSetPieces`.
+edits apply live. `shape`, `placeholderTexture`, `blocksMovement`, and
+`cancelTargetOnContact` are only read once, when `GameScene.create()`
+constructs that hazard's `HazardZoneElement` instance — a console edit to
+those needs a level restart (hard-fail restart or a fresh `Start`) to take
+effect, same next-restart-only caveat as `backgroundSetPieces`.
 
 ## `window.tuning.ability` (`src/config/abilityConfig.ts`)
 

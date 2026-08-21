@@ -40,6 +40,7 @@ export interface HazardTypeConfig {
   hitCooldownSeconds?: number;
   resourceCost: { energy: number; structure: number };
   blocksMovement?: boolean;
+  cancelTargetOnContact?: boolean;
   // Solar Flare has no sourced art yet (docs/STATUS.md) -- GameScene
   // generates a flat placeholder circle texture at this color/alpha under
   // `textureKey`. Debris Field, Ion Storm, Nebula Field, and Meteoroid all
@@ -132,6 +133,10 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     hitCooldownSeconds: 1,
     resourceCost: { energy: 0, structure: 25 },
     blocksMovement: true,
+    // Experimental (2026-08-21) -- see HazardZoneConfig's comment. Playtest
+    // feedback: hitting Meteoroid head-on felt "stuck" rather than bounced
+    // off, because click-to-move kept re-steering into it every frame.
+    cancelTargetOnContact: true,
   },
 };
 

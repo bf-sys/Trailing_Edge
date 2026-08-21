@@ -264,6 +264,17 @@ export class ExplorationController implements GameSystem {
     return { x: ship.image.x + dx * scale, y: ship.image.y + dy * scale };
   }
 
+  // Clears the current click-to-move destination without touching velocity
+  // directly -- the next update() frame's !this.target branch takes over
+  // via decelerateToStop() on its own. Added 2026-08-21 (experimental) for
+  // HazardZoneElement's cancelTargetOnContact: a blocksMovement hazard's
+  // collider fires this on every contact frame so steering stops re-driving
+  // the ship back toward a destination on the far side of the hazard,
+  // fighting Arcade's own collision separation.
+  cancelTarget(): void {
+    this.target = null;
+  }
+
   // Read-only queries for TeleportRangeRing (display-only, polled every
   // frame the same way ShipStatusArcs tracks the ship continuously).
   isTeleportArmed(): boolean {

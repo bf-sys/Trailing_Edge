@@ -313,6 +313,31 @@ imports; **nobody hand-edits `create()`.**
     for a body-accurate circle-vs-rectangle test, the same geometry the
     physical collider itself uses, so "does it hit" and "does it block"
     agree.
+  - **`cancelTargetOnContact`, added 2026-08-21 (Meteoroid, experimental):**
+    a `HazardZoneConfig` flag, only meaningful alongside `blocksMovement`.
+    On contact, clears `ExplorationController`'s click-to-move target via
+    its new `cancelTarget()` method, passed as the collider's callback
+    (`scene.physics.add.collider(zone, ship.image, onCollide)`). Root
+    cause it addresses: `ExplorationController.update()` re-drives velocity
+    toward the target every single frame regardless of what's in the way;
+    if the target sits beyond a solid hazard, steering fights Arcade's
+    collision separation frame after frame. Measured via a controlled
+    synthetic A/B (paired trial hazards, one per flag value, same click
+    target, `world.singleStep()`-driven so it's independent of the browser
+    tab's render-loop throttling): with the flag, a hit resolves to a
+    genuine `velocity = (0,0)` stop within a handful of frames and stays
+    there; without it, velocity never reaches zero — each frame
+    re-collides, gets zeroed by separation, partially re-accelerates, and
+    the ship visibly creeps sideways along the hazard's edge indefinitely
+    on any hit that isn't perfectly dead-center (`dy` grew every frame in
+    the no-cancel trial, frozen the instant contact hit in the
+    with-cancel one). Note what this does *not* do: Arcade's separation
+    has zero restitution, so neither condition produces a dramatic
+    knockback/bounce-away impulse — the fix converts "grinds along the
+    hazard forever" into "stops cleanly against it," not into a bounce.
+    An actual knockback would need a deliberate velocity impulse added on
+    contact, a separate change not made here. Per-hazard-type flag, not a
+    blanket `blocksMovement` behavior -- Debris Field doesn't set it.
   - **Debris Field re-scoped 2026-08-07 (GDD §9):** was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship

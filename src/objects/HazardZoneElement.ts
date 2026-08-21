@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getPlayerShip } from '../systems/ExplorationController';
+import { getPlayerShip, getExplorationController } from '../systems/ExplorationController';
 import { setCircleFromWorldRadius, setRectFromWorldSize } from './arcadeBodyHelpers';
 
 export type HazardShape =
@@ -30,11 +30,26 @@ export interface HazardZoneConfig {
   pulseIntervalSeconds?: number; // required when activation is 'pulsed'
   hitCooldownSeconds?: number; // required when activation is 'impact'
   resourceCost: { energy: number; structure: number };
-  // A solid, movement-blocking obstacle instead of an overlap-and-drain
-  // zone (Debris Field, re-scoped 2026-08-07 — GDD §9/§11.3). No
-  // onHazardContact()-equivalent call happens for these: a collider has no
-  // "contact cost" to report, it just physically prevents entry.
+  // A solid, movement-blocking obstacle instead of a fly-through zone
+  // (Debris Field, re-scoped 2026-08-07 — GDD §9/§11.3). Independent of
+  // resourceCost/activation as of 2026-08-21 -- see the top of this file's
+  // activation comment -- a blocksMovement hazard can still charge a
+  // contact cost (e.g. Meteoroid's 'impact' hits); it just also physically
+  // blocks entry via a real Arcade collider.
   blocksMovement?: boolean;
+  // Experimental, added 2026-08-21 for Meteoroid: clears the player's
+  // click-to-move destination on every contact with this hazard's
+  // collider. Only meaningful when blocksMovement is true. Exists because
+  // ExplorationController.update() re-drives velocity toward the target
+  // every frame regardless of what's in the way -- if that target sits
+  // beyond a blocksMovement hazard, steering fights Arcade's collision
+  // separation frame after frame, which reads as getting stuck on it
+  // rather than bouncing off. Cancelling the target lets
+  // ExplorationController's decelerateToStop() take over instead, so
+  // separation isn't immediately re-opposed. Per-hazard-type flag, not a
+  // blanket blocksMovement behavior -- scoped to Meteoroid until playtesting
+  // confirms it's worth generalizing.
+  cancelTargetOnContact?: boolean;
   // Per-placement visual rotation (HazardPlacement.rotationRadians, added
   // 2026-08-15) -- purely cosmetic, applied to the sprite only; doesn't
   // touch the Arcade body (a circle body is rotation-invariant, and
@@ -84,7 +99,11 @@ export class HazardZoneElement {
       // overlap, not this zone -- still allowed to have its own velocity
       // via applyMovement() above for a future moving+blocking variant.
       (this.zone.body as Phaser.Physics.Arcade.Body).setImmovable(true);
-      if (ship) scene.physics.add.collider(this.zone, ship.image);
+      // cancelTargetOnContact (see the field's comment above): fires every
+      // physics step the bodies remain in contact, same as the cost side of
+      // things -- repeatedly clearing an already-null target is harmless.
+      const onCollide = config.cancelTargetOnContact ? () => getExplorationController().cancelTarget() : undefined;
+      if (ship) scene.physics.add.collider(this.zone, ship.image, onCollide);
     }
   }
 

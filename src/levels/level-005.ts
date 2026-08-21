@@ -1,6 +1,7 @@
 import type { HazardPlacement, LevelConfig } from './levelTypes';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
+const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
 
 // Interpolates a straight chain of Debris Field placements between two
 // points, spaced closer than 2x its 60px radius (hazardConfig.ts) so
@@ -102,11 +103,13 @@ export const LEVEL_005: LevelConfig = {
 
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
-    // scattered.
-    { type: 'nebulaField', x: 2000, y: 1750 }, // Wall A's south (open) bypass
-    { type: 'nebulaField', x: 4200, y: 2500 }, // Wall B's east (open) bypass
-    { type: 'nebulaField', x: 1100, y: 900 }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 5250, y: 1050 }, // bridges the close Probe<->Exit hop
+    // scattered. Cycles the three sourced Nebula Field textures
+    // (2026-08-21, mirroring Debris Field's alt2/alt3 precedent) so four
+    // instances on one map don't read as one sprite copy-pasted four times.
+    { type: 'nebulaField', x: 2000, y: 1750, textureKey: NEBULA_TEXTURES[0] }, // Wall A's south (open) bypass
+    { type: 'nebulaField', x: 4200, y: 2500, textureKey: NEBULA_TEXTURES[1] }, // Wall B's east (open) bypass
+    { type: 'nebulaField', x: 1100, y: 900, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the map center
+    { type: 'nebulaField', x: 5250, y: 1050, textureKey: NEBULA_TEXTURES[0] }, // bridges the close Probe<->Exit hop
 
     // Ion Storm x5 -- this level's axis. Roughly 2.5x the busiest prior
     // level's Ion Storm count, spread across open pockets of the map so no

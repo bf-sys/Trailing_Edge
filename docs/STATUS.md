@@ -1,9 +1,126 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-20)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-21)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Art-integration update (2026-08-21) — multi-variant Nebula Field pass: two new sourced textures wired in, one candidate escalated and left out
+
+Follow-up to the 2026-08-20 entry immediately below, closing the
+multi-variant gap that entry's `nebula_field.png` never actually filled
+(the "shared cloud-texture-family... 2-3 distinct variants" approach
+`art-production-guidelines.md`'s "Nebula Field / Ion Storm cloud art"
+section calls for, mirroring the existing `debris_large_1/2/3` precedent).
+That single asset was also oblong (~1276x674 native, ~1.9:1 aspect) despite
+its prompt asking for "gently rounded" — this pass explicitly re-biased the
+prompt toward a circular silhouette to fix that, on top of adding variant
+count.
+
+**Ran the full GER loop against three new candidate ids** (`nebula_field_1`
+"Core Bloom", `nebula_field_2` "Layered Rings", `nebula_field_3` "Drifting
+Wisp"), registered in `tools/art-reviewer/assets.json` alongside the
+untouched original `nebula_field` entry. `nebula_field_1` and
+`nebula_field_3` passed clean (round 1 for `_1`: 8/8/9 Technique/Style/
+Format; `_3` flagged round 1 at Format 3/10 for an unrequested two-cloud
+contact-sheet artifact, fixed and passed round 2 at 8/8/9). Both landed
+within ~5% of a circular 1:1 bounding box (`_1`: 622x616px/1.010:1; `_3`:
+526x502px/1.048:1) — the specific defect this pass targeted is fixed.
+`nebula_field_2` passed round 1 at 8/8/8 (758x748px/1.013:1) but the
+project owner judged the accepted image "exceedingly regular" on direct
+inspection; a follow-up redo aimed at rougher/less symmetrical edges
+achieved that (Style held at 7/10, edges confirmed organic against
+`nebula_field_1`/`_3`) but regressed the silhouette back to oblong
+(~1.78:1) across two refine attempts and hit the 3-round cap — **left
+`needs_revision` in `feedback.json`, not integrated below.** Full
+round-by-round detail: `docs/history/art-eval-log-2026-08-21.md`.
+
+**Integration mirrors the 2026-08-20 entry's own chroma-key/wiring method
+exactly** — `tools/asset-prep/chroma-key.js` on the two accepted
+candidates, producing `assets/hazards/hazard_nebula_field_alt2.png`
+(628x624, from `nebula_field_1`) and `hazard_nebula_field_alt3.png`
+(536x512, from `nebula_field_3`). Preloaded in `BootScene.ts` under those
+texture keys alongside the existing `hazard_nebula_field`. **Judgment call,
+flagged rather than silently decided:** the existing (oblong) original
+`hazard_nebula_field.png` was kept as the first of now three variants
+rather than retired — nothing asked for its removal, and Debris Field's own
+precedent is three coexisting variants, not a replace-in-place. Every level
+file placing more than one Nebula Field instance (`level-002` through
+`level-008`, four-instance discrete placements plus `level-008`'s chained
+`nebulaWall()` gauntlet) now cycles a per-file `NEBULA_TEXTURES` array
+across its placements via `HazardPlacement.textureKey`, the same override
+mechanism `debrisWall()`'s `DEBRIS_TEXTURES` already used — `level-000`'s
+and `level-001`'s single-instance placements are left on the type-level
+default, matching how single-instance Debris Field placements already
+behave.
+
+**Verified**, same bar as the 2026-08-20 entry: `npx tsc --noEmit` passes
+clean, and a headless Playwright run jumping straight into `GameScene` at
+`level-008` (the busiest `nebulaWall()` usage, 87 chained instances total)
+confirmed zero console/page errors, all three `hazard_nebula_field*`
+texture keys resolve, all three actually render in-scene (32/31/24 split
+across the three variants), and a sampled `alt2` instance's display size is
+the configured 200x200 (`shape.radius * 2`) despite its differing native
+pixel dimensions from the original — asset/gameplay-size decoupling held.
+
+**Docs updated this pass:** this STATUS.md entry, `ATTRIBUTION.md` (two new
+"Owner-created assets" rows plus a note on the escalated candidate),
+`phase1-manifest-and-tasks.md` (hazards/ directory listing).
+
+### Follow-up, same day — `nebula_field_2` integrated after direct owner approval; original oblong asset dropped from rotation
+
+The project owner reviewed the round-3 `nebula_field_2` image directly
+(the one the entry above describes as escalated — rough/organic edges
+achieved, but the evaluator's automated bbox scan read the silhouette as
+oblong, ~1268x710px/1.786:1) and judged it good, overriding the automated
+escalation. **This is a human override of a `escalate` verdict, not a
+retroactive automated pass** — recorded as such rather than a fabricated
+evaluator pass. Re-inspecting the same image directly (not just trusting
+the automated measurement) it does read as reasonably round by eye — worth
+noting the evaluator's noise-filtered bbox scan may itself have been an
+overcautious read here, consistent with a couple of earlier false-positive
+elongation reads this same session (`nebula_field_2` round 1's own
+false-elongation scare, `nebula_field_3`'s per-panel measurement). The
+chroma-keyed/auto-cropped output that actually ships
+(`tools/asset-prep/chroma-key.js`'s alpha-threshold crop, a different,
+arguably more reliable method than the evaluator's RGB-distance patch scan)
+measured 694x716px — 0.969:1, genuinely close to circular.
+
+Per the same conversation, the original (2026-08-20, oblong, ~1.9:1)
+`nebula_field` asset is now **dropped from the game's rotation entirely** —
+not just left as a non-preferred third option as the entry above described.
+To minimize churn, the three existing texture keys
+(`hazard_nebula_field`/`_alt2`/`_alt3`, and every level file's
+`NEBULA_TEXTURES` array/`BootScene.ts` preload referencing them) were left
+untouched; only which candidate's art occupies each key's PNG changed:
+- `hazard_nebula_field.png` (base slot) — now `nebula_field_1`'s art
+  (previously in the `_alt2` slot). The original oblong asset's pixel
+  content no longer exists in `assets/hazards/` under any key.
+- `hazard_nebula_field_alt2.png` — now `nebula_field_2`'s art (newly
+  integrated this follow-up).
+- `hazard_nebula_field_alt3.png` — unchanged, still `nebula_field_3`.
+
+`tools/art-reviewer/feedback.json["nebula_field_2"]` is `"accepted"`; its
+winning round-3 feedback was folded into `assets.json`'s stored base
+prompt. **One process discrepancy surfaced while doing this, flagged
+rather than quietly built on top of:** `feedback.json["nebula_field_2"]`
+was already sitting at `"accepted"` (matching the pre-redo, round-1-pass
+state committed in `4c6d6ae`) before this follow-up's own edit — not the
+`"needs_revision"` the art-refiner-agent's cap-hit close-out step reported
+leaving in place a few messages earlier in that session. The file's mtime
+lines up with that close-out step's own run, so its write likely didn't
+match its self-reported summary. Didn't block this integration (the
+intended end state is `"accepted"` either way, now for a real reason — the
+owner's direct approval — rather than whatever caused the earlier
+mismatch), but worth a look if this pattern recurs.
+
+Untracked in `assets/hazards/` before this follow-up, tracked in it after:
+no new files (all three PNG paths already existed from the entry above;
+only two of the three files' contents changed). Verified the same way —
+`npx tsc --noEmit` clean (no code changed, since texture keys are stable);
+image content changes don't need a fresh headless-render check beyond what
+the entry above already confirmed for these exact texture keys resolving
+and rendering.
 
 ## Art-integration update (2026-08-20) — Meteoroid/Ion Storm/Nebula Field moved from `tools/art-reviewer/` into real game assets
 

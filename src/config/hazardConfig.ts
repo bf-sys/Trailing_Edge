@@ -115,6 +115,13 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
   },
 
+  // Three sourced art variants as of 2026-08-21 (hazard_nebula_field,
+  // hazard_nebula_field_alt2, hazard_nebula_field_alt3 -- the latter two
+  // from the multi-variant GER pass docs/reference/art-production-guidelines.md
+  // called for, mirroring debrisField's alt2/alt3 precedent above), cycled
+  // per-placement via HazardPlacement.textureKey in level files that chain
+  // multiple Nebula Field instances -- this textureKey is just the default
+  // for a placement that doesn't override it.
   nebulaField: {
     textureKey: 'hazard_nebula_field',
     displayName: 'NEBULA FIELD',

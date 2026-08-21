@@ -2,6 +2,7 @@ import type { HazardPlacement, LevelConfig } from './levelTypes';
 import { abilityConfig } from '../config/abilityConfig';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
+const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
 
 // Interpolates a straight chain of Debris Field placements between two
 // points, spaced closer than 2x its 60px radius (hazardConfig.ts) so
@@ -194,10 +195,13 @@ export const LEVEL_007: LevelConfig = {
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
     // scattered (see file comment above for each one's role/clearance).
-    { type: 'nebulaField', x: 2400, y: 3550 }, // bypass toll at Wall A's open south end, ~1900px clear of Entry
-    { type: 'nebulaField', x: 900, y: 3200 }, // early-route toll on Entry's way toward the Probe pocket
-    { type: 'nebulaField', x: 1500, y: 1000 }, // bridges the close Probe<->Exit hop
-    { type: 'nebulaField', x: 5600, y: 3100 }, // tolls the route from Resupply/Wall B toward the Beacon pocket
+    // Cycles the three sourced Nebula Field textures (2026-08-21,
+    // mirroring Debris Field's alt2/alt3 precedent) so four instances on
+    // one map don't read as one sprite copy-pasted four times.
+    { type: 'nebulaField', x: 2400, y: 3550, textureKey: NEBULA_TEXTURES[0] }, // bypass toll at Wall A's open south end, ~1900px clear of Entry
+    { type: 'nebulaField', x: 900, y: 3200, textureKey: NEBULA_TEXTURES[1] }, // early-route toll on Entry's way toward the Probe pocket
+    { type: 'nebulaField', x: 1500, y: 1000, textureKey: NEBULA_TEXTURES[2] }, // bridges the close Probe<->Exit hop
+    { type: 'nebulaField', x: 5600, y: 3100, textureKey: NEBULA_TEXTURES[0] }, // tolls the route from Resupply/Wall B toward the Beacon pocket
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager. Initial
     // positions only, held at the established 2-1 baseline (this

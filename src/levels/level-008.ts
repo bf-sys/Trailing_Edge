@@ -1,6 +1,7 @@
 import type { HazardPlacement, LevelConfig } from './levelTypes';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
+const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
 
 // Interpolates a straight chain of Debris Field placements between two
 // points, spaced closer than 2x its 60px radius (hazardConfig.ts) so
@@ -32,12 +33,16 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // Same interpolation as debrisWall above, but for Nebula Field (100px-radius,
 // static, energy-draining, NOT blocksMovement -- hazardConfig.ts) -- this
 // file's primary hazard, so it gets its own per-file helper rather than
-// reusing debrisWall's texture/rotation-variety plumbing (Nebula Field has
-// no sourced art yet, one shared placeholder texture, no per-instance
-// variety fields needed). Default spacing (190) is chosen the same way
-// debrisWall's 115 was: comfortably under 2x Nebula Field's 100px radius
-// (200px) so a chain reads as one continuous drain field with no gap a
-// ship could slip through *along the wall's own length* -- see the file
+// reusing debrisWall's plumbing directly. Cycles the three sourced Nebula
+// Field textures (2026-08-21, mirroring debrisWall's alt2/alt3 texture
+// cycling above) -- this file's THE DRIFT EXPANSE gauntlet chains many
+// instances per wall, exactly the case where one sprite copy-pasted N times
+// would be most visible. (Comment updated 2026-08-21: Nebula Field now has
+// three sourced art variants, superseding the earlier "no sourced art yet,
+// one shared placeholder" note.) Default spacing (190) is chosen the same
+// way debrisWall's 115 was: comfortably under 2x Nebula Field's 100px
+// radius (200px) so a chain reads as one continuous drain field with no gap
+// a ship could slip through *along the wall's own length* -- see the file
 // comment below for why that's a distinct claim from "the wall blocks
 // movement," which it deliberately never does.
 function nebulaWall(x1: number, y1: number, x2: number, y2: number, spacing = 190): HazardPlacement[] {
@@ -50,6 +55,7 @@ function nebulaWall(x1: number, y1: number, x2: number, y2: number, spacing = 19
       type: 'nebulaField',
       x: x1 + (x2 - x1) * t,
       y: y1 + (y2 - y1) * t,
+      textureKey: NEBULA_TEXTURES[i % NEBULA_TEXTURES.length],
     });
   }
   return placements;

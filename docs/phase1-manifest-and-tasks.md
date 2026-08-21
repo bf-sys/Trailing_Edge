@@ -37,7 +37,7 @@ assets/
   hazards/
     debris_large_PLACEHOLDER.png, debris_medium_PLACEHOLDER.png,
     debris_small_PLACEHOLDER.png
-    hazard_meteoroid.png, hazard_ion_storm.png, hazard_nebula_field.png
+    hazard_meteoroid.png, hazard_ion_storm.png
       (AI-generated final art, 2026-08-20 — added via the new art
       Generate-Evaluate-Refine loop, see STATUS.md's 2026-08-19/20
       entries; chroma-keyed and auto-cropped to content bounds by
@@ -45,6 +45,22 @@ assets/
       that tool's previously-scaffolding-only package.json. Beyond Phase
       1's scope listed above — Solar Flare remains the only open-world
       hazard with no sourced art)
+    hazard_nebula_field.png, hazard_nebula_field_alt2.png,
+    hazard_nebula_field_alt3.png
+      (AI-generated final art — three variants from the 2026-08-21
+      multi-variant Nebula Field pass art-production-guidelines.md called
+      for, mirroring debris_large_alt2/alt3 above; see STATUS.md's
+      2026-08-21 entries (both the initial pass and the same-day
+      follow-up). Same chroma-key/auto-crop prep as the other GER-loop
+      hazard art. Cycled per-placement via level files' NEBULA_TEXTURES
+      arrays wherever a level places more than one Nebula Field instance.
+      hazard_nebula_field.png's *content* was replaced same-day, after
+      this manifest's original 2026-08-20-sourced nebula_field candidate
+      was dropped from the rotation entirely (oblong result) in favor of
+      nebula_field_1; hazard_nebula_field_alt2.png's content is
+      nebula_field_2, integrated on the project owner's direct approval
+      after that candidate hit the GER loop's 3-round cap — see
+      STATUS.md/ATTRIBUTION.md's 2026-08-21 entries for the full history)
   resupply/
     asteroid_large.png   (AI-generated final art, 2026-08-01 — was
       asteroid_large_PLACEHOLDER.png)

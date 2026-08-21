@@ -18,6 +18,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('hazard_meteoroid', 'hazards/hazard_meteoroid.png');
     this.load.image('hazard_ion_storm', 'hazards/hazard_ion_storm.png');
     this.load.image('hazard_nebula_field', 'hazards/hazard_nebula_field.png');
+    this.load.image('hazard_nebula_field_alt2', 'hazards/hazard_nebula_field_alt2.png');
+    this.load.image('hazard_nebula_field_alt3', 'hazards/hazard_nebula_field_alt3.png');
     this.load.image('asteroid_large', 'resupply/asteroid_large.png');
     this.load.image('probe', 'objectives/probe.png');
     this.load.image('relay_beacon', 'objectives/relay_beacon.png');

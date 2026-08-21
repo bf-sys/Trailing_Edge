@@ -2,6 +2,7 @@ import type { HazardPlacement, LevelConfig } from './levelTypes';
 import { abilityConfig } from '../config/abilityConfig';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
+const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
 
 // Interpolates a straight chain of Debris Field placements between two
 // points, spaced closer than 2x its 60px radius (hazardConfig.ts) so
@@ -119,11 +120,14 @@ export const LEVEL_003: LevelConfig = {
     // Nebula Field -- four instances, placed with intent rather than
     // scattered: two toll the open bypass routes around Debris Field walls
     // (A's south gap, D's south gap), one sits on Entry's early route out,
-    // one tolls the final approach to the Probe's sealed ring.
-    { type: 'nebulaField', x: 2000, y: 1750 }, // Wall A's south bypass
-    { type: 'nebulaField', x: 3900, y: 1750 }, // Wall D's south bypass
-    { type: 'nebulaField', x: 1200, y: 900 }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 4550, y: 950 }, // tolls the approach to the Probe's ring, between it and Exit
+    // one tolls the final approach to the Probe's sealed ring. Cycles the
+    // three sourced Nebula Field textures (2026-08-21, mirroring Debris
+    // Field's alt2/alt3 precedent) so four instances on one map don't read
+    // as one sprite copy-pasted four times.
+    { type: 'nebulaField', x: 2000, y: 1750, textureKey: NEBULA_TEXTURES[0] }, // Wall A's south bypass
+    { type: 'nebulaField', x: 3900, y: 1750, textureKey: NEBULA_TEXTURES[1] }, // Wall D's south bypass
+    { type: 'nebulaField', x: 1200, y: 900, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the map center
+    { type: 'nebulaField', x: 4550, y: 950, textureKey: NEBULA_TEXTURES[0] }, // tolls the approach to the Probe's ring, between it and Exit
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager (see the
     // file-level comment above). Initial positions only, clear of every

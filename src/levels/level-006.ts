@@ -1,6 +1,7 @@
 import type { HazardPlacement, LevelConfig } from './levelTypes';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
+const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
 
 // Interpolates a straight chain of Debris Field placements between two
 // points, spaced closer than 2x its 60px radius (hazardConfig.ts) so
@@ -142,11 +143,14 @@ export const LEVEL_006: LevelConfig = {
     // Nebula Field -- four instances, placed with intent rather than
     // scattered: two toll the maze's west/east thresholds (wall 0's and
     // wall 5's primary gaps), one sits early on Entry's route toward the
-    // Probe/maze, one bridges the close Probe<->Exit hop.
-    { type: 'nebulaField', x: 2200, y: 3350 }, // tolls wall 0's bottom gap -- the maze's western entrance
-    { type: 'nebulaField', x: 5200, y: 300 }, // tolls wall 5's top gap -- the maze's eastern exit, right before the Beacon approach
-    { type: 'nebulaField', x: 900, y: 2600 }, // early on Entry's route toward the Probe/maze
-    { type: 'nebulaField', x: 750, y: 1175 }, // bridges the close Probe<->Exit hop
+    // Probe/maze, one bridges the close Probe<->Exit hop. Cycles the three
+    // sourced Nebula Field textures (2026-08-21, mirroring Debris Field's
+    // alt2/alt3 precedent) so four instances on one map don't read as one
+    // sprite copy-pasted four times.
+    { type: 'nebulaField', x: 2200, y: 3350, textureKey: NEBULA_TEXTURES[0] }, // tolls wall 0's bottom gap -- the maze's western entrance
+    { type: 'nebulaField', x: 5200, y: 300, textureKey: NEBULA_TEXTURES[1] }, // tolls wall 5's top gap -- the maze's eastern exit, right before the Beacon approach
+    { type: 'nebulaField', x: 900, y: 2600, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the Probe/maze
+    { type: 'nebulaField', x: 750, y: 1175, textureKey: NEBULA_TEXTURES[0] }, // bridges the close Probe<->Exit hop
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager. Initial
     // positions only, held at the established 2-1 baseline (see file

@@ -27,6 +27,14 @@ export interface HazardTypeConfig {
   movementPattern: HazardMovementPattern;
   speed: number;
   headingRadians?: number;
+  // Corrects a 'linear' hazard's sprite rotation so it visually faces its
+  // direction of travel, the same spriteFacingOffsetRadians pattern
+  // shipConfig.ts already uses (rotation = heading + offset). Native art
+  // orientation varies per sprite, so this is per-hazard-type, not derived.
+  // Unset means "don't rotate the sprite from its authored/default
+  // orientation" -- correct for movementPattern: 'static' hazards, and for
+  // Ion Storm, whose swirl art doesn't read as facing any particular way.
+  spriteFacingOffsetRadians?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
   resourceCost: { energy: number; structure: number };
@@ -109,6 +117,12 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     movementPattern: 'linear',
     speed: 60,
     headingRadians: 0,
+    // hazard_meteoroid.png's rock+ember-trail art faces up-and-right at
+    // zero rotation, not due east -- measured from the sprite's own pixel
+    // data (ember-trail centroid to rock centroid) at ~30.3 deg above the
+    // horizontal, rounded to the nearest clean angle, same "measure the
+    // art, name the offset" approach shipConfig.ts's comment describes.
+    spriteFacingOffsetRadians: Math.PI / 6,
     activation: 'continuous',
     resourceCost: { energy: 0, structure: 25 },
   },

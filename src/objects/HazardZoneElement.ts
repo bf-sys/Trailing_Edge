@@ -32,8 +32,17 @@ export interface HazardZoneConfig {
   // Per-placement visual rotation (HazardPlacement.rotationRadians, added
   // 2026-08-15) -- purely cosmetic, applied to the sprite only; doesn't
   // touch the Arcade body (a circle body is rotation-invariant, and
-  // rectangle-shape hazards don't use this today).
+  // rectangle-shape hazards don't use this today). Only meaningful for
+  // movementPattern: 'static' hazards -- a 'linear' hazard with
+  // spriteFacingOffsetRadians set overrides this at construction and on
+  // every reposition() (see below), since a moving hazard's rotation
+  // should track its heading, not stay fixed at an authored angle.
   rotationRadians?: number;
+  // hazardConfig.ts's per-type spriteFacingOffsetRadians (see that file's
+  // comment) -- when set, applied as `heading + offset` every time this
+  // hazard's heading is established or changes (construction and
+  // reposition()), so the sprite visually faces its direction of travel.
+  spriteFacingOffsetRadians?: number;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
@@ -106,6 +115,9 @@ export class HazardZoneElement {
     this.zone.setPosition(x, y);
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(Math.cos(headingRadians) * this.config.speed, Math.sin(headingRadians) * this.config.speed);
+    if (this.config.spriteFacingOffsetRadians !== undefined) {
+      this.zone.setRotation(headingRadians + this.config.spriteFacingOffsetRadians);
+    }
   }
 
   update(_time: number, delta: number): void {
@@ -166,6 +178,9 @@ export class HazardZoneElement {
     if (movementPattern === 'linear') {
       const heading = this.config.headingRadians ?? 0;
       body.setVelocity(Math.cos(heading) * speed, Math.sin(heading) * speed);
+      if (this.config.spriteFacingOffsetRadians !== undefined) {
+        this.zone.setRotation(heading + this.config.spriteFacingOffsetRadians);
+      }
       return;
     }
 

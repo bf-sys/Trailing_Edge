@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 
 export const WIN_SCENE_KEY = 'WinScene';
 
-// Shown when levelOrder is exhausted. Not reachable yet — no levels exist.
+// Shown when LEVEL_ORDER is exhausted (src/config/levelOrder.ts).
 export class WinScene extends Phaser.Scene {
   constructor() {
     super(WIN_SCENE_KEY);

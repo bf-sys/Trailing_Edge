@@ -37,6 +37,14 @@ assets/
   hazards/
     debris_large_PLACEHOLDER.png, debris_medium_PLACEHOLDER.png,
     debris_small_PLACEHOLDER.png
+    hazard_meteoroid.png, hazard_ion_storm.png, hazard_nebula_field.png
+      (AI-generated final art, 2026-08-20 — added via the new art
+      Generate-Evaluate-Refine loop, see STATUS.md's 2026-08-19/20
+      entries; chroma-keyed and auto-cropped to content bounds by
+      tools/asset-prep/chroma-key.js, the first real script written for
+      that tool's previously-scaffolding-only package.json. Beyond Phase
+      1's scope listed above — Solar Flare remains the only open-world
+      hazard with no sourced art)
   resupply/
     asteroid_large.png   (AI-generated final art, 2026-08-01 — was
       asteroid_large_PLACEHOLDER.png)

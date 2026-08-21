@@ -350,9 +350,9 @@ export class GameScene extends Phaser.Scene {
   // this level's authored x/y (level content, stays in src/levels/ per GDD
   // §11.7 -- only the hazard-type defaults live in the shared config
   // module). Generates the type's placeholder circle texture first if the
-  // config carries one (Solar Flare/Ion Storm/Nebula Field/Meteoroid have
-  // no sourced art yet, docs/STATUS.md); Debris Field skips this since it
-  // already has final sourced art loaded by BootScene.
+  // config carries one (only Solar Flare has no sourced art yet,
+  // docs/STATUS.md); Debris Field, Ion Storm, Nebula Field, and Meteoroid
+  // all skip this since they have final sourced art loaded by BootScene.
   private placeHazard(placement: HazardPlacement, config: HazardTypeConfig): HazardZoneElement {
     if (config.placeholderTexture && config.shape.kind === 'circle') {
       this.createHazardPlaceholderTexture(
@@ -374,12 +374,11 @@ export class GameScene extends Phaser.Scene {
     return hazard;
   }
 
-  // Placeholder texture for the four hazardConfig.ts entries with no
-  // sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid,
-  // docs/STATUS.md) -- a flat generated circle, same procedural-texture
-  // precedent as everything else added this phase (createObjectiveMarkerTexture,
-  // ScanInteractElement's ring, ...). Real per-hazard art is Phase 2b's job,
-  // tracked in trailing_edge_art_asset_list.md.
+  // Placeholder texture for the one hazardConfig.ts entry with no sourced
+  // art yet (Solar Flare, docs/STATUS.md) -- a flat generated circle, same
+  // procedural-texture precedent as everything else added this phase
+  // (createObjectiveMarkerTexture, ScanInteractElement's ring, ...). Real
+  // per-hazard art is tracked in trailing_edge_art_asset_list.md.
   private createHazardPlaceholderTexture(key: string, radius: number, color: number, alpha: number): void {
     if (this.textures.exists(key)) return;
 

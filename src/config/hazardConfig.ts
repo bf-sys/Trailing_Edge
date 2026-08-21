@@ -31,10 +31,12 @@ export interface HazardTypeConfig {
   pulseIntervalSeconds?: number;
   resourceCost: { energy: number; structure: number };
   blocksMovement?: boolean;
-  // Solar Flare/Ion Storm/Nebula Field/Meteoroid have no sourced art yet
-  // (docs/STATUS.md) -- GameScene generates a flat placeholder circle
-  // texture at this color/alpha under `textureKey`. Debris Field omits this
-  // field since it already has final sourced art loaded by BootScene.
+  // Solar Flare has no sourced art yet (docs/STATUS.md) -- GameScene
+  // generates a flat placeholder circle texture at this color/alpha under
+  // `textureKey`. Debris Field, Ion Storm, Nebula Field, and Meteoroid all
+  // omit this field since they have final sourced art loaded by BootScene
+  // (Ion Storm/Nebula Field/Meteoroid added 2026-08-20 via the art
+  // Generate-Evaluate-Refine loop, docs/STATUS.md's 2026-08-19/20 entries).
   placeholderTexture?: { color: number; alpha: number };
 }
 
@@ -85,7 +87,6 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     headingRadians: Math.PI,
     activation: 'continuous',
     resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
-    placeholderTexture: { color: 0x6a6aff, alpha: 0.4 },
   },
 
   nebulaField: {
@@ -96,7 +97,6 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     speed: 0,
     activation: 'continuous',
     resourceCost: { energy: 15, structure: 0 }, // matches ionStorm -- same family, same rate
-    placeholderTexture: { color: 0x9966cc, alpha: 0.4 },
   },
 
   // The sole structure-draining open-world hazard (GDD §9, since Debris
@@ -111,7 +111,6 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     headingRadians: 0,
     activation: 'continuous',
     resourceCost: { energy: 0, structure: 25 },
-    placeholderTexture: { color: 0x998877, alpha: 1 },
   },
 };
 

@@ -1,9 +1,139 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-10)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-20)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Art-integration update (2026-08-20) — Meteoroid/Ion Storm/Nebula Field moved from `tools/art-reviewer/` into real game assets
+
+Follow-up to the 2026-08-19 entry immediately below: the three accepted
+candidates are now actually wired into the game, not just sitting in the
+review tool.
+
+**New tool, not just new assets:** `tools/asset-prep/chroma-key.js` — the
+first real script written for `tools/asset-prep`'s package.json, which
+previously only *declared* "chroma-key removal + auto-trim" as its purpose
+with no implementation. Uses `jimp` (already a real dependency there): an
+excess-green threshold classifies each pixel as background/edge-band/
+subject with a linear alpha ramp across the band, a despill step caps the
+green channel at `max(r,b)` on every pixel so no fringe survives
+compositing, then the opaque bounding box is computed directly from the
+resulting alpha channel and cropped to it (plus a small transparent pad).
+**Note for whoever reuses this:** jimp's own built-in `autocrop()` was
+tried first and doesn't work for this — it compares border pixels to the
+corner color with a near-zero default tolerance, meant for solid-color
+opaque borders, and ordinary JPEG noise in the newly-transparent
+background pixels defeats it every time (confirmed: it returned the
+un-cropped original canvas). The alpha-bounding-box approach in this
+script is a deliberate replacement for that call, not an alternative
+option left in.
+
+**Wired in, matching Debris Field's exact existing precedent** (the one
+hazard that already had final art before this pass): `hazardConfig.ts`'s
+`ionStorm`/`nebulaField`/`meteoroid` entries dropped their
+`placeholderTexture` fields (now only `solarFlare` has one), and
+`BootScene.ts` preloads the three new files under the texture keys
+`hazardConfig.ts` already referenced (`hazard_meteoroid`,
+`hazard_ion_storm`, `hazard_nebula_field`). No `GameScene.create()` logic
+changed — `placeHazard()`'s existing `if (config.placeholderTexture)`
+branch already skips placeholder-texture generation once that field is
+absent, the same path Debris Field has always used.
+
+**Verified, not just typechecked:** `npx tsc --noEmit -p .` passes, and a
+headless Playwright run against `level-000` (which places all five
+hazard types together) confirmed zero console/page errors, all five
+hazard textures resolved (`scene.textures.exists(...)`), and each of the
+three new hazards renders at its configured display size
+(`shape.radius * 2`, matching the asset/gameplay-size-decoupling rule —
+`hazard_nebula_field.png`'s very wide native aspect ratio, ~1276x674 after
+auto-crop, gets non-uniformly scaled into a 200x200 display box as a
+result; noted, not treated as a defect, same as any other sprite here).
+
+**One real finding surfaced during that verification, not fixed
+unilaterally:** with the camera moved off the ship (the default follow
+target) and centered directly on Nebula Field, the sprite is genuinely
+there — correct position, scale, alpha — but its Style-passing desaturated
+dark-violet/charcoal-grey body renders quite low-contrast against the
+game's black space background; easy to miss at a glance in a normal
+full-screen view, easy to spot once you know to look. This is a real
+telegraphing data point for GDD §9's still-open
+structure-vs-energy/hazard-legibility question (see the 2026-08-19 entry
+below and `trailing_edge_art_asset_list.md`'s updated flag) — recorded
+here rather than silently brightening the already-evaluator-accepted art.
+
+**Docs updated this pass:** this STATUS.md entry,
+`phase1-manifest-and-tasks.md` (hazards/ directory listing),
+`ATTRIBUTION.md` (three new "Owner-created assets" rows),
+`trailing_edge_art_asset_list.md` (Meteoroid/Ion Storm/Nebula Field rows
+marked sourced/final, flag paragraph updated with the visibility finding
+and the still-open §9 status).
+
+## Art-pipeline update (2026-08-19) — Meteoroid/Ion Storm/Nebula Field candidates generated via a new scored art GER loop; Ion Storm/Nebula Field deliberately diverge from the 2026-08-08 shared-pass decision below
+
+**New tooling, not new final art integration.** Three new agents —
+`.claude/agents/art-generator-agent.md`, `art-evaluator-agent.md`,
+`art-refiner-agent.md` — mirror the existing level-authoring
+Generate-Evaluate-Refine loop (`content-agent.md` /
+`level-evaluator-agent.md` / `level-refiner-agent.md`), but for art: the
+Generator wraps `art-director-agent.md`'s existing prompt discipline and
+the `tools/art-reviewer` Gemini pipeline; the Evaluator scores each
+candidate 1-10 on three dimensions (Technique — 2D pixel-art fidelity,
+Style — gritty dark sci-fi adherence, Format — solid `#00FF00` chroma-key
+compliance, checked deterministically via `jimp` patch-sampling, already a
+real dependency of `tools/asset-prep`) against a pass threshold of 7 on
+each; the Refiner translates flagged dimensions into regeneration feedback
+and always loops back to Evaluate (an image has no "small scoped patch" —
+every fix is a full regenerate-and-recheck), capped at 3 rounds.
+
+**Run live against three previously-unsourced hazards:**
+- **Meteoroid** — passed round 1 clean (Technique 8, Style 8, Format 8).
+- **Ion Storm** — passed round 1 clean (Technique 7, Style 8, Format 9).
+- **Nebula Field** — round 1 flagged on Style (6/10: the candidate's
+  saturated purple/magenta was the entire cloud body, not a minority
+  accent against a muted anchor tone the way `meteoroid.jpg`/`ion_storm.jpg`
+  both use it). The Refiner translated that into targeted regeneration
+  feedback; round 2 passed clean (Technique 8, Style 8, Format 9) and was
+  finalized with that feedback folded into `assets.json`'s stored prompt.
+  First real exercise of the loop's Refine step, not just its Generate/
+  Evaluate halves.
+
+Full per-round detail, pixel-sample numbers, and screenshots-equivalent
+observations: `docs/history/art-eval-log-2026-08-19.md`.
+
+**Deliberate deviation, flagged rather than silently reconciled:** the
+"Planning update (2026-08-08)" entry immediately below this one decided
+Ion Storm and Nebula Field should share **one** art-production pass (a
+soft translucent cloud/wisp texture family, differentiated only by an
+in-engine tint) rather than being independently designed. For this run,
+the project owner explicitly chose to generate them as two independently-
+directed sprites instead (Ion Storm: hard-edged, lightning-veined storm
+cloud; Nebula Field: soft-edged, muted-body-with-core-glow cloud) — a
+one-off exercise of the new art GER loop, not a reversal of the 2026-08-08
+decision. That decision and its reasoning (a nebula's diffuse-gas fiction
+doesn't survive a debris-style cluster approach, overlapping translucent
+instances accumulate alpha, etc.) are unchanged and still the documented
+default in `docs/reference/art-production-guidelines.md` if/when this asset
+gets a real production pass.
+
+One side effect worth recording: viewed side by side, this run's two
+independently-styled candidates read as clearly distinct hazards (different
+hue family, different edge hardness, presence/absence of internal
+linework) — a live data point toward GDD §9's still-open "does Ion
+Storm read as distinct from Nebula Field" question. This is a static-image
+judgment only, not the in-engine playtest validation the GDD actually
+calls for, so **the GDD §9 item stays open** — don't treat this run as
+having resolved it.
+
+**Not yet integrated.** All three candidates live only in
+`tools/art-reviewer/assets/` (`meteoroid.jpg`, `ion_storm.jpg`,
+`nebula_field.jpg`), marked `"accepted"` in `tools/art-reviewer/feedback.json`.
+They have not been chroma-keyed or moved into the real `assets/` tree, and
+`hazardConfig.ts`'s `placeholderTexture` fallback for `ionStorm`/
+`nebulaField`/`meteoroid` and `BootScene`'s preload list are both still
+unchanged — that's `asset-integration-agent.md`'s job (continuing the
+existing Sourcing → Evaluation → Prep pipeline per its own doc), genuinely
+separate follow-up work, not implied or started by this pass.
 
 ## Code update (2026-08-10) — resource display moved from screen-pinned HudOverlay to ship-relative ShipStatusArcs
 
@@ -559,13 +689,21 @@ not sourced from a licensed pack — see the design-update note above.
 
 ## Explicitly out of scope right now (Phase 2a/2b — don't start early)
 
-- Comet vs. Meteoroid visual distinction
+- Comet vs. Meteoroid visual distinction (Meteoroid itself now has a
+  candidate sprite, per the 2026-08-19 entry above — Comet does not, and
+  the two-object distinction question is unaddressed by that pass)
 - Ion Storm / Nebula Field — production *approach* decided 2026-08-08 (see
-  entry above), but no actual assets sourced yet and the motion-vs-static
-  differentiation question itself is still open; also still needs to read
-  as lower-stakes than the structure-draining hazard family, per the
-  2026-07-29 GDD revision (§9) — Meteoroid is now the *sole* member of that
-  family as of the 2026-08-07 Debris Field re-scope, see above
+  entry below); as of 2026-08-19, candidate sprites for both now exist
+  (`tools/art-reviewer/assets/ion_storm.jpg`, `nebula_field.jpg`, both
+  `"accepted"`) but were deliberately generated as independent designs for
+  that one GER-loop exercise rather than via the shared-pass approach
+  decided here, and neither is integrated into the real `assets/` tree yet
+  — see the 2026-08-19 entry above before assuming this line is resolved.
+  The motion-vs-static differentiation question itself is still open, and
+  Ion Storm/Nebula Field still need to read as lower-stakes than the
+  structure-draining hazard family, per the 2026-07-29 GDD revision (§9) —
+  Meteoroid is now the *sole* member of that family as of the 2026-08-07
+  Debris Field re-scope, see above
 - Beacon Cluster (still no named match anywhere)
 - Signal Array (sequence puzzle, formerly named Relay Beacon) — see "What's
   NOT done" above

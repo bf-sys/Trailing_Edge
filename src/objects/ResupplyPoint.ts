@@ -35,6 +35,12 @@ export class ResupplyPoint {
     }
   }
 
+  // Read-only query for HudOverlay's resupply-waypoint marker (2026-08-21)
+  // -- same display-only-consumer contract as HazardZoneElement.getPosition().
+  getPosition(): { x: number; y: number } {
+    return { x: this.zone.x, y: this.zone.y };
+  }
+
   update(_time: number, delta: number): void {
     if (this.overlapping) {
       const ship = getPlayerShip();

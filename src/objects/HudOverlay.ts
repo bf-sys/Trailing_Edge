@@ -7,6 +7,7 @@ import type { PuzzleSite } from './PuzzleSite';
 
 const DEPTH = 2000;
 const OBJECTIVE_MARKER_KEY = 'objective_marker';
+const RESUPPLY_MARKER_KEY = 'resupply_marker';
 // tractorBeam is de-scoped from all player-facing ability UI (2026-08-14
 // ability rework) -- abilityUnlockOrder (now 3 entries) is the source of
 // truth for what appears here, not every key in abilityConfig.
@@ -23,15 +24,16 @@ export interface PuzzleSiteMarker {
 // as a plain Image so rotation follows the same proven convention as
 // PlayerShip (faces up by default, rotation = atan2(dy,dx) + PI/2), rather
 // than Phaser's Triangle Shape GameObject, whose rotation pivot doesn't
-// match its visual center.
-function createObjectiveMarkerTexture(scene: Phaser.Scene, size: number, color: number): void {
-  if (scene.textures.exists(OBJECTIVE_MARKER_KEY)) return;
+// match its visual center. Shared by both edge-pinned markers below (key
+// parameterized since the two use different sizes/colors, added 2026-08-21).
+function createMarkerTexture(scene: Phaser.Scene, key: string, size: number, color: number): void {
+  if (scene.textures.exists(key)) return;
 
   const diameter = size * 2;
   const graphics = scene.make.graphics({}, false);
   graphics.fillStyle(color, 1);
   graphics.fillTriangle(size, 0, 0, diameter, diameter, diameter);
-  graphics.generateTexture(OBJECTIVE_MARKER_KEY, diameter, diameter);
+  graphics.generateTexture(key, diameter, diameter);
   graphics.destroy();
 }
 
@@ -47,9 +49,11 @@ export class HudOverlay {
   private readonly scene: Phaser.Scene;
   private readonly tracker: LevelObjectiveTracker;
   private readonly objectiveMarker: Phaser.GameObjects.Image;
+  private readonly resupplyMarker: Phaser.GameObjects.Image;
   private readonly abilityIcons: Phaser.GameObjects.Graphics;
   private readonly puzzleSiteIndicator: Phaser.GameObjects.Text;
   private puzzleSites: PuzzleSiteMarker[] = [];
+  private resupplyPoints: { x: number; y: number }[] = [];
   // 2026-08-14 ability rework: one-shot objective-marker flash window (see
   // flashObjectiveMarker() below), timestamped in the same this.scene.time.now
   // clock updateObjectiveMarker() reads every frame.
@@ -65,9 +69,19 @@ export class HudOverlay {
     // sequence, so there's only ever one target to point at. Points up by
     // default; rotation below accounts for that, same convention as
     // shipConfig's spriteFacingOffsetRadians.
-    createObjectiveMarkerTexture(scene, hudConfig.objectiveMarkerSize, hudConfig.objectiveMarkerColor);
+    createMarkerTexture(scene, OBJECTIVE_MARKER_KEY, hudConfig.objectiveMarkerSize, hudConfig.objectiveMarkerColor);
     this.objectiveMarker = scene.add
       .image(0, 0, OBJECTIVE_MARKER_KEY)
+      .setScrollFactor(0)
+      .setDepth(DEPTH + 1)
+      .setVisible(false);
+
+    // Resupply waypoint marker (2026-08-21) — points at the nearest
+    // AsteroidField ResupplyPoint while scan is active; see hudConfig.ts's
+    // comment for why it's colored/sized the way it is.
+    createMarkerTexture(scene, RESUPPLY_MARKER_KEY, hudConfig.resupplyMarkerSize, hudConfig.resupplyMarkerColor);
+    this.resupplyMarker = scene.add
+      .image(0, 0, RESUPPLY_MARKER_KEY)
       .setScrollFactor(0)
       .setDepth(DEPTH + 1)
       .setVisible(false);
@@ -100,6 +114,14 @@ export class HudOverlay {
     this.puzzleSites = sites;
   }
 
+  // Display-only registration, same contract as setPuzzleSites() above —
+  // HudOverlay never creates/owns ResupplyPoints, only reads their position
+  // to decide where the resupply marker points. GameScene calls this once
+  // per level, same call site as setPuzzleSites().
+  setResupplyPoints(points: { x: number; y: number }[]): void {
+    this.resupplyPoints = points;
+  }
+
   // 2026-08-14 ability rework: opens a brief window where the objective
   // marker shows regardless of scan state. GameScene calls this once at
   // level start and on LevelObjectiveTracker's ProbeFound/BeaconReached
@@ -111,6 +133,7 @@ export class HudOverlay {
 
   update(): void {
     this.updateObjectiveMarker();
+    this.updateResupplyMarker();
     this.updateAbilityIcons();
     this.updatePuzzleSiteIndicator();
   }
@@ -181,17 +204,55 @@ export class HudOverlay {
       return;
     }
 
-    const camera = this.scene.cameras.main;
     const target = this.tracker.getCurrentObjectiveTarget();
-    const screenX = target.x - camera.scrollX;
-    const screenY = target.y - camera.scrollY;
+    this.positionEdgeMarker(this.objectiveMarker, target.x, target.y);
+  }
+
+  // Resupply waypoint marker (2026-08-21, TODO.md) — points at the nearest
+  // AsteroidField ResupplyPoint while scan is active. No flash window of its
+  // own, unlike the objective marker above: resupply isn't tied to a
+  // level-start/probe-found/beacon-reached moment, only to scan being on.
+  private updateResupplyMarker(): void {
+    const nowMs = this.scene.time.now;
+    const ship = getPlayerShip();
+    const scanActive = ship?.ability.isActive('scan', nowMs) ?? false;
+
+    if (!scanActive || !ship || this.resupplyPoints.length === 0) {
+      this.resupplyMarker.setVisible(false);
+      return;
+    }
+
+    let nearest = this.resupplyPoints[0];
+    let nearestDistance = Phaser.Math.Distance.Between(ship.image.x, ship.image.y, nearest.x, nearest.y);
+    for (let i = 1; i < this.resupplyPoints.length; i++) {
+      const point = this.resupplyPoints[i];
+      const distance = Phaser.Math.Distance.Between(ship.image.x, ship.image.y, point.x, point.y);
+      if (distance < nearestDistance) {
+        nearest = point;
+        nearestDistance = distance;
+      }
+    }
+
+    this.positionEdgeMarker(this.resupplyMarker, nearest.x, nearest.y);
+  }
+
+  // Shared by both edge-pinned markers (added 2026-08-21 alongside the
+  // resupply marker — previously inlined in updateObjectiveMarker() only).
+  // Hides the marker if its target is already on-screen (the whole point of
+  // an edge-pinned arrow is orienting toward something off-screen); otherwise
+  // clamps its position to the margin-inset screen rect along the
+  // center->target ray, and rotates the (up-pointing) arrow to face it.
+  private positionEdgeMarker(marker: Phaser.GameObjects.Image, targetX: number, targetY: number): void {
+    const camera = this.scene.cameras.main;
+    const screenX = targetX - camera.scrollX;
+    const screenY = targetY - camera.scrollY;
 
     const margin = hudConfig.objectiveMarkerEdgeMargin;
     const withinViewport =
       screenX >= margin && screenX <= camera.width - margin && screenY >= margin && screenY <= camera.height - margin;
 
     if (withinViewport) {
-      this.objectiveMarker.setVisible(false);
+      marker.setVisible(false);
       return;
     }
 
@@ -200,14 +261,12 @@ export class HudOverlay {
     const dx = screenX - centerX;
     const dy = screenY - centerY;
 
-    // Clamp to the margin-inset screen rect along the center->target ray,
-    // then rotate the (up-pointing) arrow to face the target.
     const halfWidth = centerX - margin;
     const halfHeight = centerY - margin;
     const scale = Math.min(dx !== 0 ? Math.abs(halfWidth / dx) : Infinity, dy !== 0 ? Math.abs(halfHeight / dy) : Infinity);
 
-    this.objectiveMarker.setPosition(centerX + dx * scale, centerY + dy * scale);
-    this.objectiveMarker.setRotation(Math.atan2(dy, dx) + Math.PI / 2);
-    this.objectiveMarker.setVisible(true);
+    marker.setPosition(centerX + dx * scale, centerY + dy * scale);
+    marker.setRotation(Math.atan2(dy, dx) + Math.PI / 2);
+    marker.setVisible(true);
   }
 }

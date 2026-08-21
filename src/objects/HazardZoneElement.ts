@@ -75,6 +75,16 @@ export interface HazardZoneConfig {
   // hazard's heading is established or changes (construction and
   // reposition()), so the sprite visually faces its direction of travel.
   spriteFacingOffsetRadians?: number;
+  // Continuous cosmetic self-rotation (added 2026-08-21, Ion Storm's
+  // swirl), independent of movementPattern/heading -- unlike
+  // spriteFacingOffsetRadians (which sets an absolute rotation once per
+  // heading change, to face direction of travel), this increments rotation
+  // every update() frame regardless of whether or how the hazard is
+  // moving. Positive values spin clockwise (Phaser's y-down screen space
+  // makes increasing rotation read as clockwise, same as plain canvas
+  // rotation). Purely visual -- doesn't touch the Arcade body, same as
+  // rotationRadians above.
+  spinRadiansPerSecond?: number;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
@@ -161,6 +171,8 @@ export class HazardZoneElement {
 
   update(time: number, delta: number): void {
     const dt = delta / 1000;
+
+    if (this.config.spinRadiansPerSecond) this.zone.rotation += this.config.spinRadiansPerSecond * dt;
 
     // Resource-cost contact is checked directly here (distance/AABB against
     // the ship's current position) rather than via scene.physics.add.overlap()

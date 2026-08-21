@@ -35,6 +35,9 @@ export interface HazardTypeConfig {
   // orientation" -- correct for movementPattern: 'static' hazards, and for
   // Ion Storm, whose swirl art doesn't read as facing any particular way.
   spriteFacingOffsetRadians?: number;
+  // Continuous cosmetic spin (added 2026-08-21, Ion Storm), independent of
+  // spriteFacingOffsetRadians/heading -- see HazardZoneConfig's comment.
+  spinRadiansPerSecond?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
   hitCooldownSeconds?: number;
@@ -88,14 +91,26 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   },
 
   // Same visual family as Nebula Field (GDD §9) -- motion is the only
-  // behavioral difference: a slow linear drift vs. fully static.
+  // behavioral difference: a slow linear drift vs. fully static. Size/speed
+  // bumped 2026-08-21 (same "make it a little bigger and faster" pass as
+  // Meteoroid) -- no collision change, still pure fly-through/drain, no
+  // blocksMovement. Kept well under Meteoroid's 140 px/s so it still reads
+  // as a *drift*, not a threat requiring reflexes -- the GDD's "slow-moving
+  // hazard area" framing for Ion Storm vs. Nebula Field's fully static one
+  // is unchanged, just more visibly in motion than the old barely-there 15.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
     displayName: 'ION STORM',
-    shape: { kind: 'circle', radius: 90 },
+    shape: { kind: 'circle', radius: 110 },
     movementPattern: 'linear',
-    speed: 15,
+    speed: 30,
     headingRadians: Math.PI,
+    // Swirling-cloud spin (2026-08-21, tuned same day: 8s -> 16s -> 24s) --
+    // clockwise, one full rotation every 24s. Purely cosmetic (doesn't
+    // touch the circular collision body, which is rotation-invariant);
+    // independent of headingRadians, so it spins in place regardless of
+    // drift direction.
+    spinRadiansPerSecond: (Math.PI * 2) / 24,
     activation: 'continuous',
     resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
   },

@@ -150,6 +150,7 @@ sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
 but not yet sourced, see its 2026-08-08 entry). Other reference docs live
 in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
+- `docs/trailing_edge_audio_asset_list.md` — audio asset taxonomy/requirements list (added 2026-08-21), same Core/Content split as the art list but derived from what's actually built rather than a GDD audio spec — §9's asset-procurement resolution never scoped audio the way it scoped art
 - `docs/phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
 - `docs/ATTRIBUTION.md` — license/credit ledger for sourced assets
 - `docs/asset-procurement-agent-flow.md` — mermaid diagram of the three-agent sourcing pipeline

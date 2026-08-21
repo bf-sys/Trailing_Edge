@@ -25,7 +25,7 @@ Items already resolved in these docs (e.g. Probe art, ship/wormhole/beacon art, 
 
 ## Audio
 
-- [ ] **Audio asset list** — menu clicks, ship thruster, ability activation, taking damage, etc. (SFX), plus background/ambient music tracks.
+- [x] ~~Audio asset list~~ — **written 2026-08-21**, `docs/trailing_edge_audio_asset_list.md`. Several real open questions came out of it, not yet decided: Ion Storm/Nebula Field audio identity (tied to their still-open visual-differentiation question), whether a hazard's own sound coexists with or replaces a generic damage-taken cue, and the menu-vs-gameplay music split (deliberately deferred). See that doc's §4 for the full list.
 - [ ] **Source the audio files** — both SFX and music.
 - [ ] **Implement audio in-game** — wire sourced files to their trigger points.
 - [ ] **Volume control** — an option on the main menu / pause screen.

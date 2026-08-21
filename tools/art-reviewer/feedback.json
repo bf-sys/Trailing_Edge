@@ -38,5 +38,17 @@
   "debris_large_2": {
     "status": "needs_revision",
     "feedback": "Love this image, can we make it a little more rectangular in shape?\n"
+  },
+  "meteoroid": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "ion_storm": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "nebula_field": {
+    "status": "accepted",
+    "feedback": ""
   }
 }

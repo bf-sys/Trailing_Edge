@@ -60,6 +60,24 @@
         "prompt": "Isolated single sprite of a Pixel art sci-fi UI structure health bar, glowing orange, gritty dark sci-fi, scanlines, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
     },
     {
+        "id": "meteoroid",
+        "name": "Meteoroid Hazard",
+        "path": "/assets/meteoroid.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art jagged mineral meteoroid rock chunk hurtling through space, angular fractured silhouette with glowing molten orange-red cracks and ember trail streaks signaling danger and motion, distinct from a smooth asteroid or an icy comet, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "ion_storm",
+        "name": "Ion Storm Hazard",
+        "path": "/assets/ion_storm.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art ion storm hazard, a dense dark electromagnetic storm cloud mass crackling with arcing jagged blue-white electrical energy and lightning bolts within and around its silhouette, energetic and dangerous, visually distinct from a soft diffuse nebula cloud, fully opaque solid-shaded pixel art with no transparency or see-through areas, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
+        "id": "nebula_field",
+        "name": "Nebula Field Hazard",
+        "path": "/assets/nebula_field.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art nebula field hazard, a soft diffuse gaseous cloud of drifting purple, magenta, and violet space gas with a gently rounded, wispy irregular silhouette and soft internal shading bands suggesting billowing gas density, its visible mass desaturated to a dark-violet/charcoal-grey anchor tone covering the majority of the silhouette, with the saturated jewel-tone magenta/purple confined to a smaller highlight or core-glow region only, not the whole body, mirroring the muted-body-plus-saturated-accent structure already used by the meteoroid (muted rock plus molten-orange accent) and ion storm (muted cloud plus electric-blue accent) hazard sprites, calm and static-feeling with no lightning, no electrical arcs, and no hard jagged edges, visually distinct from a dense hard-edged electromagnetic storm cloud, fully opaque solid-shaded pixel art with no transparency or see-through areas, rendered as a fully solid cutout with a hard, clean edge transition directly from the background straight into the cloud silhouette and zero greenish anti-aliased blend or fringe pixels at the boundary, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
+    },
+    {
         "id": "bg_stars_far",
         "name": "Far Background Stars",
         "path": "/assets/bg_stars_far.jpg",

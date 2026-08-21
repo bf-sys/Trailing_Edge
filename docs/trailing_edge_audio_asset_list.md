@@ -184,3 +184,81 @@ Same three exclusions the art list states (GDD §10), audio side:
   decided against; revisit after the single loop is in and playtested.
 - No low-resource warning system exists yet to source audio for — flagged
   so it isn't later mistaken for an existing gap that was simply missed.
+
+---
+
+## 5. Sourcing Recommendations (researched 2026-08-21)
+
+Where to look for CC0/CC-BY audio matching the categories above — same
+"describe what's needed, leave how-to-source for a separate pass" restraint
+this doc opens with, now that separate pass has happened. Mirrors
+`ATTRIBUTION.md`'s existing license-tracking discipline: CC0 preferred, but
+CC-BY/CC-BY-SA already accepted for this build (per the art-sourcing
+precedent), so it's a usable fallback, not a hard blocker.
+
+### 5.1 General-purpose sources
+
+- **Kenney.nl (audio)** — https://kenney.nl/assets?q=audio. All CC0, no
+  account or attribution required, same pack/zip pattern already used for
+  Kenney's *art* packs (Space Shooter Remastered, Simple Space, UI Pack -
+  Sci-Fi — see `ATTRIBUTION.md`). Three relevant packs, confirmed live:
+  **Sci-fi Sounds** (engine/space one-shots — thruster loop candidate,
+  §1.1; several §1.5 ability sounds), **Interface Sounds**, and the newer
+  **UI Audio** (clicks/confirms/menu cues — direct fit for §1.7). Given the
+  existing art pipeline already leans on Kenney, this is the obvious first
+  stop for consistency alone.
+- **OpenGameArt.org** — pre-curated packs (not loose clips), filterable by
+  license on the browse page — same site already used for the Objects.zip
+  debris/asteroid pack (see `phase1-manifest-and-tasks.md`). CC0 sci-fi
+  packs worth checking first: "60 CC0 Sci-Fi SFX" and its companion "50 CC0
+  Sci-Fi SFX" (lasers, metallic hits, ambient hums, warp/terminal tones —
+  candidates for Ion Storm's crackle and Nebula Field's drone, §1.2; a
+  wormhole-warp cue, §1.3a; ability pings, §1.5), plus "Sci-Fi Sound
+  Effects Library," "Dark Sci-Fi Sound Effects," and "Space Sounds." Also
+  has music, not just SFX. Attribution needed only where a specific
+  submission is CC-BY/BY-SA rather than CC0 — track it in `ATTRIBUTION.md`
+  the same way the art packs already are.
+- **Freesound.org** — the deepest library for oddly specific one-shots (an
+  electrical-crackle loop, a meteor-impact thud, a tracking-hum texture,
+  §1.2/§1.3's harder-to-find items), but licensing is mixed **per file** —
+  CC0, CC-BY, and CC-BY-NC sit side by side in the same search results, and
+  the built-in license filter is clunky enough that it's worth checking
+  each file's license tag individually rather than trusting the search
+  filter or the pack framing. CC-BY-NC hits are not usable here even under
+  the "CC-BY/SA accepted" policy — NC was never part of that acceptance.
+  Free account required to download.
+- **Sonniss GDC bundle** — https://gdc.sonniss.com/, still an annual
+  release (a 2026 edition shipped this spring). License: free, commercial
+  use permitted, no attribution required, can't resell raw clips or claim
+  authorship — one new wrinkle since older recommendations of this bundle
+  is an explicit AI-training-use prohibition clause, not relevant to this
+  project but worth knowing it's there. Professional Foley-grade content in
+  bulk — good for the heavier sounds: Meteoroid impact (§1.2), the
+  hard-fail/restart stinger (§1.6), tractor-beam engage (§1.5).
+- **itch.io sci-fi SFX packs** (e.g. a "Free Sci-Fi UI Sound Effects Pack"
+  with 100+ bleeps/clicks/glitches) — licensing is inconsistent
+  per-creator, no site-wide CC0 guarantee the way Kenney/OpenGameArt have.
+  Read each pack's license section individually before treating it as
+  CC0/CC-BY equivalent, and credit in `ATTRIBUTION.md` per-pack rather than
+  assuming public domain.
+
+### 5.2 Music (§1.8)
+
+- **FreePD.com** — https://freepd.com/scoring.php. True CC0 public domain,
+  no attribution ever required. The "Scoring"/ambient categories include
+  drone-style atmosphere tracks that fit a single loopable sci-fi bed —
+  best current candidate for §1.8's one ambient background loop.
+- **incompetech.com** (Kevin MacLeod) — still active, free with
+  attribution (or a paid tier to waive it). Catalog skews orchestral/
+  cinematic rather than ambient-loop sci-fi, so a better fit for a fanfare
+  moment (puzzle-solved, §1.3; ability-unlocked or win, §1.7) than the main
+  background loop itself.
+
+### 5.3 Suggested sourcing order
+
+Kenney (covers most of §1.7 UI plus a chunk of §1.1/§1.5) + the two
+OpenGameArt CC0 sci-fi packs (covers most of §1.2 hazards, §1.3a wormhole,
+remaining §1.5 ability sounds) get most of this list in two stops. Fill
+what's left — per-step puzzle tones (§1.3), the two damage-stinger
+variants (§1.6), and the distinct fanfares (§1.3/§1.7) — from Freesound or
+the Sonniss bundle where Kenney/OGA don't have a close match.

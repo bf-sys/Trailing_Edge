@@ -50,5 +50,17 @@
   "nebula_field": {
     "status": "accepted",
     "feedback": ""
+  },
+  "nebula_field_1": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "nebula_field_2": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "nebula_field_3": {
+    "status": "accepted",
+    "feedback": ""
   }
 }

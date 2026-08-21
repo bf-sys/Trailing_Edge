@@ -248,9 +248,9 @@ per-level authored content (GDD §11.7), not a global tunable, and stays in
 |---|---|
 | `shape` | `{ kind: 'circle', radius }` or `{ kind: 'rectangle', width, height }` — collision/interaction size, authored independent of sprite pixel size |
 | `movementPattern` / `speed` / `headingRadians` | `'static'` \| `'linear'` \| `'patrol'` (`'patrol'` reserved, unimplemented — see `HazardZoneElement`); `speed` px/s, ignored when static |
-| `activation` / `pulseIntervalSeconds` | `'continuous'` drains every frame while overlapping; `'pulsed'` drains once per interval |
-| `resourceCost` | `{ energy, structure }` per second (continuous) or per pulse (pulsed) |
-| `blocksMovement` | Debris Field only — solid collider, no `onHazardContact()`/resource-cost call at all |
+| `activation` / `pulseIntervalSeconds` / `hitCooldownSeconds` | `'continuous'` drains every frame while overlapping; `'pulsed'` drains once per `pulseIntervalSeconds`; `'impact'` (added 2026-08-21, Meteoroid) applies `resourceCost` as a one-time hit on contact, gated by `hitCooldownSeconds` so a lingering overlap doesn't re-trigger every frame |
+| `resourceCost` | `{ energy, structure }` per second (continuous), per pulse (pulsed), or per hit (impact) |
+| `blocksMovement` | Solid collider — ship physically bounces off instead of passing through. No longer implies zero cost (decoupled 2026-08-21): Debris Field is `blocksMovement` with zero cost, Meteoroid is `blocksMovement` *and* charges an impact hit — the two are independent flags now, not one implying the other |
 | `placeholderTexture` | `{ color, alpha }` for the four hazards with no sourced art yet (Solar Flare/Ion Storm/Nebula Field/Meteoroid, `docs/STATUS.md`) — `GameScene` bakes this into a flat circle texture under `textureKey`. Debris Field omits this since it has final sourced art. |
 
 ```js

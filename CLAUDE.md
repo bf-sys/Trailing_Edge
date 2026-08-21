@@ -145,6 +145,22 @@ handed through `scene.start()`) and its one fallback case (the last
 ability granted on the last `LEVEL_ORDER` entry, with no next level to
 attach the popup to).
 
+**Meteoroid collision rework (2026-08-21).** Speed bumped 60 → 140 px/s,
+radius bumped 26 → 40, and it's now a `blocksMovement: true` solid
+collider (ship physically bounces off it via the same Arcade
+immovable-body + `collider()` mechanism Debris Field already used —
+GDD §9/§11.3) instead of a fly-through drain zone. Structure cost is
+unchanged at 25, but how it's applied changed: a new `activation: 'impact'`
+`HazardZoneElement` mode applies it as a one-time hit on contact, gated by
+a `hitCooldownSeconds: 1` window, instead of a per-second continuous
+drain — see `activation: 'impact'` under Architecture contract below.
+This required dropping the old hard rule that `blocksMovement: true`
+hazards never call `onHazardContact()` (a solid collider previously
+implied zero contact cost); that coupling is gone as of this change, on
+purpose — it's what makes it possible, later, to also give Debris Field a
+small structure cost without further code changes (not decided/scoped
+yet, purely kept easy).
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
 but not yet sourced, see its 2026-08-08 entry). Other reference docs live
@@ -272,9 +288,31 @@ imports; **nobody hand-edits `create()`.**
     identity.
   - Hard rule: `onHazardContact()` only calls
     `ShipSurvivalComponent.consumeEnergy/consumeStructure` — never sets
-    resource values itself. **Exception:** `blocksMovement: true` hazards
-    don't call `onHazardContact()` at all — a solid collider has no
-    "contact cost," it just physically blocks entry.
+    resource values itself. `blocksMovement: true` no longer implies zero
+    contact cost (that coupling was removed 2026-08-21 — see the Meteoroid
+    collision rework below); a hazard can be a solid collider and still
+    charge a cost on contact. Whether a given hazard *does* both is a
+    per-hazard content decision in `hazardConfig.ts`, not a rule of the
+    class — e.g. Debris Field stays zero-cost today, but that's tunable,
+    not structural.
+  - **`activation: 'impact'`, added 2026-08-21 (Meteoroid collision
+    rework):** a third `HazardActivation` mode alongside `continuous`/
+    `pulsed` — applies `resourceCost` as a one-time lump on contact,
+    gated by a new `hitCooldownSeconds` field, instead of a per-second/
+    per-pulse rate. Exists so a `blocksMovement` hazard's lingering overlap
+    (while Arcade's collision separation is still shoving the ship clear)
+    doesn't re-charge the cost every frame. **Uses its own overlap check,
+    not `continuous`/`pulsed`'s manual center-distance-vs-radius one:**
+    that existing check treats the ship as a dimensionless point against
+    the hazard's own radius, which is harmless for the three big,
+    pass-through energy hazards (radius 70-100 vs. the ship's ~23-28px
+    half-extent) but wrong once a hazard is both physically-sized and
+    `blocksMovement` — Arcade's real collision response shoves the ship's
+    center back out before it'd ever cross that naive radius, so a hit
+    would rarely land. `'impact'` instead calls `scene.physics.overlap()`
+    for a body-accurate circle-vs-rectangle test, the same geometry the
+    physical collider itself uses, so "does it hit" and "does it block"
+    agree.
   - **Debris Field re-scoped 2026-08-07 (GDD §9):** was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship

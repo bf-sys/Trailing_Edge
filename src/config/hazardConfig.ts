@@ -37,6 +37,7 @@ export interface HazardTypeConfig {
   spriteFacingOffsetRadians?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
+  hitCooldownSeconds?: number;
   resourceCost: { energy: number; structure: number };
   blocksMovement?: boolean;
   // Solar Flare has no sourced art yet (docs/STATUS.md) -- GameScene
@@ -109,13 +110,17 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
 
   // The sole structure-draining open-world hazard (GDD §9, since Debris
   // Field's 2026-08-07 re-scope) -- carries the real fail-stakes side of
-  // the structure-vs-energy asymmetry.
+  // the structure-vs-energy asymmetry. Collision rework (2026-08-21): now a
+  // blocksMovement solid collider (ship physically bounces off instead of
+  // flying through it) that also deals a one-time impact hit rather than a
+  // per-second drain -- hitCooldownSeconds stops repeat hits while Arcade's
+  // collision separation is still shoving the ship clear.
   meteoroid: {
     textureKey: 'hazard_meteoroid',
     displayName: 'METEOROID',
-    shape: { kind: 'circle', radius: 26 },
+    shape: { kind: 'circle', radius: 40 },
     movementPattern: 'linear',
-    speed: 60,
+    speed: 140,
     headingRadians: 0,
     // hazard_meteoroid.png's rock+ember-trail art faces up-and-right at
     // zero rotation, not due east -- measured from the sprite's own pixel
@@ -123,8 +128,10 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     // horizontal, rounded to the nearest clean angle, same "measure the
     // art, name the offset" approach shipConfig.ts's comment describes.
     spriteFacingOffsetRadians: Math.PI / 6,
-    activation: 'continuous',
+    activation: 'impact',
+    hitCooldownSeconds: 1,
     resourceCost: { energy: 0, structure: 25 },
+    blocksMovement: true,
   },
 };
 

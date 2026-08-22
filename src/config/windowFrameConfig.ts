@@ -20,6 +20,13 @@ export const windowFrameConfig = {
   cornerTextureKey: 'window_corner',
   edgeTextureKey: 'window_edge',
   titlebarTextureKey: 'window_titlebar',
+  // Cropped directly out of window_titlebar.png's own left edge (2026-08-22,
+  // tools/asset-prep/split-titlebar-cap.js) rather than generated separately
+  // -- guarantees an exact material/scale match, since it's literally the
+  // same source pixels at the same native height. Reused via horizontal
+  // flip for the title bar's right end (the source's right edge measured as
+  // a near-exact mirror of its left, so one crop covers both).
+  titlebarCapTextureKey: 'window_titlebar_cap',
   fillTextureKey: 'window_fill',
 
   borderThicknessPx: 28, // on-screen thickness of the corner/edge border ring

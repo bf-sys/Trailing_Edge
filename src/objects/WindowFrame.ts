@@ -44,12 +44,13 @@ function getSourceSize(scene: Phaser.Scene, key: string): { width: number; heigh
 // exactly fills the required span.
 //
 // Layout, top to bottom: a border row (corners + tiled edge) at the top;
-// an optional tiled title-bar row just inside it if `title` is given; the
-// tiled fill interior (flanked by tiled edge columns down both sides); a
-// border row at the bottom. The title bar is an additional row inside the
-// top border, not a replacement for it -- avoids a seam where a taller
-// title-bar plate would otherwise fail to line up with the (thinner)
-// corner/edge border thickness.
+// an optional title-bar row just inside it if `title` is given (a 3-slice:
+// fixed end caps + a tiled plain middle, see below); the tiled fill
+// interior (flanked by tiled edge columns down both sides); a border row
+// at the bottom. The title bar is an additional row inside the top border,
+// not a replacement for it -- avoids a seam where a taller title-bar plate
+// would otherwise fail to line up with the (thinner) corner/edge border
+// thickness.
 //
 // No art asset backs window_fill's chroma-key format the way the other 3
 // do -- it's an opaque, already-tileable texture (see
@@ -64,6 +65,7 @@ export class WindowFrame extends Phaser.GameObjects.Container {
     const cornerNative = getSourceSize(scene, windowFrameConfig.cornerTextureKey);
     const edgeNative = getSourceSize(scene, windowFrameConfig.edgeTextureKey);
     const titlebarNative = getSourceSize(scene, windowFrameConfig.titlebarTextureKey);
+    const titlebarCapNative = getSourceSize(scene, windowFrameConfig.titlebarCapTextureKey);
     const fillNative = getSourceSize(scene, windowFrameConfig.fillTextureKey);
 
     // Tiles sit directly edge-to-edge with no overlap, so Phaser's default
@@ -77,6 +79,7 @@ export class WindowFrame extends Phaser.GameObjects.Container {
       windowFrameConfig.cornerTextureKey,
       windowFrameConfig.edgeTextureKey,
       windowFrameConfig.titlebarTextureKey,
+      windowFrameConfig.titlebarCapTextureKey,
       windowFrameConfig.fillTextureKey,
     ]) {
       scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
@@ -182,24 +185,53 @@ export class WindowFrame extends Phaser.GameObjects.Container {
       );
     }
 
-    // Title bar: an additional tiled row just inside the top border, not a
+    // Title bar: an additional row just inside the top border, not a
     // replacement for it (see class comment). Spans the same inset as the
-    // edge tiles so it lines up with the left/right border columns.
+    // edge tiles so it lines up with the left/right border columns. True
+    // 3-slice: a fixed-size cap at each end (the right one horizontally
+    // flipped, not a separate asset -- see windowFrameConfig.ts) with the
+    // plain, tileable middle segment filling whatever space is left. The
+    // cap is cropped from the middle texture's own edge, so both share the
+    // same native height/scale by construction -- no separate size to keep
+    // in sync.
     if (title !== undefined) {
       const titlebarScale = titleBarHeightPx / titlebarNative.height;
-      const naturalTitlebarTileLength = titlebarNative.width * titlebarScale;
-      const titlebarRun = fitTiles(topBottomRunLength, naturalTitlebarTileLength);
-      const titlebarTileWidth = topBottomRunLength / titlebarRun.count;
       const titlebarCenterY = borderThicknessPx + titleBarHeightPx / 2;
-      for (let i = 0; i < titlebarRun.count; i++) {
-        const tileX = borderThicknessPx + titlebarTileWidth * (i + 0.5);
-        const scaleX = titlebarScale * titlebarRun.correctionScale;
-        this.add(
-          scene.add
-            .image(tileX, titlebarCenterY, windowFrameConfig.titlebarTextureKey)
-            .setScale(scaleX, titlebarScale)
-        );
+      const capDisplayWidth = titlebarCapNative.width * titlebarScale;
+
+      this.add(
+        scene.add
+          .image(borderThicknessPx + capDisplayWidth / 2, titlebarCenterY, windowFrameConfig.titlebarCapTextureKey)
+          .setScale(titlebarScale)
+      );
+      this.add(
+        scene.add
+          .image(
+            width - borderThicknessPx - capDisplayWidth / 2,
+            titlebarCenterY,
+            windowFrameConfig.titlebarCapTextureKey
+          )
+          .setScale(titlebarScale)
+          .setFlipX(true)
+      );
+
+      const middleRunLength = topBottomRunLength - capDisplayWidth * 2;
+      if (middleRunLength > 0) {
+        const naturalTitlebarTileLength = titlebarNative.width * titlebarScale;
+        const titlebarRun = fitTiles(middleRunLength, naturalTitlebarTileLength);
+        const titlebarTileWidth = middleRunLength / titlebarRun.count;
+        const middleStartX = borderThicknessPx + capDisplayWidth;
+        for (let i = 0; i < titlebarRun.count; i++) {
+          const tileX = middleStartX + titlebarTileWidth * (i + 0.5);
+          const scaleX = titlebarScale * titlebarRun.correctionScale;
+          this.add(
+            scene.add
+              .image(tileX, titlebarCenterY, windowFrameConfig.titlebarTextureKey)
+              .setScale(scaleX, titlebarScale)
+          );
+        }
       }
+
       this.add(
         scene.add
           .text(width / 2, titlebarCenterY, title, titleTextStyle)

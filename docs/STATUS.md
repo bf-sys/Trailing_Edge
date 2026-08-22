@@ -5,6 +5,16 @@ for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
 
+## Design decision (2026-08-22) — Nebula Field low-contrast visibility flag: accept as-is
+
+The 2026-08-20/21 entries below flagged the family's shared muted
+dark-violet/charcoal-grey body as low-contrast against the game's black
+space background — easy to miss at a glance in full-screen view, recorded
+as an open "brighten vs. accept" decision rather than silently fixed.
+Project owner's call on direct review: the grey reads as legible against
+the black background as-is. No art change. `trailing_edge_art_asset_list.md`'s
+Nebula Field flag paragraph and `TODO.md` updated to reflect the decision.
+
 ## Art-integration update (2026-08-22) — Meteoroid re-integrated with a corrected ember-trail angle; spriteFacingOffsetRadians recalibrated to match
 
 Flagged on direct review of the existing integrated sprite: `hazard_meteoroid.png`'s

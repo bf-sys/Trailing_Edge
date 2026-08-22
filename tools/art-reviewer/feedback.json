@@ -86,5 +86,9 @@
   "window_titlebar_middle": {
     "status": "accepted",
     "feedback": ""
+  },
+  "meteoroid_v2": {
+    "status": "accepted",
+    "feedback": ""
   }
 }

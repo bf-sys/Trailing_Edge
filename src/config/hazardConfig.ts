@@ -146,12 +146,18 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     movementPattern: 'linear',
     speed: 140,
     headingRadians: 0,
-    // hazard_meteoroid.png's rock+ember-trail art faces up-and-right at
+    // hazard_meteoroid.png's rock+ember-trail art faces down-and-left at
     // zero rotation, not due east -- measured from the sprite's own pixel
-    // data (ember-trail centroid to rock centroid) at ~30.3 deg above the
-    // horizontal, rounded to the nearest clean angle, same "measure the
-    // art, name the offset" approach shipConfig.ts's comment describes.
-    spriteFacingOffsetRadians: Math.PI / 6,
+    // data (ember-trail centroid to rock centroid) at ~150 deg (image
+    // coords), same "measure the art, name the offset" approach
+    // shipConfig.ts's comment describes. Recalibrated 2026-08-22 when the
+    // sprite was regenerated to fix a misaligned ember trail (the previous
+    // art's trail ran at a shallower angle than the rock body's own long
+    // axis; this version's trail runs collinear with it, but the
+    // regeneration also happened to flip the rock/trail layout roughly
+    // 180 degrees on the canvas, hence the sign flip from the old +30 deg
+    // value, not a mistake).
+    spriteFacingOffsetRadians: -(5 * Math.PI) / 6,
     activation: 'impact',
     hitCooldownSeconds: 1,
     resourceCost: { energy: 0, structure: 25 },

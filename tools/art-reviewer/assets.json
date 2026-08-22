@@ -66,6 +66,12 @@
         "prompt": "Isolated single sprite of a top-down 2D pixel art jagged mineral meteoroid rock chunk hurtling through space, angular fractured silhouette with glowing molten orange-red cracks and ember trail streaks signaling danger and motion, distinct from a smooth asteroid or an icy comet, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background."
     },
     {
+        "id": "meteoroid_v2",
+        "name": "Meteoroid Hazard (Aligned Trail)",
+        "path": "/assets/meteoroid_v2.jpg",
+        "prompt": "Isolated single sprite of a top-down 2D pixel art jagged mineral meteoroid rock chunk hurtling through space, angular fractured silhouette with glowing molten orange-red cracks and ember trail streaks signaling danger and motion, distinct from a smooth asteroid or an icy comet, gritty dark sci-fi, 32-bit, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background, no shading on the background. Top-down 2D pixel-art meteoroid hazard sprite: a jagged, angular dark-stone rock chunk, built from many irregular multi-faceted plates/segments with sharp spiky points jutting out along its full outline (front, sides, AND back), NOT a smooth simple diamond or arrowhead shape -- lots of small jagged protrusions like broken crystal shards. A dense web of glowing molten orange-red cracks runs across every facet of the rock, following the segment boundaries. The rock silhouette is elongated along a steep diagonal axis, tapering to a sharp jagged point at the front (leading) end and a narrower jagged tapered corner at the back (trailing) end. A full, wide ember/flame trail (a bright glowing core streak plus several thinner wavy trailing streaks and small floating ember particles, not a single thin laser line) pours off the back trailing corner, continuing in a straight, unbroken line at the exact same angle as the rock body -- rock and flame together read as one continuous straight diagonal line with zero bend or kink where flame meets rock."
+    },
+    {
         "id": "ion_storm",
         "name": "Ion Storm Hazard",
         "path": "/assets/ion_storm.jpg",

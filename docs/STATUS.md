@@ -1,9 +1,64 @@
-# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-21)
+# STATUS — Trailing Edge Asset Sourcing (as of 2026-08-22)
 
 One-page entry point. Read this first; go to `history/run-log-2026-07-24.md`
 for search-by-search detail, or `history/phase1-prep-log.md` for the full
 per-item prep record (conversions, placeholder flags, kickbacks) behind the
 summary below.
+
+## Art-integration update (2026-08-22) — Meteoroid re-integrated with a corrected ember-trail angle; spriteFacingOffsetRadians recalibrated to match
+
+Flagged on direct review of the existing integrated sprite: `hazard_meteoroid.png`'s
+ember/flame trail exited at a visibly shallower angle (~30 deg from
+horizontal) than the rock silhouette's own long axis (~64 deg) — the flame
+read as pouring off sideways rather than straight off the back of the rock.
+
+Regenerated as a new `tools/art-reviewer` candidate, `meteoroid_v2` (kept
+alongside the original `meteoroid` candidate/entry, not overwriting it, so
+the flawed version stays available for comparison). Not run through the
+full automated Generate-Evaluate-Refine loop this time — iterated directly
+with `useReference`/feedback against the `/api/generate` endpoint instead:
+
+- Round 1 (`useReference: true`, light feedback) — barely changed anything;
+  the model anchored hard on the reference image and largely ignored the
+  text feedback.
+- Round 2 (no reference, direct geometric feedback) — fixed the angle
+  correctly (trail perfectly collinear with the rock axis) but oversimplified
+  the rock into a smooth diamond and thinned the trail to a single line,
+  losing the jagged multi-faceted silhouette and layered ember texture.
+- Round 3 (`useReference: true` again, refined feedback) — style came back,
+  but the angle regressed most of the way back toward the original flaw —
+  same over-anchoring failure mode as round 1.
+- Round 4 (no reference, feedback combining round 2's geometry instruction
+  with explicit jagged-silhouette/full-trail-texture language) — converged:
+  jagged rock, dense crack web, full layered ember trail, and the trail now
+  runs collinear with the rock's long axis with no kink.
+
+**Integrated on the project owner's direct visual approval** (same
+human-override precedent as the Nebula Field variant-2 row in
+`ATTRIBUTION.md`), not a fresh automated Evaluate pass. `meteoroid_v2`
+marked `accepted` in `tools/art-reviewer/feedback.json`, winning feedback
+folded into its `assets.json` prompt. Chroma-keyed/auto-cropped via the
+existing `tools/asset-prep/chroma-key.js` straight into
+`assets/hazards/hazard_meteoroid.png` (same filename — no code path or
+`BootScene.ts` preload changes needed).
+
+**Also required a config recalibration, not just an art swap:**
+`hazardConfig.ts`'s `meteoroid.spriteFacingOffsetRadians` (previously
+`Math.PI / 6`, +30 deg) is derived directly from this specific sprite's own
+pixel data (ember-trail-centroid-to-rock-centroid vector, per its own
+comment) — it's what makes the in-game sprite visually face its direction
+of travel. Regenerating the art invalidated that measurement. Re-measured
+with a new one-off script, `tools/asset-prep/measure-facing-angle.js`
+(sanity-checked first against the old accepted art, reproducing ~33 deg
+against the documented ~30.3 deg before trusting it on the new one): the
+regeneration happened to also flip the rock/trail layout roughly 180
+degrees on the canvas, so the new value is `-(5 * Math.PI) / 6` (-150 deg),
+not simply a small tweak off the old +30. `npx tsc --noEmit -p .` passes
+with the new value in place.
+
+Both original candidate images (`meteoroid.jpg`, `meteoroid_v2.jpg`) remain
+in `tools/art-reviewer/assets/` for reference. `ATTRIBUTION.md`'s Meteoroid
+row updated with the same detail.
 
 ## Art-integration update (2026-08-21) — multi-variant Nebula Field pass: two new sourced textures wired in, one candidate escalated and left out
 

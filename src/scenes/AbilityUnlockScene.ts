@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import type { AbilityType } from '../config/abilityConfig';
 import { abilityUnlockContent } from '../config/abilityUnlockContent';
+import { WindowFrame } from '../objects/WindowFrame';
+import { windowFrameConfig } from '../config/windowFrameConfig';
 
 export const ABILITY_UNLOCK_SCENE_KEY = 'AbilityUnlockScene';
 
@@ -35,21 +37,46 @@ export class AbilityUnlockScene extends Phaser.Scene {
 
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
 
-    this.add.text(width / 2, height / 2 - 70, 'Ability unlocked', { fontSize: '16px', color: '#8fd3ff' }).setOrigin(0.5);
-    this.add.text(width / 2, height / 2 - 32, content.title, { fontSize: '28px', color: '#ffffff' }).setOrigin(0.5);
-    this.add
-      .text(width / 2, height / 2 + 10, content.description, {
-        fontSize: '15px',
-        color: '#cccccc',
-        wordWrap: { width: width * 0.6 },
-        align: 'center',
-      })
-      .setOrigin(0.5, 0);
+    const windowWidth = 560;
+    const windowHeight = 340;
+    const windowFrame = new WindowFrame(this, {
+      x: width / 2 - windowWidth / 2,
+      y: height / 2 - windowHeight / 2,
+      width: windowWidth,
+      height: windowHeight,
+      title: 'ABILITY UNLOCKED',
+    });
+
+    // Content below is added as children of the WindowFrame container, so
+    // these coordinates are local to the window (0,0 at its top-left), not
+    // screen space -- same convention WindowFrame's own corner/edge/fill
+    // tiles use internally.
+    const centerX = windowWidth / 2;
+    const contentTop = windowFrameConfig.borderThicknessPx + windowFrameConfig.titleBarHeightPx;
+    const contentPadding = 32;
+
+    windowFrame.add(
+      this.add.text(centerX, contentTop + 26, content.title, { fontSize: '26px', color: '#ffffff' }).setOrigin(0.5)
+    );
+    windowFrame.add(
+      this.add
+        .text(centerX, contentTop + 64, content.description, {
+          fontSize: '15px',
+          color: '#cccccc',
+          wordWrap: { width: windowWidth - windowFrameConfig.borderThicknessPx * 2 - contentPadding },
+          align: 'center',
+        })
+        .setOrigin(0.5, 0)
+    );
 
     const closeButton = this.add
-      .text(width / 2, height / 2 + 130, 'Close', { fontSize: '18px', color: '#8fd3ff' })
+      .text(centerX, windowHeight - windowFrameConfig.borderThicknessPx - 30, 'Close', {
+        fontSize: '18px',
+        color: '#8fd3ff',
+      })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
+    windowFrame.add(closeButton);
 
     closeButton.on('pointerdown', () => {
       this.sceneData.onClose();

@@ -26,6 +26,10 @@ export class BootScene extends Phaser.Scene {
     this.load.image('wormhole', 'objectives/wormhole.png');
     this.load.image(STARFIELD_FAR_KEY, 'backgrounds/bg_stars_far.png');
     this.load.image(STARFIELD_NEAR_KEY, 'backgrounds/bg_stars_near.png');
+    this.load.image('window_corner', 'ui/window_corner.png');
+    this.load.image('window_edge', 'ui/window_edge.png');
+    this.load.image('window_titlebar', 'ui/window_titlebar.png');
+    this.load.image('window_fill', 'ui/window_fill.png');
   }
 
   create(): void {

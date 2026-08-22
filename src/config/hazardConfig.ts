@@ -142,22 +142,35 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   meteoroid: {
     textureKey: 'hazard_meteoroid',
     displayName: 'METEOROID',
-    shape: { kind: 'circle', radius: 40 },
+    shape: { kind: 'circle', radius: 56 },
     movementPattern: 'linear',
     speed: 140,
     headingRadians: 0,
     // hazard_meteoroid.png's rock+ember-trail art faces down-and-left at
-    // zero rotation, not due east -- measured from the sprite's own pixel
-    // data (ember-trail centroid to rock centroid) at ~150 deg (image
-    // coords), same "measure the art, name the offset" approach
-    // shipConfig.ts's comment describes. Recalibrated 2026-08-22 when the
-    // sprite was regenerated to fix a misaligned ember trail (the previous
-    // art's trail ran at a shallower angle than the rock body's own long
-    // axis; this version's trail runs collinear with it, but the
-    // regeneration also happened to flip the rock/trail layout roughly
-    // 180 degrees on the canvas, hence the sign flip from the old +30 deg
-    // value, not a mistake).
-    spriteFacingOffsetRadians: -(5 * Math.PI) / 6,
+    // zero rotation, not due east -- same "measure the art, name the
+    // offset" approach shipConfig.ts's comment describes. Recalibrated
+    // 2026-08-22 when the sprite was regenerated to fix a misaligned ember
+    // trail (the previous art's trail ran at a shallower angle than the
+    // rock body's own long axis; this version's trail runs collinear with
+    // it, but the regeneration also happened to flip the rock/trail
+    // layout roughly 180 degrees on the canvas, hence the sign flip from
+    // the old +30 deg value).
+    // First-pass recalibration used an ember/rock color-centroid vector
+    // (~150 deg) and looked right on paper, but the project owner reported
+    // the in-game travel direction still looked visibly off from the
+    // rock's nose (their guess: "maybe 10-15 degrees"). A same-day
+    // follow-up measurement taking the true extreme tip-to-tip pixels
+    // (rock nose corner <-> trail's farthest ember pixel, see
+    // tools/asset-prep/measure-tip-axis.js) landed at ~152.8 deg -- and
+    // the project owner independently confirmed it by drawing their own
+    // desired-direction line on the sprite, which measured out to ~152.66
+    // deg (tools/asset-prep's ad hoc PCA fit over the drawn line's
+    // pixels). Both landing within 0.15 deg of each other is why ~152.7
+    // deg is trusted here over the original ~150 -- the earlier centroid
+    // measurement wasn't wrong so much as a few degrees short of true, and
+    // apparently that's enough to visibly read as misaligned once the
+    // rock is actually moving rather than sitting still on a static image.
+    spriteFacingOffsetRadians: -(152.7 * Math.PI) / 180,
     activation: 'impact',
     hitCooldownSeconds: 1,
     resourceCost: { energy: 0, structure: 25 },
@@ -175,8 +188,9 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     // ship body's own setMaxVelocity() cap, so anything higher is wasted --
     // set to that ceiling directly after playtesting asked for more
     // distance than 220 gave. Covers ~37.6px before deceleration
-    // (900 px/s^2) brings it to rest (v^2/2a), clearing the hazard's 40px
-    // radius plus the ship's ~23-28px half-extent with real margin.
+    // (900 px/s^2) brings it to rest (v^2/2a), clearing the hazard's
+    // radius (56px as of 2026-08-22's size bumps, was 40px originally)
+    // plus the ship's ~23-28px half-extent with real margin.
     // Direction was also changed the same playtesting pass: perpendicular
     // to the hazard's line of travel rather than radially outward from its
     // center (see applyKnockback()'s comment in HazardZoneElement.ts) --

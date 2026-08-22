@@ -33,6 +33,24 @@ function getSourceSize(scene: Phaser.Scene, key: string): { width: number; heigh
   return { width: source.width, height: source.height };
 }
 
+// Adjacent tiles are positioned/scaled independently, so even with
+// roundPixels on, floating-point drift can leave a sub-pixel gap between
+// two tiles that don't quite meet -- invisible most of the time, but with
+// a dark scene behind the window it shows up as a hairline seam wherever a
+// boundary happens to land (confirmed 2026-08-22: a title-bar tile
+// boundary landed exactly at the window's horizontal center -- also where
+// the title text is centered -- making one such gap very visible). Widens
+// every tile by a couple of screen pixels beyond its exact computed span,
+// tile centers unchanged, so neighbors overlap by a hair instead of only
+// just touching. Safe because every tiled texture here is opaque with no
+// transparent padding at the edges being tiled (confirmed per-texture when
+// each was cropped) -- growing the scale genuinely extends opaque content,
+// it doesn't just enlarge a transparent margin.
+const TILE_OVERLAP_PX = 2;
+function withOverlap(scale: number, tileLength: number): number {
+  return scale * ((tileLength + TILE_OVERLAP_PX) / tileLength);
+}
+
 // Assembles an in-game window from 4 tiled/rotated source pieces (see
 // windowFrameConfig.ts) via true per-tile repetition, not Phaser's built-in
 // NineSlice GameObject -- NineSlice only stretches its edge/fill regions
@@ -112,7 +130,10 @@ export class WindowFrame extends Phaser.GameObjects.Container {
           this.add(
             scene.add
               .image(tileX, tileY, windowFrameConfig.fillTextureKey)
-              .setScale(fillScale * fillRunX.correctionScale, fillScale * fillRunY.correctionScale)
+              .setScale(
+                withOverlap(fillScale * fillRunX.correctionScale, fillTileWidth),
+                withOverlap(fillScale * fillRunY.correctionScale, fillTileHeight)
+              )
           );
         }
       }
@@ -148,7 +169,7 @@ export class WindowFrame extends Phaser.GameObjects.Container {
     const horizontalTileWidth = topBottomRunLength / horizontalRun.count;
     for (let i = 0; i < horizontalRun.count; i++) {
       const tileX = borderThicknessPx + horizontalTileWidth * (i + 0.5);
-      const scaleX = edgeScale * horizontalRun.correctionScale;
+      const scaleX = withOverlap(edgeScale * horizontalRun.correctionScale, horizontalTileWidth);
       this.add(
         scene.add
           .image(tileX, borderThicknessPx / 2, windowFrameConfig.edgeTextureKey)
@@ -170,7 +191,7 @@ export class WindowFrame extends Phaser.GameObjects.Container {
       // axis pre-rotation) becomes the visual vertical axis, so the
       // per-tile fit correction is applied to scaleX (still the local,
       // pre-rotation width axis) here, same as horizontal's scaleX role.
-      const scaleX = edgeScale * verticalRun.correctionScale;
+      const scaleX = withOverlap(edgeScale * verticalRun.correctionScale, verticalTileHeight);
       this.add(
         scene.add
           .image(borderThicknessPx / 2, tileY, windowFrameConfig.edgeTextureKey)
@@ -223,7 +244,7 @@ export class WindowFrame extends Phaser.GameObjects.Container {
         const middleStartX = borderThicknessPx + capDisplayWidth;
         for (let i = 0; i < titlebarRun.count; i++) {
           const tileX = middleStartX + titlebarTileWidth * (i + 0.5);
-          const scaleX = titlebarScale * titlebarRun.correctionScale;
+          const scaleX = withOverlap(titlebarScale * titlebarRun.correctionScale, titlebarTileWidth);
           this.add(
             scene.add
               .image(tileX, titlebarCenterY, windowFrameConfig.titlebarTextureKey)

@@ -78,5 +78,13 @@
   "window_fill": {
     "status": "accepted",
     "feedback": ""
+  },
+  "window_titlebar_cap": {
+    "status": "needs_revision",
+    "feedback": "Previous attempts have not converged on the required shape -- follow these exact constraints this time: render ONLY a narrow vertical metal strip roughly 150-250 pixels wide (not wider than that), spanning the full plate height with visible green margin above and below it (do not let the metal touch the canvas top or bottom edges), positioned so its right edge touches the canvas's right edge with absolutely zero green pixels between the metal and the right border. Do NOT include any wide flat interior panel, no second divider column, no second partial panel, and no L-shaped extension of any kind -- just the plain riveted border edge itself with a single uniform flat metal fill inside it, matching window_edge.jp's flat unmarked interior register rather than window_corner.jpg's panel-plus-border composition. Leave visible solid green chroma-key background above, below, and to the left of this narrow strip."
+  },
+  "window_titlebar_middle": {
+    "status": "accepted",
+    "feedback": ""
   }
 }

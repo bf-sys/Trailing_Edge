@@ -2511,3 +2511,959 @@ different prompt strategy — not the round-3 wording.
 `window_edge` (post-process), `window_titlebar`, `window_fill`.
 Compositing these into one baked 9-slice texture and wiring it into Phaser
 is separate, not-yet-started follow-up work.
+
+---
+
+## window_titlebar_cap (round 1) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_cap.jpg` (1408x768 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_cap`,
+name "Window Title Bar End Cap"):** "Isolated single sprite of a pixel art
+sci-fi UI window title-bar END CAP: a compact, narrow vertical
+brushed-gunmetal metal plate segment matching the window frame's border
+style and rivet detailing, forming the LEFT end of a horizontal title-bar
+strip -- a single self-contained decorative end piece, NOT a repeatable
+middle tile -- with its right side cropped flush at the image's right edge
+so it can be placed directly against a separate plain middle segment with
+no gap, strictly NON-DIRECTIONAL utilitarian lighting with no highlight or
+shadow bias favoring either side of the piece -- because this exact same
+image is also horizontally flipped in software to form the title-bar's
+right end cap and must read correctly mirrored, no inset rectangle, no
+reserved text panel, no letters, no numbers, no glyphs baked into the
+image, sharp pixel-grid edges, 32-bit retro pixel art style, NO
+environment, NO scene, NO text, on a solid bright chroma-key green
+(#00FF00) background above, below, and to the left of the plate, no
+shading on the background."
+
+**Context this round replaces:** the prior single-piece `window_titlebar`
+asset (accepted, unchanged, historical record) baked a whole 3-segment
+"plaque" into one image; tiling whole copies produced duplicate seams and
+duplicate text-rectangles that didn't line up with code-rendered centered
+text. This round's fix is a proper 3-slice: `window_titlebar_cap` (this
+entry, reused via horizontal flip for both bar ends) plus
+`window_titlebar_middle` (evaluated separately below), tiled/stretched
+between the two caps.
+
+**Round 0 check:** grepped `window_titlebar_cap` across
+`docs/history/art-eval-log-*.md` (`art-eval-log-2026-08-19.md` and this
+entire file up to this point). No prior entry found anywhere. Confirmed
+this is a genuine round 1 — not a circuit-breaker case.
+(`tools/art-reviewer/feedback.json` lists `window_titlebar_cap` as
+`"needs_revision"` with empty feedback text — read as the pipeline's
+pre-eval default queued state, not prior human feedback to reconcile with.)
+
+### Technique: 4/10
+- Base pixel-art execution quality is genuinely good in isolation: crisp
+  pixel-grid edges, a real black-outline-stroke edge convention on the
+  left/top/bottom boundaries (transect at y=300, x=490 to 510: green through
+  x=490, blend `(21,241,15)`/`(69,148,69)` at x=490-492, crisp near-black
+  outline `(2,6,3)`/`(0,3,0)` at x=494-496, then straight into the metal
+  body by x=498-500 — a tight 4-6px hard cutout matching
+  `window_corner.jpg`/`window_edge.jpg`'s established convention), and
+  consistent rivet/panel-line detailing. No baked-in text, watermark, or
+  UI chrome.
+- **Primary, disqualifying defect: this is not a "compact, narrow vertical"
+  end cap as the prompt explicitly specifies.** Measured via a `jimp`
+  bounding-box scan (script run from `tools/asset-prep/`, deleted after
+  use): subject bbox is `x:[492,903]`, `y:[88,679]` → **411 x 591 px** —
+  width is roughly **70% of height**, essentially a large square-ish
+  corner-block, not a slim strip. Visual comparison against the
+  already-accepted `window_corner.jpg` (a genuine corner piece — two
+  border strips of equal width meeting at 90 degrees) shows this candidate
+  reproduces the same L-shaped-border-plus-recessed-panel composition
+  language (rivets across a horizontal top border, a vertical left border,
+  and a large flat recessed panel filling most of the remaining area) —
+  reading as a fragment of a corner/full-plaque piece, not a distinct,
+  purpose-built narrow end-cap silhouette.
+- **Second, related defect the prompt explicitly calls out: the right side
+  is not cropped flush at the image's right edge.** The subject's right
+  boundary sits at x=903 of a 1408px-wide canvas — **505px of green
+  padding** separates it from the canvas edge (confirmed via pixel probes:
+  x=900 `(96,103,99)` interior grey, x=902 `(64,124,66)` blend, x=904
+  `(24,242,20)` blend, x=906+ solid green `(8,248,3)`, and green continues
+  unbroken all the way to x=1407). The prompt's own language — "with its
+  right side cropped flush at the image's right edge so it can be placed
+  directly against a separate plain middle segment with no gap" — is not
+  met as delivered; using this piece requires an extra crop/trim step the
+  brief was specifically written to avoid. (One mitigating note: the crop
+  edge itself, at x=902-906, is a soft ~4px blend rather than a hard
+  outline stroke — meaning a downstream trim wouldn't inherit a stray
+  double-border, just wasted canvas.)
+- **Secondary, minor observation:** matched-offset brightness sampling at
+  x=700 (top border interior vs. bottom border interior, offsets 0-40px
+  from each edge) found the top region reading 1.8-3.1x brighter than the
+  bottom region at the innermost sampled offsets (offset 0: top 141 vs.
+  bottom 45; offset 5: 137 vs. 46; offset 10: 121 vs. 68), converging to
+  near-parity by mid-strip (offset 15-35: roughly 78-100 on both sides).
+  This is a top-vs-bottom bias, not the left-vs-right bias the prompt's
+  horizontal-flip requirement is specifically about (flipping horizontally
+  never swaps top and bottom), so it doesn't break the mirror-fitness
+  check directly — but it is still a directional-lighting choice the
+  prompt's blanket "strictly non-directional utilitarian lighting" language
+  argues against, and is plausibly a highlight/shadow bevel-lip convention
+  worth flattening if a regenerate is already happening for the two
+  defects above.
+- Not scored lower than 4: the underlying pixel-art craft (edges, rivets,
+  outline convention, palette) is solid — the deduction is entirely about
+  the delivered composition/crop not matching the specific asset this
+  prompt was written to produce, not about pixel-art fidelity itself.
+
+### Style: 6/10
+- Palette is the same coherent muted brushed-gunmetal grey family already
+  established by `window_corner.jpg`/`window_edge.jpg`/`window_titlebar.jpg`
+  (interior samples in the roughly 80-140 brightness range, near-neutral
+  with a slight blue-grey undertone) — comfortably "muted, desaturated,
+  industrial... metallics," no bright/cartoon colors. High-contrast rivet
+  and panel-line detailing reads as functional/utilitarian. No
+  genre-breaking elements.
+- **Deduction: a direct precedent comparison against this candidate's own
+  paired sibling, `window_titlebar_middle.jpg` (evaluated below,
+  inspected via `Read` this same round), shows a corner/bevel-treatment
+  mismatch.** This cap's recessed inner panel uses a sharp, roughly-square
+  inset-corner style (matching `window_titlebar.jpg`'s square recessed
+  band), while `window_titlebar_middle.jpg`'s recessed panel uses a
+  distinctly different chamfered/rounded-bevel corner treatment (soft
+  diagonal highlight cuts at each corner — see that entry's Technique
+  section). Two pieces explicitly designed to be placed directly against
+  each other to form one continuous title-bar plaque currently use two
+  different bevel/corner conventions, which will read as visibly
+  mismatched hardware once assembled rather than one manufactured object.
+- This is the specific, checkable reason this candidate lands at 6 rather
+  than the 8 its general palette/genre execution would otherwise earn —
+  a real cross-asset style-consistency defect between two pieces meant to
+  physically join, not a subtle precedent-drift nitpick.
+
+### Format: 7/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 7 patches (5x5-pixel averages) across the visible green field,
+  well clear of the subject bbox (`x:[492,903]`, `y:[88,679]`): topLeft
+  dist 10.5, topRight dist 11.0, bottomLeft dist 10.3, bottomRight dist
+  11.1, farRightMid dist 13.3, nearRightOfSubjectMid dist 11.0,
+  leftOfSubjectMid dist 13.0. All 7 fall comfortably inside the ~25-30-unit
+  compliant band, with a tight ~3-unit spread (10.3-13.3) — flat, uniform
+  background fill, no gradient/vignette, on par with the best results in
+  this window-frame asset family.
+- No stray green fringing on the subject's own edges (the black-outline
+  convention on the left/top/bottom boundaries is tight, see Technique),
+  and no green surfaces on the subject itself — no green-on-subject keying
+  tension to flag. The sprite is a single, genuinely isolated subject (no
+  second object, no partial environment/scene bleeding in).
+- **Deliberately not scored down here for the flush-crop issue** (see
+  Technique) — the rubric's Format criteria are about background flatness,
+  fringing, and isolation from a scene/second object, all of which this
+  candidate satisfies cleanly; the "not cropped flush to the canvas edge"
+  defect is about matching the asset's specific stated production spec
+  (a Technique/execution-consistency question, same category
+  `window_corner.jpg`'s round-1 rotation-bias defect was filed under), not
+  a chroma-key compliance failure. Flagging the split explicitly rather
+  than silently double-counting or silently ignoring it in either
+  dimension.
+- Not a 9-10: patch sampling only, not an exhaustive full-boundary scan of
+  the L-shaped inner joint region (same caveat `window_corner.jpg` noted).
+
+### Mirror/tiling fitness (explicit check per task brief)
+(a) **Baked-in directional highlight/shadow that would look wrong once
+horizontally flipped:** no left-vs-right bias was found — a horizontal
+brightness profile at y=300 across the panel interior (x=520 to 895) shows a
+mild bowl-shaped variation (brighter near x=520-570, roughly 114-138;
+dipping to 92-98 mid-strip; recovering to 100-106 near x=845-895), but this
+reads as residual influence from the left border's own bevel highlight
+bleeding into the nearest samples rather than a broad interior gradient —
+the difference (114-138 vs. 100-106) is modest and plausibly a normal
+brushed-metal streak pattern rather than a directional "light from one
+side" treatment. Worth a second look if a regenerate happens anyway, but
+this is not the disqualifying defect on this candidate — the top-vs-bottom
+bias noted under Technique is real but irrelevant to a horizontal flip.
+(b) **Right-edge cleanliness for joining against `window_titlebar_middle`:**
+mixed. The crop edge itself (x=902-906) is a soft blend with no baked
+border stroke, so it wouldn't create a doubled-border seam — but it is not
+flush at the canvas edge as required (505px of green padding, see
+Technique), and the joining corner/bevel style doesn't match
+`window_titlebar_middle`'s own corner treatment (see Style) — so even after
+a manual trim, the two pieces as currently delivered wouldn't read as one
+continuous object.
+
+### Fix list
+- **Technique (4/10, below threshold):** Regenerate at a genuinely compact,
+  narrow width relative to its height — the delivered content is 411x591px
+  (width ~70% of height), reading as a corner-block/full-plaque fragment
+  rather than a slim end-cap; aim for something closer to the border
+  thickness already established by `window_corner.jpg`'s own ~100-185px
+  strip (per that entry's round-2 measurement), not a piece that eats a
+  large fraction of the bar's total width on its own. Also: crop/regenerate
+  so the subject's right edge sits flush at the image's right edge (x=1408)
+  with zero green gap, per the prompt's explicit instruction — currently
+  there's a 505px gap between the subject (ending at x=903) and the canvas
+  edge. Optional in the same pass: flatten the top-vs-bottom brightness
+  bias found near each border's inner edge (offset 0-10px: top reads
+  1.8-3.1x brighter than bottom at matched offsets).
+- **Style (6/10, below threshold):** Align the recessed panel's
+  corner/bevel treatment with `window_titlebar_middle.jpg`'s chamfered/
+  rounded-bevel corner style (soft diagonal highlight cuts) instead of this
+  candidate's sharper, square inset-corner style, so the two pieces read as
+  parts of the same manufactured nameplate once placed together.
+
+VERDICT: flagged (round 1 of a 3-round cap — nowhere near the circuit
+breaker). Technique and Style are below the pass threshold of 7; Format
+(7) passes.
+
+---
+
+## window_titlebar_middle (round 1) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_middle.jpg`
+(1408x768 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_middle`,
+name "Window Title Bar Middle Segment"):** "Isolated single sprite of a
+pixel art sci-fi UI window title-bar MIDDLE segment: a plain horizontal
+brushed-gunmetal metal plate strip matching the window frame's border
+style, subtly recessed, with a flat, uniform, unmarked surface -- absolutely
+NO inset rectangle, NO reserved text panel, NO letters, NO numbers, NO
+glyphs baked into the image, since the title text is always rendered
+separately in code on top of this plate -- with the strip cropped flush at
+the left and right image edges so it tiles seamlessly with copies of itself
+placed side by side, or stretches cleanly when scaled wider, to fit between
+the two end caps at any title-bar width, strictly NON-DIRECTIONAL
+utilitarian lighting with no highlight or shadow bias along its length or
+between its top/bottom long edges, sharp pixel-grid edges, 32-bit retro
+pixel art style, NO environment, NO scene, NO text, on a solid bright
+chroma-key green (#00FF00) background above and below the strip, no shading
+on the background."
+
+**Context:** see `window_titlebar_cap`'s entry immediately above for the
+full 3-slice redesign rationale — this segment specifically exists to
+avoid the prior single-piece `window_titlebar` asset's failure mode (a
+baked-in text-reserve rectangle that produced mismatched duplicate
+rectangles when tiled).
+
+**Round 0 check:** grepped `window_titlebar_middle` across
+`docs/history/art-eval-log-*.md`. No prior entry found anywhere. Confirmed
+genuine round 1, not a circuit-breaker case. (`feedback.json` lists
+`"needs_revision"` with empty feedback text — pipeline default queued
+state, not prior human feedback.)
+
+### Technique: 3/10
+- Crisp pixel-grid edges and a consistent black-outline-stroke boundary
+  convention are present at the strip's top/bottom edges, matching the rest
+  of the window-frame family. The brushed-metal surface texture itself
+  (fine horizontal streak noise) is technically clean, and no baked text/
+  watermark/UI chrome is present.
+- **Primary, disqualifying defect — precisely the failure class this round
+  was commissioned to avoid: the image contains a large, clearly baked-in
+  beveled, rounded-corner inset rectangle, not a flat uniform surface.**
+  Confirmed via a `jimp` bounding-box scan (script from `tools/asset-prep/`,
+  deleted after use): subject bbox `x:[0,1406]`, `y:[134,638]` → 1406x504px
+  (flush left/right as required — see Format). Cropped close-up inspection
+  of both ends (`Jimp.crop` to x=0-250 and x=1150-1408, viewed via `Read`)
+  shows a large rounded-rectangle recessed panel with visible diagonal
+  highlight/shadow bevel cuts at its corners — structurally the same kind
+  of "reserved panel" feature as the prior rejected `window_titlebar.jpg`
+  asset's inset rectangle (compare that asset's own square-cornered
+  recessed band), just with rounded/chamfered corners instead of square
+  ones. This is exactly what the prompt's "absolutely NO inset rectangle,
+  NO reserved text panel... flat, uniform, unmarked surface" language was
+  written to prevent.
+- **Compounding defect, worse than a single inset panel: the delivered
+  crop appears to be a fragment of a segmented, multi-panel plaque, not
+  one uniform strip.** The left-edge crop (x=0-250) shows a narrow
+  divider/border column at the very left few pixels, then the start of
+  the rounded panel's bevel corner. The right-edge crop (x=1150-1408) shows
+  the end of that same panel's bevel corner, then another narrow
+  divider/border column, then the beginning of a second rounded panel's
+  bevel corner, cut off by the canvas edge. A horizontal brightness-profile
+  scan at the strip's vertical mid-point (y=386, sampled every 5px)
+  corroborates this structurally: a sharp dip-then-spike pattern near
+  x=90-110 (values dropping to `2` then recovering) marks the left
+  divider/panel-start transition, a gradual bevel-shading climb from ~91 to
+  ~130 runs through the main panel body (x is approximately 220-820), and a
+  second sharp dip-then-spike (`94, 74, 53, 50, 32, 4, 151, 116`) right at
+  the canvas's far right edge (x is approximately 1390-1408) marks the tail
+  of the divider and the start of the next panel. This reads as a cropped
+  snippet of a wider, multiple-panel render — the same category of
+  contact-sheet/packaging artifact `nebula_field_3`'s round-1 log flagged
+  (though there scored under Format for a two-subject canvas; here it's
+  scored under Technique since the defect is "wrong internal composition
+  for a middle-tile," not "two isolated subjects in one file" — the
+  packaging consequence for tiling is called out separately under Format
+  below).
+- Not scored lower than 3: the underlying edge/outline convention and
+  surface-texture rendering quality are genuinely fine in isolation — the
+  deduction is entirely about the piece's internal composition being the
+  opposite of "flat, uniform, unmarked," which is the one thing this
+  asset's prompt exists to guarantee.
+
+### Style: 7/10
+- Palette matches the established muted brushed-gunmetal family: the
+  panel's brightness profile (roughly 91-130 across most sampled points)
+  sits close to `window_corner.jpg`'s own mid-tone metal band (about
+  90-97) and comfortably in "muted, desaturated, industrial... metallics"
+  territory — no bright/cartoon colors, no genre-breaking elements. Rivet-
+  free flat-plate detailing reads as consistent, functional hardware.
+- **Deduction, mirroring the note in `window_titlebar_cap`'s entry above:**
+  this segment's rounded/chamfered bevel-corner treatment doesn't match
+  its paired sibling's sharper, square inset-corner style — the same
+  cross-asset inconsistency flagged there, just from the other piece's
+  perspective. Two pieces meant to physically join currently use two
+  different corner-bevel conventions.
+- Not scored lower: the color/material language itself is solidly on-brand
+  and consistent with the rest of the window-frame set; the deduction is
+  specifically the cross-piece bevel-style mismatch, not a palette or
+  genre problem.
+
+### Format: 3/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- **Background flat-fill sub-check: excellent, on its own would score in
+  the 9-10 tier.** Sampled 6 patches (5x5-pixel averages) at all four
+  corners and both edge midpoints, well clear of the strip (bbox
+  `y:[134,638]`): topLeft dist 8.5, topMid dist 9.2, topRight dist 8.9,
+  bottomLeft dist 7.5, bottomMid dist 8.8, bottomRight dist 9.0. All 6 fall
+  well inside the ~25-30-unit compliant band, with an exceptionally tight
+  ~1.7-unit spread (7.5-9.2) — among the flattest, most uniform backgrounds
+  measured across this entire window-frame asset family. Flush left/right
+  crop (`x:[0,1406]`) is correctly present, as required for tiling/
+  stretching.
+- **Overriding defect: fails the left/right seamless-tiling requirement
+  outright, both by color and by structure.** Compared 5px-wide averaged
+  edge patches: left edge `(98.1, 115.3, 131.5)` vs. right edge `(85.2,
+  100.3, 116.0)` — a **13-16 unit per-channel gap**, far outside the
+  sub-3-unit match `window_edge.jpg`'s own round-1 log established as the
+  passing bar for this exact check on this exact asset family. More
+  fundamentally than the color gap: the two edges aren't even the same
+  kind of content (see Technique) — the left edge shows a plain divider
+  column, the right edge shows the tail of a full bevel panel plus the
+  start of a different divider/panel transition. Tiling or stretching this
+  image as delivered would not produce a seamless strip; it would produce a
+  visible color jump and a structural mismatch at every tile boundary —
+  precisely the "duplicate seams... that didn't line up" failure mode this
+  whole 3-slice redesign exists to eliminate, now reproduced inside the
+  supposedly-plain middle segment itself.
+- No stray green fringing, no green-on-subject tension (grey metal
+  throughout), no partial environment/scene bleeding at the top/bottom
+  frame edges — these narrower fringe/isolation checks are all fine; the
+  score is capped by the tiling-fitness failure specifically, the same way
+  `nebula_field_3`'s otherwise-excellent background result was overridden
+  by its single severe packaging defect.
+
+### Middle-segment-specific checks (explicit per task brief)
+(a) **Genuinely zero inset rectangle / text-reserve panel / one-off
+decorative feature: fails.** A large rounded-bevel inset panel is present
+and clearly visible (see Technique) — the opposite of what this asset
+exists to deliver.
+(b) **Reads as uniform/repeatable along its whole length, no unique
+feature anywhere: fails.** The image contains at least parts of two
+distinct panel segments plus two divider columns within a single 1408px
+frame — not a uniform repeatable strip at any sampled cross-section.
+(c) **Left/right ends tile-match each other cleanly: fails**, both on
+color (13-16 unit patch gap, vs. `window_edge.jpg`'s sub-3-unit passing
+precedent) and on structure (different content at each edge, not just a
+color mismatch).
+
+### Fix list
+- **Technique (3/10, below threshold):** Regenerate with a genuinely flat,
+  uniform brushed-metal surface and remove the baked-in rounded-bevel inset
+  panel entirely — no recessed sub-rectangle of any kind, matching
+  `window_fill.jpg`'s flat, undifferentiated register more closely than
+  `window_titlebar.jpg`'s plaque-with-inset-panel register the old asset
+  used. Also remove the divider/border-column features visible near both
+  the left and right edges — a proper middle-tile should look the same at
+  every point along its length, not have distinct joint-like features
+  clustered at the ends.
+- **Format (3/10, below threshold):** Fix follows directly from the
+  Technique fix above — once the inset panel and divider columns are
+  removed in favor of a genuinely uniform strip, left and right edges
+  should naturally match (both color and content). Explicitly verify after
+  regeneration: 5px-wide edge-patch color comparison should land within
+  roughly 1-3 units per channel (the bar `window_edge.jpg` already
+  cleared), not the current 13-16 unit gap.
+
+VERDICT: flagged (round 1 of a 3-round cap — nowhere near the circuit
+breaker). Technique and Format are below the pass threshold of 7; Style
+(7) passes.
+
+---
+
+### Batch comparison paragraph — window_titlebar_cap / window_titlebar_middle
+
+Both candidates in this 3-slice redesign batch are flagged, and — notably —
+both fail for closely related reasons even though they're nominally
+different defects. `window_titlebar_cap` (Technique 4, Style 6, Format 7)
+delivers pixel-art that's technically clean but compositionally wrong for
+its stated job: it reads as a large corner/plaque fragment (411x591px, not
+"compact, narrow") rather than a purpose-built end cap, and isn't
+flush-cropped to the canvas edge as its own prompt requires, so it can't
+be directly abutted to its sibling without extra trimming even before the
+corner-bevel-style mismatch is considered. `window_titlebar_middle`
+(Technique 3, Style 7, Format 3) fails more severely and more directly on
+the exact axis this whole redesign round exists to fix: it bakes in a
+large rounded-bevel inset rectangle plus divider-column fragments, meaning
+tiling or stretching it — the entire reason a separate middle segment was
+commissioned instead of one baked 3-segment plaque — would reproduce
+mismatched seams and an inset-panel feature almost identical in spirit to
+the original `window_titlebar` asset's rejected failure mode, just with a
+different corner style. The common thread across both: neither candidate
+was generated as a minimal, purpose-specific primitive (a slim flush-cropped
+cap; a flat unmarked strip) — both instead came back closer to fragments of
+a single, more decorated plaque composition, the exact shape of asset this
+3-slice split was meant to move away from. Background chroma-key quality is
+excellent on both candidates independently (cap: 10.3-13.3 dist spread;
+middle: 7.5-9.2 dist spread, the tightest in this whole window-frame asset
+family) — neither candidate needs any background/keying rework, so a
+Refine pass on either should focus entirely on composition/geometry, not
+color or isolation. A human choosing what to prioritize first should start
+with `window_titlebar_middle`: its Format failure (broken tiling) is the
+more load-bearing defect of the two, since even a perfectly-fixed cap can't
+be usefully deployed against a middle segment that doesn't repeat cleanly,
+while `window_titlebar_cap`'s narrower composition/crop fix is more
+self-contained and doesn't block on the other candidate's outcome.
+
+**Note for the project owner:** the already-accepted `window_titlebar`
+entry (single-piece plaque, superseded by this 3-slice split per the task
+context) and the "All 4 window-frame assets are now accepted" note in the
+addendum above predate this round and are unaffected by it — this entry
+adds two new, still-in-progress candidates (`window_titlebar_cap`,
+`window_titlebar_middle`) to the set, not a re-evaluation of anything
+already accepted.
+
+---
+
+## window_titlebar_middle (round 2) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_middle.jpg`
+(1408x768 canvas, regenerated since round 1)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_middle`):**
+unchanged base text from round 1 (see that entry above) — this round's
+regeneration was driven by feedback appended at generation time, not a
+stored-prompt edit: "Remove the baked-in rounded-bevel inset panel and the
+divider/border-column fragments entirely; render a genuinely flat,
+uniform, unmarked brushed-gunmetal strip with zero recessed sub-panel,
+inset rectangle, or joint-like feature anywhere along its length -- it
+must look identical at every point along the strip, matching
+window_fill.jpg's flat undifferentiated register rather than a
+plaque-with-inset-panel composition; crop the strip flush at both the left
+and right image edges so the two edges match each other in both color and
+content for seamless tiling, targeting the same sub-3-unit-per-channel
+edge match window_edge.jpg already achieved instead of the current 13-16
+unit gap." (issued by `art-refiner-agent`, applied via
+`POST /api/generate` with `feedback` set, per its normal method).
+
+**Round 0 check:** grepped `window_titlebar_middle` across
+`docs/history/art-eval-log-*.md`. Exactly one prior entry — round 1 above,
+flagged at Technique 3/Style 7/Format 3. Confirmed this is a genuine
+**round 2** of 1 prior evaluation, well under the 3-round cap.
+
+**Scored fresh on all three dimensions** — a full regenerate can shift
+Technique/Style as well as Format, not just re-check the one flagged issue.
+
+### Technique: 6/10
+- **Round 1's disqualifying defect is genuinely fixed:** direct visual
+  inspection (`Read`) confirms no large rounded-bevel inset panel and no
+  divider-column fragments anywhere in the frame — the strip now reads as
+  one continuous plate with only a thin border/outline treatment at the
+  very top and bottom, a real, substantial improvement over round 1's
+  "fragment of a segmented multi-panel plaque" finding.
+- **New defect, smaller than round 1's but real and checkable: a
+  left-to-right brightness gradient across the strip's entire length.** A
+  `jimp` horizontal brightness-profile scan at y=383 (script run from
+  `tools/asset-prep/`, sampled every ~35px across the full width) shows a
+  smooth symmetric bell-curve: brightness ~95 near the left edge (x=0-35),
+  climbing steadily to a peak of ~132 near the horizontal center (x=700),
+  then falling back to ~96 near the right edge (x=1400) — a genuine
+  directional lighting bias along the strip's length, precisely what the
+  prompt's "no highlight or shadow bias along its length" line prohibits.
+  Not a subtle read: the swing is roughly 36 brightness units,
+  peak-to-edge, symmetric on both sides.
+- **Second new defect: the left and right edges use structurally different
+  treatments, not mirror-identical ones.** A fine-pixel scan at y=383 finds
+  the left edge carries the established black-outline-stroke convention
+  plus a dark bevel dip (x=12-16 near-black `(0,0,0)`, x=18-22 dark
+  `(64-74)`) before settling into the fill tone — matching
+  `window_edge.jpg`/`window_corner.jpg`'s own outline convention. The right
+  edge has no equivalent black outline at all; instead it shows a brief
+  bright highlight streak (x=1391-1395, `~140-155`, noticeably brighter
+  than the surrounding ~96-105 fill) with plain fill running straight to
+  the canvas edge past it. Two structurally different edge features, not
+  the same feature mirrored.
+- Not scored lower than 6: the primary round-1 defect (baked inset panel/
+  divider fragments) is convincingly resolved, and the remaining issues,
+  while real, are narrower in scope than a full plaque-fragment
+  composition problem.
+
+### Style: 8/10
+- Palette unchanged and consistent with the established muted
+  brushed-gunmetal family (brightness profile mostly in the 90-130 range,
+  same register as round 1's own passing Style score). No genre-breaking
+  elements, no bright/cartoon colors.
+- Round 1's cross-piece corner-bevel-mismatch deduction (this segment's
+  rounded/chamfered inset panel vs. `window_titlebar_cap`'s square inset
+  panel) is now moot from this candidate's side — the inset panel it
+  referenced is gone entirely — so it isn't carried forward as a deduction
+  here. (Whether the *cap* candidate still has an unresolved version of
+  that problem is scored in its own entry below.)
+- Not raised above 8: same tier as round 1 — solid, on-brand material
+  language, no new style-specific defect found this round.
+
+### Format: 6/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Background flat-fill sub-check remains excellent: 6 patches (5x5-pixel
+  averages) at all four corners and both edge midpoints — topLeft 12.8,
+  topMid 13.3, topRight 15.1, bottomLeft 15.6, bottomMid 15.9, bottomRight
+  17.0 — all comfortably inside the ~25-30-unit compliant band, tight
+  ~4.2-unit spread, as flat and uniform as round 1's own excellent
+  background result for this asset.
+- **Left/right tiling-fitness: improved from round 1 but still doesn't
+  clear the bar.** Comparing clean interior-fill strips (avoiding the
+  outline/highlight artifacts described under Technique, sampled at
+  minX+30..58 and maxX-58..-30) narrows round 1's 13-16-unit-per-channel
+  gap down to roughly 4-6 units per channel — real, measurable progress —
+  but still short of `window_edge.jpg`'s established sub-3-unit passing
+  precedent. More importantly, the edges aren't just slightly
+  off-color, they carry genuinely different *content* (left: outline +
+  dark bevel dip; right: plain fill + a localized bright highlight streak,
+  no outline) — tiling two copies side by side would still produce a
+  visible seam, a smaller and subtler one than round 1's mismatched-panel
+  seam, but a seam nonetheless.
+- No stray green fringing beyond the subject's own boundary, no
+  green-on-subject tension, single continuous isolated subject (no
+  environment/scene bleed, no second object).
+- Not scored higher: the specific defect this round exists to fix (tiling
+  fitness) is meaningfully improved but not resolved — same category of
+  failure as round 1, at a smaller magnitude, not a different, unrelated
+  defect this round.
+
+### Fix list
+- **Technique (6/10, below threshold):** Remove the length-wise brightness
+  gradient — request perfectly flat, uniform brightness at every
+  x-position along the strip, with no brighter-in-the-middle/
+  darker-at-the-ends falloff (current swing: ~95 at both edges up to ~132
+  at center). Make the left and right edges literal mirror-matches of each
+  other: the same black-outline-stroke + bevel treatment on both sides,
+  not an outline-and-dip on one side and a plain highlight streak on the
+  other.
+- **Format (6/10, below threshold):** Follows directly from the Technique
+  fix — once both a) the length-wise gradient is flattened and b) the two
+  edges use identical mirrored treatments, the edge-color comparison should
+  tighten from the current ~4-6 units per channel to `window_edge.jpg`'s
+  sub-3-unit precedent, and the structural content at each edge should
+  match rather than differ.
+
+VERDICT: flagged (round 2 of a 3-round cap — one round of headroom
+remains before the circuit breaker). Technique and Format are below the
+pass threshold of 7; Style (8) passes. Real, measurable progress from
+round 1 (Technique 3→6, Format 3→6) on a smaller, more localized version
+of the same underlying "not genuinely flat/uniform along its length"
+problem — not a different defect replacing the old one.
+
+---
+
+## window_titlebar_cap (round 2) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_cap.jpg`
+(1408x768 canvas, regenerated since round 1)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_cap`):**
+unchanged base text from round 1 (see that entry above) — this round's
+regeneration was driven by feedback appended at generation time: "Regenerate
+as a genuinely compact, narrow vertical strip -- width roughly in line with
+window_corner.jpg's own ~100-185px border thickness, not a wide
+corner-block/plaque fragment -- with the subject's right edge cropped
+perfectly flush at the image's right edge (zero green gap) so it can butt
+directly against the middle segment; remove the large recessed inset panel
+entirely, per this asset's own no-inset-rectangle/no-reserved-text-panel
+spec -- render only the bordered, riveted plate surface with no interior
+recessed sub-panel of any kind, so it reads as a plain flat cap consistent
+with the now-flat, unmarked middle segment rather than a fragment of a
+decorated plaque; also flatten any residual top-vs-bottom brightness bias
+so the lighting is genuinely non-directional, since this same image is
+mirrored to form the opposite end cap." (issued by `art-refiner-agent`,
+applied via `POST /api/generate` with `feedback` set).
+
+**Round 0 check:** grepped `window_titlebar_cap` across
+`docs/history/art-eval-log-*.md`. Exactly one prior entry — round 1 above,
+flagged at Technique 4/Style 6/Format 7. Confirmed this is a genuine
+**round 2** of 1 prior evaluation, well under the 3-round cap.
+
+**Scored fresh on all three dimensions.**
+
+### Technique: 3/10
+- **None of the round-1 fix-list items converged; the width/shape ask
+  regressed rather than improved.** A `jimp` bounding-box scan (script run
+  from `tools/asset-prep/`, deleted after use) gives subject bbox
+  `x:[94,1342]`, `y:[0,766]` → **1248 x 766 px, ratio 1.629 (wider than
+  tall)** — round 1 was 411x591px (ratio 0.696, taller than wide but still
+  too large); this round moved further from "compact, narrow vertical," not
+  closer to it, and the bbox now spans essentially the full canvas height
+  (y:[0,766] of a 768px-tall canvas) with zero green margin top or bottom.
+- **The flush-right-crop ask shows partial progress but is still not met.**
+  Fine pixel probes at the vertical midline (y=384) find the subject's true
+  right boundary around x=1342, with solid green resuming by x=1398 — a
+  **~65px gap** to the canvas edge (x=1407). A real reduction from round 1's
+  505px gap, but the prompt's explicit "cropped flush at the image's right
+  edge" requirement is still unmet.
+- **The large recessed inset panel — the one thing the feedback explicitly
+  asked to remove, per this asset's own "no inset rectangle, no reserved
+  text panel" prompt language — is still present, essentially unchanged in
+  kind.** Direct visual inspection (`Read`) shows the same
+  border-strips-plus-large-flat-recessed-panel composition as round 1, now
+  plus a second divider column and a partial second panel fragment visible
+  at the right side of the frame (a stepped L-shaped silhouette continuing
+  past the second divider) — the same "fragment of a larger multi-panel
+  plaque" read round 1 already flagged, not resolved.
+- Base pixel-art execution (crisp edges, rivet detailing) remains clean in
+  isolation, consistent with round 1 — not scored lower than 3, but this
+  round shows no meaningful convergence on any of the three specific,
+  numbered fixes requested, and one dimension (width ratio) moved backward.
+
+### Style: 5/10
+- Palette and rivet/panel-line detailing remain in the established muted
+  gunmetal family — no genre-breaking elements, no bright/cartoon colors.
+- **The specific round-1 deduction (a sharp/square inset-panel corner style
+  mismatched against a sibling's rounded/chamfered one) is technically
+  moot now, but for the wrong reason — not because this candidate fixed
+  anything, but because `window_titlebar_middle`'s round-2 fix removed
+  its own inset panel entirely,** leaving no competing bevel style on the
+  sibling piece to mismatch against. This candidate's own inset panel is
+  still present, still unaddressed, and still violates its own prompt's
+  "no inset rectangle" language independent of any cross-piece comparison
+  — scored slightly above round 1's parallel Technique concern (not a 3)
+  because the base palette/genre-fit is fine, but the specific,
+  spec-violating recessed panel is the real, unresolved reason this isn't
+  higher.
+
+### Format: 6/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use).
+- Background flat-fill sub-check remains solid: 4 corner patches (5x5-pixel
+  averages) — topLeft 8.4, topRight 11.8, bottomLeft 10.8, bottomRight
+  13.4 — comfortably inside the compliant band, tight ~5-unit spread, no
+  fringing, no green-on-subject tension. Reads as one continuous subject
+  (the divider/second-panel fragment is attached to, not separate from,
+  the main piece — scored as a wrongly-composed single object under
+  Technique above, not as a second-object isolation failure here, per the
+  same category split round 1 used for the flush-crop issue).
+- **New deduction versus round 1: the subject now touches the canvas's top
+  and bottom edges with zero green margin** (bbox `y:[0,766]` of a 768px
+  canvas), where the prompt explicitly calls for chroma-key green "above,
+  below, and to the left of the plate." Round 1 had comfortable margin on
+  those sides; this is a real regression on a stated background-placement
+  requirement, similar in kind to `nebula_field_2`'s round-1 near-zero-
+  margin deduction (also scored under Format there).
+- Not scored higher: the flat-fill/fringing/isolation checks that are
+  properly Format's own remain solid, but the new top/bottom margin loss is
+  a genuine, checkable regression from round 1's 7.
+
+### Fix list
+- **Technique (3/10, below threshold):** None of round 1's three numbered
+  asks converged — regenerate again for: (1) a genuinely narrow vertical
+  strip, targeting `window_corner.jpg`'s own ~100-185px border thickness
+  as a width reference, not the current 1248px-wide fragment; (2) the
+  subject's right edge cropped perfectly flush at x=1408 with zero green
+  gap (currently ~65px short); (3) complete removal of the recessed inset
+  panel, divider column, and partial second-panel fragment — render only
+  the bordered/riveted plate edge treatment itself, no interior sub-panel
+  of any kind, consistent with `window_titlebar_middle`'s now-flat surface.
+- **Style (5/10, below threshold):** Follows directly from the Technique
+  fix — removing the inset panel entirely (rather than trying to match its
+  corner-bevel style to anything) resolves this candidate's own independent
+  "no inset rectangle" spec violation.
+- **Format (6/10, below threshold):** Restore green margin above and below
+  the plate — the subject currently touches both the top and bottom canvas
+  edges with zero padding; only the right edge should be flush to the
+  canvas boundary, per the prompt's explicit "above, below, and to the left
+  of the plate" background language.
+
+VERDICT: flagged (round 2 of a 3-round cap — one round of headroom remains
+before the circuit breaker). Technique, Style, and Format all remain below
+the pass threshold of 7. Unlike `window_titlebar_middle`'s round 2 (which
+showed real convergence on its own primary defect), this candidate shows
+no meaningful convergence on any of round 1's three numbered fixes, and one
+axis (width/shape ratio) moved backward — a signal worth flagging plainly
+for the next Refine attempt rather than treating this as ordinary
+round-to-round noise.
+
+### Batch comparison paragraph — round 2
+The two candidates have diverged this round. `window_titlebar_middle`
+(Technique 6, Style 8, Format 6) made real, measurable progress on the
+exact defect its round-1 fix list targeted — the disqualifying inset panel
+is gone, replaced by a smaller-scope lighting/edge-symmetry issue — and is
+plausibly one more focused round from passing. `window_titlebar_cap`
+(Technique 3, Style 5, Format 6) shows no comparable convergence: the
+inset panel it was asked to remove is still there, the flush-crop ask is
+still unmet (though narrower), and the "narrow vertical" width ask
+regressed into a wider-than-tall shape. If a third round is pursued for
+both, `window_titlebar_cap`'s feedback should be more numerically explicit
+than round 2's (e.g. an approximate target width in pixels or as a
+fraction of the canvas) given that descriptive language alone
+("compact, narrow vertical strip") has now failed to converge across two
+rounds.
+
+---
+
+## window_titlebar_middle (round 3) — VERDICT: pass
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_middle.jpg`
+(1408x768 canvas, regenerated since round 2)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_middle`):**
+unchanged base text (see round 1 entry above) — this round's regeneration
+was driven by feedback appended at generation time: "The recessed inset
+panel and divider-column fragments are successfully gone now -- keep that,
+do not reintroduce them. Two remaining issues to fix: (1) there is a
+visible brightness gradient along the strip's length, darker at both ends
+and brighter in the middle -- render the surface at perfectly flat,
+uniform brightness across its entire width with zero highlight or shadow
+variation from left to right, like a single unbroken flat metal tone. (2)
+the left and right edges currently use two different treatments -- the
+left edge has a visible black outline stroke plus a dark bevel dip, the
+right edge has neither and instead shows a bright highlight streak -- make
+both edges identical mirror-matched copies of the exact same border/
+outline treatment, so two copies of this strip placed side by side tile
+with no visible seam." (issued by `art-refiner-agent`, applied via
+`POST /api/generate`).
+
+**Round 0 check:** grepped `window_titlebar_middle` across
+`docs/history/art-eval-log-*.md`. Two prior entries — round 1 (Technique
+3/Style 7/Format 3, flagged) and round 2 (Technique 6/Style 8/Format 6,
+flagged) above. Confirmed this is a genuine **round 3** of 2 prior
+evaluations — the last round permitted before the 3-round cap; this
+evaluation itself does not trigger the cap (a 4th evaluation would).
+
+**Scored fresh on all three dimensions.**
+
+### Technique: 8/10
+- **Round 2's two flagged defects are both resolved, confirmed by
+  measurement, not just visual impression.** A `jimp` horizontal
+  brightness-profile scan (script run from `tools/asset-prep/`, deleted
+  after use) across the strip's interior (x=92 to x=1334, avoiding the
+  edge-feature zones) now ranges only **108.3 to 120.3** — an ~11%
+  swing — versus round 2's 95→132→95 (~36-unit, ~38% swing). A small,
+  smooth, symmetric brightness bump still remains near the horizontal
+  center, but at roughly a third of round 2's magnitude, closer to normal
+  brushed-metal streak variation than a directional highlight/shadow
+  bias.
+- **Left/right edges are now genuine mirror matches, confirmed by a
+  fine-pixel scan at both boundaries.** Reading inward from each edge, both
+  sides show the identical feature sequence in the identical order: dark
+  exterior fill → black-outline-stroke dip (near-black, e.g. left x=12-16
+  `(7,8,24)`-`(5,5,17)`, right x=1391-1395 `(8,9,25)`-`(11,10,27)`) →
+  bright bevel highlight (left x=18-22 `~150-165`, right x=1385-1389
+  `~140-158`) → settling into the main interior fill (~121-135 on both
+  sides). This is a structural match, not just a color-average match —
+  round 2's asymmetry (outline-and-dip on one side, plain highlight-only on
+  the other) is gone.
+- Crisp pixel-grid edges, consistent brushed-metal surface texture, no
+  baked text/watermark/UI chrome — all held steady from prior rounds.
+- Not a 9-10: the residual center brightness bump, while much smaller than
+  round 2's, is still measurably present rather than literally zero.
+
+### Style: 8/10
+- Palette unchanged and consistent with the established muted
+  brushed-gunmetal family, same tier as rounds 1-2. No genre-breaking
+  elements, no bright/cartoon colors. No new style-specific defect this
+  round.
+
+### Format: 8/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use).
+- Background flat-fill: 6 patches (5x5-pixel averages) — topLeft 7.0,
+  topMid 9.0, topRight 11.6, bottomLeft 11.2, bottomMid 12.5, bottomRight
+  14.3 — comfortably inside the compliant band, tight ~7.3-unit spread, on
+  par with prior rounds' excellent background results. Flush left/right
+  crop confirmed (`bbox x:[0,1407]`), with green margin restored top/bottom
+  (`bbox y:[100,667]` of a 768px canvas).
+- **Left/right tiling-fitness — the specific defect this round exists to
+  fix — is now genuinely resolved.** Beyond the structural mirror-match
+  confirmed under Technique, matched-offset color comparison at
+  corresponding points from each edge lands within single-digit
+  per-channel differences at every sampled position (e.g. left x=8
+  `(70,76,86)` vs. right x=1399 `(69,75,85)` — under 2 units per channel;
+  left x=14 outline `(13,12,30)` vs. right x=1393 outline `(12,16,31)` —
+  under 4 units per channel), comfortably in the same tier as
+  `window_edge.jpg`'s own sub-3-unit passing precedent at the
+  best-matched points, and no worse than ~10 units even at the brightest
+  highlight sub-feature — a decisive improvement from round 2's 4-6-unit
+  interior gap plus outright structural mismatch.
+- No stray green fringing, no green-on-subject tension, single continuous
+  isolated subject.
+- Not a 9-10: this is confirmation at sampled points along one
+  cross-section, not an exhaustive full-length scan, and the small residual
+  center brightness bump (see Technique) means "flat" is very close to but
+  not literally uniform everywhere.
+
+### Middle-segment-specific checks (revisited from round 1's task brief)
+(a) **Genuinely zero inset rectangle / text-reserve panel:** confirmed
+clear, both this round and round 2 — no recessed sub-rectangle anywhere.
+(b) **Reads as uniform/repeatable along its whole length:** yes, within the
+~11%-swing residual bump noted above — no unique one-off feature anywhere
+along the strip's body.
+(c) **Left/right ends tile-match each other cleanly:** yes — structural
+mirror-match confirmed, matched-offset color differences in the low
+single-digit-to-low-double-digit unit range, in the same tier as
+`window_edge.jpg`'s established passing precedent.
+
+No fix list — all three dimensions scored at or above the pass threshold of
+7 this round (Technique 8, Style 8, Format 8), a clean improvement from
+round 2's Technique 6/Format 6 with Style held steady. VERDICT: pass.
+
+---
+
+## window_titlebar_cap (round 3) — VERDICT: flagged (round cap reached)
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar_cap.jpg`
+(1408x768 canvas, regenerated since round 2)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar_cap`):**
+unchanged base text (see round 1 entry above) — this round's regeneration
+was driven by feedback appended at generation time: "Previous attempts have
+not converged on the required shape -- follow these exact constraints this
+time: render ONLY a narrow vertical metal strip roughly 150-250 pixels wide
+(not wider than that), spanning the full plate height with visible green
+margin above and below it (do not let the metal touch the canvas top or
+bottom edges), positioned so its right edge touches the canvas's right edge
+with absolutely zero green pixels between the metal and the right border.
+Do NOT include any wide flat interior panel, no second divider column, no
+second partial panel, and no L-shaped extension of any kind -- just the
+plain riveted border edge itself with a single uniform flat metal fill
+inside it, matching window_edge.jpg's flat unmarked interior register
+rather than window_corner.jpg's panel-plus-border composition. Leave
+visible solid green chroma-key background above, below, and to the left of
+this narrow strip." (issued by `art-refiner-agent`, applied via
+`POST /api/generate`).
+
+**Round 0 check:** grepped `window_titlebar_cap` across
+`docs/history/art-eval-log-*.md`. Two prior entries — round 1 (Technique
+4/Style 6/Format 7, flagged) and round 2 (Technique 3/Style 5/Format 6,
+flagged) above. Confirmed this is a genuine **round 3** of 2 prior
+evaluations — the last round permitted before the 3-round cap. This
+evaluation itself is allowed; **a further Refine→Evaluate loop after this
+one is not** (it would be the 4th evaluation).
+
+**Scored fresh on all three dimensions.**
+
+### Technique: 2/10
+- **The core "narrow vertical strip" requirement has now failed to
+  converge across all three rounds, and has moved monotonically in the
+  wrong direction each time.** A `jimp` bounding-box scan (script run from
+  `tools/asset-prep/`, deleted after use) gives subject bbox `x:[0,1407]`,
+  `y:[94,674]` → **1407 x 580 px, ratio 2.426 (wider than tall)**. Width
+  progression across all three rounds: round 1 = 411px, round 2 = 1248px,
+  round 3 = 1407px — essentially the **entire canvas width**, edge to
+  edge. This round explicitly asked for "roughly 150-250 pixels wide"; the
+  delivered width is over 5.6x that upper bound and is now the single
+  widest of the three rounds, not a convergence.
+- **The large recessed interior panel the feedback has now asked to remove
+  in two consecutive rounds is still present, unchanged in kind** — direct
+  visual inspection (`Read`) shows the same full flat panel bordered by a
+  riveted frame on all four sides, structurally identical in composition
+  to rounds 1 and 2, just now stretched to fill the entire canvas width.
+- **New defect this round: the left edge is now also flush to the canvas
+  boundary with zero green margin**, when the prompt explicitly requires
+  green background "to the left of the plate." Fine-pixel scan at the
+  vertical midline confirms a black-outline stroke sitting directly at
+  x=0-4 on the left (matching the right edge's own outline at x=1402-1406)
+  — i.e. the piece is now flush on *both* left and right, when only the
+  right edge should be. Top/bottom green margin, which round 2 had lost
+  entirely, is restored this round (`bbox y:[94,674]` of a 768px canvas,
+  genuine margin both sides) — a real, if isolated, improvement, but not
+  enough to offset the left-margin regression and the continued failure of
+  the width requirement.
+- Base pixel-art execution (crisp edges, rivet detailing, consistent
+  outline convention) remains clean in isolation across all three rounds —
+  the deduction is entirely about composition, not pixel-art fidelity, but
+  the composition gap from spec has not narrowed; if anything it has grown
+  on the single most-repeated, most-specific ask (the width number).
+  Scored below both prior rounds (4, then 3) to reflect the monotonic
+  regression on the requirement most rounds of feedback have focused on.
+
+### Style: 5/10
+- Palette and rivet/panel-line detailing remain in the established muted
+  gunmetal family — no genre-breaking elements, no bright/cartoon colors.
+- Same deduction as round 2: the recessed interior panel, still present
+  and still unaddressed after two consecutive rounds of feedback asking for
+  its removal, independently violates this asset's own prompt language
+  ("no inset rectangle, no reserved text panel"), regardless of any
+  cross-piece bevel-style comparison. Not scored lower than 5 — the
+  base palette/genre execution itself is fine — but this is now the third
+  round running the same specific defect at the same severity.
+
+### Format: 6/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use).
+- Background flat-fill sub-check remains solid: 4 corner patches
+  (5x5-pixel averages) — topLeft 6.9, topRight 10.4, bottomLeft 11.4,
+  bottomRight 13.4 — comfortably inside the compliant band, tight
+  ~6.5-unit spread, no fringing, no green-on-subject tension, single
+  continuous subject.
+- **Right-edge flush requirement: met this round** — the outline sits
+  within a few pixels of the true canvas edge (x=1402-1406 of 1408), a
+  genuine, isolated win on one of the three original asks.
+- **But a new, equally explicit requirement is now violated in its place:
+  zero green margin on the left edge**, where the prompt requires it. Net
+  effect versus round 2 (which had lost the top/bottom margin instead) is
+  a lateral shift of the same category of defect, not a net improvement —
+  scored the same as round 2 (6) rather than higher, since one explicit
+  margin requirement is traded for another rather than both being
+  resolved.
+
+### Fix list (not actionable this round — see cap/escalation below)
+Would ordinarily read: (1) Technique — the width requirement has not been
+met in any of three attempts (411px → 1248px → 1407px); stop asking for a
+"narrow strip" descriptively and consider a fundamentally different
+generation approach (e.g. a hard programmatic crop of a wider render, or a
+different reference composition entirely) rather than a fourth
+natural-language width request. (2) Style — remove the interior recessed
+panel entirely, unaddressed for three rounds running. (3) Format — restore
+left-edge green margin without re-losing the right-edge flush crop or the
+now-restored top/bottom margin, i.e. margin on left/top/bottom
+simultaneously, flush only on the right, all at once — no round so far has
+gotten more than two of these four edge conditions correct at the same
+time.
+
+VERDICT: flagged. **This is the 3rd evaluation of `window_titlebar_cap` —
+the round cap. Per the circuit breaker, no further Refine→Evaluate loop
+follows this entry**, regardless of this round's scores. See the
+escalation note immediately below in place of a fix list the Refine stage
+would act on.
+
+### Escalation note (round cap reached, 3 of 3)
+`window_titlebar_cap` has been evaluated three times without passing.
+Score history: round 1 Technique 4/Style 6/Format 7; round 2 Technique
+3/Style 5/Format 6; round 3 Technique 2/Style 5/Format 6. **Technique never
+cleared threshold and trended down, not up, across all three rounds** —
+Style and Format both stayed persistently just below or at the margin of
+threshold without ever both clearing simultaneously.
+
+The specific pattern: every round's feedback asked for the same three
+things (a narrow strip, a flush right crop, no interior panel), phrased
+increasingly explicitly (round 2 referenced a pixel-width comparison to
+`window_corner.jpg`; round 3 gave an explicit 150-250px target range and an
+exhaustive negative list of what not to include). None of the three rounds
+converged on the width ask — the delivered width went **411px → 1248px →
+1407px**, moving further from the target with each attempt rather than
+closer, despite round 3's feedback being the most numerically explicit of
+the three. The interior recessed panel — the one specific, named element
+every round's feedback asked to remove — was never removed in any round;
+it just got wider along with the rest of the composition. This reads as
+the generation model defaulting to a "corner/plaque" reference composition
+(closely resembling the already-accepted `window_corner.jpg`'s L-shaped
+border-plus-panel language) regardless of how the prompt/feedback asks it
+to diverge from that shape — each round asked for something narrower and
+simpler, and each round instead delivered something wider and structurally
+identical to a full corner-block panel piece. That's a pattern consistent
+with the brief's own framing (per `art-refiner-agent.md`'s circuit-breaker
+guidance): a fix for one dimension not regressing another so much as *no
+dimension actually fixing*, three times running, on the same named defect
+— which suggests the base prompt's own composition language (or the
+underlying model's response to it) needs a human rewrite or a different
+production approach (e.g. cropping a piece out of the already-accepted,
+already-passing `window_corner.jpg`/`window_edge.jpg` art directly, rather
+than generating an end cap from scratch), not a fourth automated
+regeneration round.
+
+**Per the task brief: leaving `feedback.json["window_titlebar_cap"].status`
+as `"needs_revision"`. Not folding any of the three attempted feedback
+strings into `assets.json`'s stored `prompt` — none of them are a proven
+fix, and the base prompt itself is the more likely thing that needs to
+change.**

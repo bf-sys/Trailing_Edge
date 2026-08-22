@@ -1513,3 +1513,1001 @@ measuring aspect ratio, not read the raw file's own dimensions.
 for a real pass). `assets.json`'s prompt is unchanged from round 1 — no
 new feedback to fold in, since this was a clean regeneration, not a
 feedback-driven fix. `nebula_field_1` and `nebula_field_3` untouched.
+
+## window_corner (round 1) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_corner.jpg` (1408x768 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_corner`, name
+"Window Frame Corner"):** "Isolated single sprite of a pixel art sci-fi UI
+window-frame corner piece: two thick brushed-gunmetal metal border strips of
+EQUAL width meeting at a clean 90-degree right angle in the upper-left of
+the image, forming an L-shape, with fine rivets and panel-line detailing,
+gritty dark sci-fi aesthetic, high-contrast but strictly NON-DIRECTIONAL
+utilitarian lighting -- no single-side highlight, no shadow bias favoring
+the top strip over the left strip or vice versa -- because this exact same
+piece will be rotated 90, 180, and 270 degrees in software to form the
+window's other three corners and must read correctly in every rotation,
+sharp pixel-grid edges, 32-bit retro pixel art style, NO environment, NO
+scene, NO text, on a solid bright chroma-key green (#00FF00) background
+filling everywhere outside the L-shaped border strip, no shading on the
+background."
+
+**Round 0 check:** grepped `window_corner` across
+`docs/history/art-eval-log-*.md` (`art-eval-log-2026-08-19.md` and this
+file) before scoring. No prior entry found anywhere. Confirmed this is a
+genuine round 1 — not a circuit-breaker case. (Note, not part of the eval
+itself: `tools/art-reviewer/feedback.json` lists `window_corner` as
+`"needs_revision"` with empty feedback text — read as the pipeline's
+pre-eval default queued state, not prior human feedback to reconcile with.)
+
+### Technique: 6/10
+- Confirmed via `jimp` (script run from `tools/asset-prep/` so
+  `require('jimp')` resolved) that the L-shape's inner boundary is a
+  genuine hard, deliberate cutout, not a soft blur: a transect at y=500,
+  x=405-425 shows solid metal through x=409 `(61,59,58)`, a crisp near-black
+  outline band x=410-414 (`(4,7,4)` down to `(0,3,0)`), then a 1-2px blend
+  x=415-417 (`(12,40,13)` to `(25,231,30)`), then solid green by x=418
+  `(5,247,3)` — a real black-outline-stroke convention (like
+  `meteoroid.jpg`/`ion_storm.jpg`/`debris_large.jpg`), confirmed at both
+  y=500 and y=760 with matching numbers. Rivets and double-line panel-line
+  grooves are crisp and consistently detailed on both strips. No baked-in
+  text, watermark, or UI chrome. Reads clearly as a metal frame corner even
+  imagined downscaled to ~48-64px.
+- **Real, measured defect the prompt explicitly tried to prevent: a
+  systematic directional lighting bias between the two strips.** Sampled
+  brightness (avg of R/G/B) in matched-position bands on each strip via
+  `jimp`, at multiple segments along each strip's length to rule out local
+  noise:
+  - Outer band (near the canvas edge, y10-30 on the top strip vs. x10-30 on
+    the left strip): top strip segments range 92.6-135.0 (mean about 114.9)
+    across x=50/300/600/900/1200/1350; left strip segments range 75.2-95.6
+    (mean about 87.4) across y=50/150/300/450/600. Top strip reads roughly
+    24-30% brighter on average at this equivalent position.
+  - Inner band (near the window opening, y330-350 on the top strip vs.
+    x330-350 on the left strip, avoiding the rounded corner joint): top
+    strip segments range 71.1-97.3 (mean about 83.5) across x=500/700/900/
+    1100/1300; left strip segments range 45.2-53.0 (mean about 50.4) across
+    y=450/550/650. Top strip reads roughly 40-65% brighter than the left
+    strip at the equivalent inner position — the largest, most consistent
+    gap of the two bands sampled.
+  - Both bands, sampled at 5-6 independent points spread across each
+    strip's full length, show the same direction and rough magnitude of
+    bias every time (top consistently brighter than left) — this is a
+    systematic, measurable "light from above" treatment, not local texture
+    noise. This directly contradicts the prompt's own explicit instruction
+    ("no shadow bias favoring the top strip over the left strip or vice
+    versa").
+- This is scored under Technique rather than Style because it's an
+  execution-consistency defect specific to this asset's stated reuse
+  requirement, not a genre/palette problem — the piece's shading isn't
+  internally coherent across its two symmetric regions the way the prompt
+  requires for safe 90-degree/180-degree/270-degree rotation.
+
+### Style: 8/10
+- Palette is a coherent muted brushed-gunmetal grey (mid-tone samples in
+  the 66-97 brightness range, near-neutral RGB with only a slight
+  blue-grey undertone, e.g. `(76,77,83)`), consistent with "muted,
+  desaturated, industrial... metallics" and comfortably darker/more muted
+  than any bright cartoon palette. High-contrast rivet/panel-line detailing
+  reads as functional/utilitarian, not sleek or friendly.
+- No genre-breaking elements — no fantasy motifs, no cute/cartoon
+  proportions, no bright primary-color accents unrelated to the subject.
+- No direct precedent asset exists yet for a UI window frame specifically
+  (this is the first of this asset type), so no cross-asset palette
+  comparison was possible; judged against the general Gritty Dark Sci-Fi
+  Pixel language (ship/hazard metallics) instead, which it matches.
+- Deduction keeping this at 8 rather than 9-10: the same directional
+  lighting bias flagged under Technique is also a style-language concern
+  (the prompt frames "strictly non-directional... utilitarian lighting" as
+  part of the intended look, not just a rotation-mechanics footnote) — not
+  double-counted as a separate hard failure here since the fix is the same
+  single change, but worth naming in both places per the task brief.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 6 patches (5x5-pixel averages) across the visible green quadrant,
+  well clear of the L-shaped subject: bottomRight (4.76,248.4,2.6, dist
+  8.5), midGreen1 (5.92,247.76,2.4, dist 9.7), midGreen2
+  (6.16,248.16,2.24, dist 9.5), nearInnerCornerGreen (4.36,249.28,2.76,
+  dist 7.7), farRight (6.68,245.76,3.44, dist 11.9), bottomMid
+  (5.72,248.76,4.12, dist 9.4). All 6 patches fall well inside the
+  ~25-30-unit compliant band, with a tight ~4.2-unit spread (7.7-11.9) —
+  flat, uniform background fill, no gradient/vignette.
+- Edge-fringing check: the L-shape's inner boundary uses a genuine
+  black-outline-stroke convention (see Technique) with only a 1-2px blend
+  transition before hitting solid green — tight and on-spec, no stray
+  green fringing bleeding onto the metal.
+- The left strip's inner edge sits at a constant x=416 across
+  y=390-750 (confirmed via a row-by-row scan) — a clean, straight,
+  consistent boundary, not a wobbly or partially-rendered edge.
+- No green surfaces on the subject itself (gunmetal grey throughout) — no
+  green-on-subject keying tension to flag. No partial environment/scene
+  bleeding in at the frame edges.
+- Not a 10: this is background-flatness/edge-cleanliness only, not an
+  exhaustive full-boundary scan of the corner's curved/stepped inner joint
+  region (only straight-edge segments were transected).
+
+### Rotation/tiling fitness (folded into Technique/Style above, called out explicitly per task brief)
+(a) **Baked-in directional highlight/shadow that would look wrong once
+rotated: yes, confirmed and measured above.** The top strip reads
+roughly 24-65% brighter than the left strip at matched positions,
+consistently across multiple sampled segments on each strip. Rotating this
+same file 90/180/270 degrees to produce the other three corners will carry
+that "light-from-top" bias along with it, so each of the four corners will
+appear lit from a different relative direction once assembled into a full
+window frame — the four corners won't read as one consistently-lit object.
+(b) Not applicable to window_corner (no tiling requirement — only
+window_edge below needs the left/right tiling check).
+
+### Fix list
+- **Technique (6/10, below threshold):** Rebalance the lighting between
+  the top and left border strips so both read at comparable brightness at
+  matched positions — currently the top strip's outer band averages about
+  114.9 vs. the left strip's about 87.4 (a roughly 24-30% gap), and the top
+  strip's inner band (near the window opening) averages about 83.5 vs. the
+  left strip's about 50.4 (a roughly 40-65% gap, the more severe of the
+  two). Regenerate emphasizing flat, harsh, non-directional utilitarian
+  lighting applied identically to both strips — no single-side highlight or
+  shadow bias, per the prompt's own explicit language. Everything else
+  (rivets, panel-line detail, edge cleanliness, background) is solid and
+  doesn't need touching.
+
+VERDICT: flagged (round 1 of a 3-round cap — nowhere near the circuit
+breaker). Technique is the only dimension below 7 (Style 8, Format 9 both
+pass).
+
+---
+
+## window_edge (round 1) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_edge.jpg` (1408x768 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_edge`, name
+"Window Frame Edge"):** "Isolated single sprite of a pixel art sci-fi UI
+window-frame edge/border strip: one straight horizontal segment of thick
+brushed-gunmetal metal border trim, matching the rivet and panel-line
+detailing of the frame's corner piece, running the full width of the image
+with the strip cropped flush at the left and right image edges so it tiles
+seamlessly with copies of itself placed side by side, strictly
+NON-DIRECTIONAL utilitarian lighting with no highlight or shadow bias along
+its length or between its top/bottom long edges -- because this same piece
+is also rotated 90 degrees in software to serve as the frame's vertical
+edges and must read correctly rotated, sharp pixel-grid edges, 32-bit retro
+pixel art style, NO environment, NO scene, NO text, on a solid bright
+chroma-key green (#00FF00) background above and below the strip, no shading
+on the background."
+
+**Round 0 check:** grepped `window_edge` across
+`docs/history/art-eval-log-*.md` (both files, including everything written
+in this run above it). No prior entry found anywhere. Confirmed this is a
+genuine round 1 — not a circuit-breaker case. (Note, not part of the eval
+itself: `feedback.json` lists `window_edge` as `"needs_revision"` with
+empty feedback text — pipeline default queued state, not prior human
+feedback.)
+
+### Technique: 5/10
+- The strip's vertical extent (roughly y=317-450 of the 768px canvas) uses
+  the same black-outline-stroke convention as `window_corner.jpg`: a
+  transect at x=700 shows solid green through y=310, a dark near-black
+  outline around y=315-320, then straight into the metal body by y=325;
+  the bottom edge mirrors this at y about 434-450. Rivets and panel-line/
+  plate detailing are crisp, consistent, and match `window_corner.jpg`'s
+  style (same brushed-metal palette, same rivet size/spacing language). No
+  baked-in text, watermark, or UI chrome. Reads clearly as a metal edge
+  trim even downscaled to ~48-64px.
+- **Real, measured defect, more severe and more consistent than
+  `window_corner.jpg`'s: a systematic top-vs-bottom directional lighting
+  bias along the strip's long axis.** Sampled brightness in matched top
+  band (y325-345) vs. bottom band (y425-445) via `jimp`, at 6 independent
+  x-segments spanning the full 1408px width (x=20/300/600/900/1200/1380):
+  top band brightness is 98.5-102.2 at every single segment; bottom band
+  brightness is 63.1-66.6 at every single segment. The gap (roughly 35-39
+  brightness points, about 35-38% relatively darker on the bottom) is
+  essentially constant across the entire length — this rules out local
+  texture noise as the explanation; it's a deliberate, uniform top-lit
+  bevel treatment applied the full width of the piece, which is exactly
+  what the prompt's "no highlight or shadow bias... between its top/bottom
+  long edges" language explicitly asks not to have.
+- This scores lower than `window_corner.jpg`'s Technique (6) because the
+  bias here is more consistent — near-perfectly uniform across all 6
+  independently sampled segments (a roughly 3.7-point spread in the top
+  band, a roughly 3.5-point spread in the bottom band) — i.e. there is no
+  ambiguity that this is systematic rather than incidental.
+
+### Style: 8/10
+- Same muted brushed-gunmetal palette as `window_corner.jpg` (mid-tone
+  samples in the same general 60-105 brightness range with a comparable
+  slight blue-grey undertone), consistent with "muted, desaturated,
+  industrial... metallics." Rivet/panel-line detailing reads utilitarian,
+  not sleek/friendly. No genre-breaking elements — no fantasy motifs, no
+  cartoon proportions, no bright unrelated accent colors.
+- Direct palette comparison against sibling `window_corner.jpg`: both
+  pieces' body-metal tones land in the same general range and read as part
+  of the same manufactured frame set, though `window_corner.jpg`'s own
+  internal light/dark spread (from its own bias defect) makes an
+  apples-to-apples brightness comparison between the two pieces less clean
+  than it should be until that's fixed.
+- Deduction keeping this at 8 rather than 9-10: same lighting-bias concern
+  flagged under Technique, framed here as a style-language departure from
+  "strictly non-directional... utilitarian lighting" rather than a second
+  hard failure — one fix addresses both notes.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 6 background patches (5x5-pixel averages) at all four corners and
+  the two edge midpoints, well clear of the strip: topLeft
+  (5.44,244.4,3.56, dist 12.4), topMid (7.96,244.32,5.28, dist 14.3),
+  topRight (7.96,241.76,4.92, dist 16.2), bottomLeft (7.32,242.56,5.48,
+  dist 15.4), bottomMid (7.84,244.64,4.6, dist 13.8), bottomRight
+  (10.76,241.04,7.68, dist 19.2). All 6 fall comfortably inside the
+  ~25-30-unit compliant band, spread of only about 6.8 dist units
+  (12.4-19.2) — flat, uniform, no gradient/vignette. (Two additional sample
+  points I initially picked at the vertical mid-height landed on the metal
+  strip itself, not background — a sampling-coordinate mistake on my part,
+  not a finding; excluded from the results above.)
+- Edge-fringing at the strip's top/bottom boundary is tight (the same hard
+  black-outline-stroke convention as `window_corner.jpg`), no stray green
+  bleeding onto the metal, no green surfaces on the subject itself.
+- No partial environment/scene bleeding in at the frame edges.
+
+### Rotation/tiling fitness (folded into Technique/Style above, called out explicitly per task brief)
+(a) **Baked-in directional highlight/shadow that would look wrong once
+rotated: yes, confirmed and measured above** — the top-vs-bottom bias
+(roughly 35-38%, uniform across the full length) is the dominant defect on
+this candidate. Rotated 90 degrees to serve as a vertical edge, this
+"top-lit" strip becomes a "one-side-lit" vertical strip, and — because a
+90-degree rotation only has one direction — the two vertical edges of an
+assembled window (left and right) would end up lit from *opposite*
+relative sides of the frame unless one copy is also flipped, which isn't
+mentioned as part of this asset's intended reuse. This is the single most
+consequential defect found across the whole four-candidate batch.
+(b) **Left/right end tiling: passes cleanly, no fix needed.** Compared
+5px-wide average color at the very left edge (72.1,75.1,80.4) against the
+very right edge (73.8,75.7,81.0) — a difference of under 2 units per
+channel. A pixel-by-pixel comparison at matched offsets-from-edge (0-14px
+in from each side, at y=380) shows both sides tracking within 1-3 units of
+each other at every offset (e.g. offset 0: left `(76,77,83)` vs. right
+`(77,78,84)`; offset 14: left `(76,77,83)` vs. right `(76,77,83)`, an exact
+match). Placed edge-to-edge, this strip will tile with no visible seam,
+color jump, or partial motif cutoff — the specific tiling risk the task
+brief asked to check.
+
+### Fix list
+- **Technique (5/10, below threshold):** Rebalance the lighting between the
+  strip's top and bottom long edges so both read at comparable brightness
+  along the full length — currently top band brightness is uniformly
+  98.5-102.2 across the whole width while bottom band brightness is
+  uniformly 63.1-66.6, a consistent roughly 35-38% gap present at every
+  sampled point along the strip. Regenerate emphasizing flat, harsh,
+  non-directional utilitarian lighting applied identically to the top and
+  bottom halves of the strip — no single-edge highlight or shadow bias, per
+  the prompt's own explicit language. Left/right tiling and edge
+  cleanliness are both already correct and don't need touching.
+
+VERDICT: flagged (round 1 of a 3-round cap — nowhere near the circuit
+breaker). Technique is the only dimension below 7 (Style 8, Format 9 both
+pass).
+
+---
+
+## window_titlebar (round 1) — VERDICT: pass
+
+**Candidate:** `tools/art-reviewer/assets/window_titlebar.jpg` (1408x768 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_titlebar`, name
+"Window Title Bar Plate"):** "Isolated single sprite of a pixel art sci-fi
+UI window title bar plate: a horizontal brushed-gunmetal metal header plate
+matching the same window frame's border style and rivet detailing, subtly
+recessed to read as a nameplate, with a flat, empty, slightly darker panel
+band across its center reserved for text -- absolutely NO letters, NO
+numbers, NO glyphs, NO text baked into the image -- with the plate cropped
+flush at the left and right image edges so the empty center band tiles
+seamlessly when the piece is repeated or stretched wider to fit a longer
+title, gritty dark sci-fi aesthetic, high-contrast utilitarian lighting,
+sharp pixel-grid edges, 32-bit retro pixel art style, NO environment, NO
+scene, on a solid bright chroma-key green (#00FF00) background above and
+below the plate, no shading on the background."
+
+**Round 0 check:** grepped `window_titlebar` across
+`docs/history/art-eval-log-*.md`. No prior entry found anywhere. Confirmed
+genuine round 1, not a circuit-breaker case. (`feedback.json` lists
+`"needs_revision"` with empty feedback text — default queued state.)
+
+### Technique: 8/10
+- Clean, crisp double-frame plate with rivets on both the outer border and
+  the inner recessed band, consistent brushed-metal shading and grunge
+  scratches/weathering, sharp pixel-grid presentation. Reads clearly as a
+  UI nameplate even downscaled to ~48-64px — the recessed dark center band
+  stays legible as "reserved space" against the lighter outer plate at
+  small scale.
+- **Explicit failure mode this candidate's prompt tried to prevent, checked
+  directly: no baked-in text, letters, numbers, or glyphs found.**
+  Visually inspected the center dark band via `Read` — no legible or
+  semi-legible character shapes anywhere in the band. Backed up with a
+  `jimp` statistical check: sampled the dark band region (x150-1250,
+  y270-500 approx., every 4th pixel) and computed grayscale mean/stddev —
+  mean 42.3, stddev only 2.4, min 26.3/max 55.7. A band containing baked
+  text would show much higher local variance (sharp light-glyph-on-dark or
+  dark-glyph-on-light edges); this band's low, tight variance is consistent
+  with a uniform dark panel plus mild grunge noise/scratches only, not
+  rendered characters.
+- Deduction keeping this at 8 rather than 9-10: some soft highlight-sheen
+  gradient bands across the brushed-metal plate (a diagonal streak in the
+  upper portion) read slightly closer to a continuous-tone render than a
+  strict flat-palette pixel-art shading pass — a minor softness, not a
+  disqualifying one, and consistent with the same AI-generation texture
+  register already accepted on `ship_base.jpg`/`meteoroid.jpg`.
+
+### Style: 8/10
+- Same muted brushed-gunmetal palette family as `window_corner.jpg`/
+  `window_edge.jpg` — sampled two outer-plate metal points at
+  `(85.76,85.68,85.81)` and `(65.59,65.69,65.72)` brightness, both
+  comfortably in the same neutral-grey, muted-industrial range as the
+  corner/edge pieces' mid-tone bands (about 90-97). The recessed dark band
+  sampled at `(44.75,43.07,39.69)` sits close to `window_fill.jpg`'s own
+  tone (about 31-37, see below) — a sensible in-fiction match, since both
+  read as "the darker, receded surface" relative to the raised metal trim.
+  High-contrast rivets, scratches, and recessed-panel shading read as
+  functional/utilitarian, not sleek or decorative. No genre-breaking
+  elements.
+- Deduction keeping this at 8 rather than 9-10: same soft-highlight-sheen
+  observation as Technique — a very mild, not disqualifying, departure
+  from a stricter flat-shaded pixel-art register.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script from
+  `tools/asset-prep/`, deleted after use). Sampled 6 background patches
+  (5x5-pixel averages) at all four corners and both edge midpoints, well
+  clear of the plate: topLeft (3.88,250.56,1.92, dist 6.2), topMid
+  (4.32,250.56,3.32, dist 7.0), topRight (5.84,247.4,4.28, dist 10.5),
+  bottomLeft (4.52,246.64,4.8, dist 10.6), bottomMid (4.92,247.76,6.68,
+  dist 11.0), bottomRight (8.28,244.4,8.0, dist 15.6). All 6 fall well
+  inside the ~25-30-unit compliant band, tight roughly 9.4-unit spread —
+  flat, uniform, no gradient/vignette, among the cleanest background
+  results in this batch.
+- No green surfaces on the subject itself, no stray fringing observed on
+  visual inspection, no partial environment/scene bleeding at the frame
+  edges.
+- Not a 10: this was corner/edge-midpoint sampling plus a visual check, not
+  a full-boundary pixel transect of the plate's own outer edge (unlike
+  `window_corner.jpg`/`window_edge.jpg` above, which got an explicit
+  fringe-transect check as part of their rotation-fitness review).
+
+VERDICT: pass. All three dimensions clear the 7 threshold (Technique 8,
+Style 8, Format 9). No fix list required.
+
+---
+
+## window_fill (round 1) — VERDICT: pass
+
+**Candidate:** `tools/art-reviewer/assets/window_fill.jpg` (1024x1024 canvas)
+**Prompt (from `tools/art-reviewer/assets.json`, id `window_fill`, name
+"Window Interior Fill Texture"):** "Seamless tileable pixel art sci-fi UI
+panel texture: a flat dark gunmetal-grey metallic surface with very subtle
+fine noise, scratches, and faint panel seams, matching the same window
+frame set's material palette but noticeably darker and less detailed than
+the border trim so it reads as background rather than foreground, tiles
+seamlessly in all directions with no visible edge or seam when repeated,
+muted low-contrast even lighting with no vignette and no gradient, gritty
+dark sci-fi aesthetic, sharp pixel-grid texture, 32-bit retro pixel art
+style, NO environment, NO scene, NO text."
+
+**Round 0 check:** grepped `window_fill` across
+`docs/history/art-eval-log-*.md`. No prior entry found anywhere. Confirmed
+genuine round 1, not a circuit-breaker case. (`feedback.json` lists
+`"needs_revision"` with empty feedback text — default queued state.)
+
+**Note on scope, per the task brief:** this candidate is **not** a
+chroma-key isolate — its prompt deliberately has no green-background
+instruction, matching the already-accepted `bg_stars_far.jpg`/
+`bg_stars_near.jpg` opaque-tileable-texture category rather than the
+isolated-subject-on-green-screen category everything else in `assets.json`
+uses. Format below is scored on seamless-tileability and flat/even lighting
+instead of chroma-key compliance, per that distinction — not penalized for
+lacking a green background.
+
+### Technique: 8/10
+- Fine noise, faint diagonal scratch marks, and subtle geometric
+  panel-seam linework are all present and crisp at the pixel level — no
+  photographic blur. The texture reads as a coherent, muted dark-grey
+  surface at both close inspection and (imagining it downscaled/tiled
+  behind other UI) at a distance. No baked-in text, watermark, or UI
+  chrome.
+- No single dominant color gradient standing in for shading (confirmed
+  under Format below via block-averaged brightness sampling) — the
+  apparent tonal variation across the image is local noise/scratch detail,
+  not a smooth gradient.
+- Deduction keeping this at 8 rather than 9-10: the noise/scratch pattern
+  is fine and organic-looking, closer to a photographic-noise/procedural
+  texture register than a hand-placed pixel-art dither pattern — matches
+  the softer end of this project's own established AI-generation texture
+  register (same tier as `ship_base.jpg`), not a defect specific to this
+  candidate.
+
+### Style: 8/10
+- Confirmed **noticeably darker and less detailed than the border trim**,
+  as the prompt explicitly requires: `window_fill.jpg` samples around
+  31-40 brightness (e.g. center point `(31.14,34.9,36.99)`), while
+  `window_corner.jpg`/`window_edge.jpg`'s mid-tone metal bands sample
+  around 90-97 and `window_titlebar.jpg`'s outer plate samples around
+  66-86 — a clear, correctly-executed material/depth hierarchy (raised
+  trim brighter and more detailed, recessed fill darker and flatter).
+  `window_fill.jpg`'s tone is close to `window_titlebar.jpg`'s own recessed
+  dark band (about 40-45) — a sensible cross-asset match for "the receded
+  surface" register across the set.
+- Muted, desaturated, near-neutral dark grey throughout — comfortably in
+  "industrial... dark blues/greys" territory, no bright/saturated/cartoon
+  colors. No genre-breaking elements.
+- Deduction keeping this at 8 rather than 9-10: same as Technique — a
+  solid, on-brand match without the more distinctive internal-detail
+  language (e.g. visible rivets) the border-trim pieces in this same set
+  have, though the prompt itself doesn't call for that on a background
+  fill texture, so this is a mild ceiling rather than a defect.
+
+### Format: 9/10 (scored on seamless-tileability and flat/even lighting, not chroma-key — see note above)
+- Deterministic check ran successfully via `jimp` (script from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1024x1024 JPEG).
+- **Vignette/gradient check:** an initial small-patch (16x16px) 3x3 grid
+  scan showed a misleading-looking spread (29.4-40.7 brightness across 9
+  points) — investigated further with larger 150x150px block averages at
+  the same 3x3 grid positions specifically to average out local
+  scratch/noise texture rather than measure true lighting: results were
+  38.4, 39.3, 39.2 / 39.4, 38.5, 39.0 / 38.4, 38.7, 38.9 — a spread of only
+  **1.6 brightness units** across the whole canvas. Confirms the small-patch
+  spread was local texture noise (a scratch or seam mark landing inside a
+  given 16px sample), not a real lighting gradient — the underlying
+  lighting is genuinely flat and even, matching the prompt's explicit "no
+  vignette and no gradient" requirement.
+- **Seamless-tiling check (all four directions):** compared full-length
+  20px-wide edge strips: left edge `(35.47,39.43,40.39)` vs. right edge
+  `(35.27,39.23,40.13)` — under 0.3 units apart per channel; top edge
+  `(36.1,40.13,41.18)` vs. bottom edge `(34.93,38.91,39.66)` — under 1.5
+  units apart per channel. Both opposite-edge pairs are close enough that
+  tiling this texture in any direction should produce no visible seam,
+  brightness jump, or color-band discontinuity at the boundary — the
+  specific check this dimension is scored on for this candidate.
+- No baked text, no environment/scene content, matches the "flat dark
+  gunmetal-grey metallic surface" brief directly.
+- Not a 10: the seam-continuity check compared averaged edge strips rather
+  than a pixel-by-pixel autocorrelation/wrap-around diff, and the fine
+  noise pattern itself (not just brightness) wasn't verified to avoid a
+  faint repeating-stamp look at production tile scale — both would need a
+  live in-engine tiled render to fully confirm, not something available in
+  this tool chain.
+
+VERDICT: pass. All three dimensions clear the 7 threshold (Technique 8,
+Style 8, Format 9). No fix list required.
+
+---
+
+### Batch comparison paragraph
+
+Two clear passes and two clear, single-dimension flags in this batch, and
+the flags share the same root cause rather than being independent defects.
+`window_titlebar` and `window_fill` both pass cleanly (Technique 8/Style
+8/Format 9 each) — `window_titlebar` specifically cleared the one failure
+mode its own prompt was written to prevent (no baked text, confirmed both
+visually and via a low-variance statistical check on the reserved band),
+and `window_fill` cleared its tileability/flat-lighting bar with tight,
+concrete numbers (1.6-unit vignette spread, sub-1.5-unit edge-to-edge
+tiling match) despite being scored on a different Format standard than the
+rest of the set (no chroma-key requirement, per its prompt). `window_corner`
+and `window_edge` both fail on the same axis — Technique, specifically a
+measured, systematic directional lighting bias the prompts explicitly
+warned against, not a palette/genre problem (both still score 8/10 on
+Style) and not a background/isolation problem (both score 9/10 on Format).
+`window_edge`'s bias is the more consequential of the two: uniformly about
+35-38% darker on its bottom edge across the entire sampled length (vs.
+`window_corner`'s roughly 24-65% top-vs-left gap, which varies more by
+region), and because `window_edge` is rotated 90 degrees to produce the
+frame's *vertical* edges while `window_corner` is rotated to produce three
+more *corners*, a mismatched top/bottom bias on the edge piece risks a
+visibly asymmetric left-vs-right window frame once assembled, not just a
+subtly-off corner. One genuine piece of good news specific to
+`window_edge`: its left/right end tiling (the other correctness
+requirement this asset type carries) already passes cleanly — pixel-matched
+to within 1-3 units at every sampled offset from each edge — so a Refine
+pass on `window_edge` should target the top/bottom lighting rebalance only
+and can leave the tiling treatment untouched. A human choosing what to look
+at first from this batch should prioritize `window_edge`'s lighting fix
+over `window_corner`'s (larger practical consequence once assembled), while
+`window_titlebar` and `window_fill` are both already usable as delivered.
+
+---
+
+## window_corner (round 2) — VERDICT: pass
+
+**Candidate:** `tools/art-reviewer/assets/window_corner.jpg` (1408x768 canvas,
+regenerated via the feedback endpoint since round 1)
+**Prompt (base, unchanged in `tools/art-reviewer/assets.json`):** same as
+round 1 — see that entry above. Regeneration feedback sent by
+`art-refiner-agent` this round (not yet folded into the stored base prompt
+pending this verdict): "Apply completely flat, non-directional utilitarian
+lighting equally to both the top and left border strips -- eliminate the
+top strip's brightness advantage over the left strip entirely (currently
+the top strip reads roughly 24-30% brighter near the outer edge and
+40-65% brighter near the inner window opening than the left strip at
+matched positions); both strips must render at the same brightness level
+at every matched position along their length, with zero shadow or
+highlight bias favoring either strip, so the piece reads identically after
+being rotated 90/180/270 degrees. Keep everything else -- rivet detailing,
+panel-line grooves, the black-outline-stroke edge convention, and the flat
+chroma-key green background -- unchanged."
+
+**Round 0 check:** grepped `window_corner` across
+`docs/history/art-eval-log-*.md` before scoring — exactly one prior entry
+(round 1, this same file, flagged solely on Technique 6/10 for the
+directional lighting bias above; Style 8 and Format 9 both already
+passing). Confirmed this is a genuine round 2 of 1 prior evaluation, well
+under the 3-round cap.
+
+**Scored fresh on all three dimensions** — a full regenerate can shift
+composition/geometry as well as fix the targeted defect, and it did here
+(the L-shape's strip thickness and corner-joint position both shifted
+slightly from round 1's render — expected for a full re-render, not a
+targeted patch, per this pipeline's own design).
+
+### Technique: 8/10
+- The specific, measured round-1 defect — systematic top-vs-left
+  brightness bias — is resolved to noise-level. Re-ran the round-1
+  matched-position sampling methodology via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use), first re-locating the strip
+  geometry (thickness shifted from round 1's render, confirmed via
+  transects: both strips now run a symmetric ~185px thickness from the
+  canvas edge to the inner opening) before sampling:
+  - **Outer band** (15x15 patches, 30-55px from the canvas edge, 5
+    positions per strip along its length): top strip mean 135.4, left
+    strip mean 136.9 — **1.1% difference**, direction no longer
+    consistently favoring the top strip.
+  - **Inner band** (15x15 patches, 125-150px from the canvas edge, near
+    the window opening): top strip mean 126.4, left strip mean 130.5 —
+    **3.2% difference**.
+  - Both figures are well inside the per-segment noise already present
+    within a single strip in round 1's own data (round 1's top strip alone
+    ranged 92.6-135.0 across its 6 sampled segments, a >40-point internal
+    spread) — a 1-3% between-strip gap is not a measurable directional
+    bias by the same standard round 1 used to flag the original ~24-65%
+    gap. The two strips' individual segment values also track each other's
+    brushed-metal streak pattern (both rise and fall at matched
+    length-fractions), consistent with an identical texture applied to
+    both, not two different light directions.
+- Re-verified the black-outline-stroke edge convention survived the
+  regenerate: a transect at y=500 through the (re-located) left strip's
+  inner boundary shows a clean pattern — solid metal through x=174, a
+  crisp near-black outline band x=176-180 (`(2,5,2)` to `(0,17,0)`), one
+  blended pixel at x=182 `(24,232,20)`, clean green by x=184-186 — the
+  same tight 2-4px hard-cutout convention as round 1 and as
+  `meteoroid.jpg`/`ion_storm.jpg`/`debris_large.jpg`.
+- Rivets and panel-line/double-groove detailing remain crisp and
+  consistent on both strips (confirmed via direct visual inspection — see
+  Style below). No baked-in text, watermark, or UI chrome. Reads clearly
+  as a metal frame corner even imagined downscaled to ~48-64px.
+- Not scored 9-10: this was targeted patch sampling at multiple positions
+  per strip, not an exhaustive full-boundary scan, and the outer/inner
+  bands still show a non-zero (if noise-level) 1-3% gap rather than a
+  literal, provably-zero difference.
+
+### Style: 9/10
+- Round 1's sole deduction was the directional lighting bias, framed as a
+  style-language departure from "strictly non-directional... utilitarian
+  lighting" as well as a Technique defect — now resolved (see Technique
+  above), so the specific reason round 1 held this at 8 no longer applies.
+- Palette remains a coherent muted brushed-gunmetal grey, consistent with
+  "muted, desaturated, industrial... metallics," comfortably darker/more
+  muted than any bright cartoon palette. High-contrast rivet/panel-line
+  detailing still reads as functional/utilitarian.
+- No genre-breaking elements — no fantasy motifs, no cute/cartoon
+  proportions, no bright primary-color accents unrelated to the subject.
+- Not a 10: still no direct precedent asset of this exact type (a UI
+  window frame) to cross-compare against beyond the general Gritty Dark
+  Sci-Fi Pixel language, the same limitation round 1 noted.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 5 patches (5x5-pixel averages) across the visible green
+  quadrant, well clear of the (re-located) L-shaped subject: bottomRight
+  dist 14.2, midGreen1 dist 11.8, midGreen2 dist 13.0, farRight dist 11.4,
+  bottomMid dist 13.8. All 5 fall comfortably inside the ~25-30-unit
+  compliant band, with a tight ~2.8-unit spread (11.4-14.2) — flat,
+  uniform background fill, consistent with round 1's own 9/10 result
+  (7.7-11.9 spread) and not regressed by the regenerate.
+- Edge-fringing check (see Technique transect above): the L-shape's
+  boundary uses the same black-outline-stroke convention with a tight
+  2-4px transition before hitting solid green — no stray green fringing
+  onto the metal.
+- No green surfaces on the subject itself, no partial environment/scene
+  bleeding at the frame edges.
+- Not a 10: patch sampling, not an exhaustive full-boundary scan of the
+  corner's curved/stepped inner joint region, same caveat round 1 noted.
+
+No fix list — all three dimensions scored at or above the pass threshold
+of 7 this round (Technique 8, Style 9, Format 9), a clean improvement from
+round 1's Technique 6 with Style/Format held steady or improved.
+VERDICT: pass.
+
+### Comparison paragraph
+Directly comparable to round 1 of the same `assetId`: round 1 scored
+Technique 6/Style 8/Format 9 (flagged solely for the top-vs-left
+directional lighting bias); round 2 scores Technique 8/Style 9/Format 9
+(pass), with the targeted bias resolved from a measured 24-30%/40-65% gap
+down to 1.1%/3.2% — inside the noise level of the strips' own internal
+brushed-metal texture variation. `art-refiner-agent`'s single-round
+regeneration fully converged on this candidate; no further round needed.
+
+---
+
+## window_edge (round 2) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_edge.jpg` (1408x768
+canvas, regenerated via the feedback endpoint since round 1)
+**Prompt (base, unchanged in `tools/art-reviewer/assets.json`):** same as
+round 1 — see that entry above. Regeneration feedback sent by
+`art-refiner-agent` this round (not folded into the stored base prompt,
+since this round does not pass): "Apply completely flat, non-directional
+utilitarian lighting equally to the strip's top and bottom long edges --
+eliminate the top-lit bevel bias entirely (currently the top band reads
+uniformly about 35-38% brighter than the bottom band across the full
+width, a consistent gap at every sampled point along the strip's length);
+both the top and bottom edges must render at the same brightness level
+along the entire strip, with zero highlight/shadow bias between them, so
+the piece reads identically after being rotated 90 degrees to form a
+vertical edge. Do not change anything about the left/right edge tiling or
+crop -- that already tiles seamlessly and must be preserved exactly
+as-is; only fix the top-vs-bottom lighting."
+
+**Round 0 check:** grepped `window_edge` across
+`docs/history/art-eval-log-*.md` before scoring — exactly one prior entry
+(round 1, this same file, flagged solely on Technique 5/10 for the
+top-vs-bottom directional lighting bias; Style 8 and Format 9 both already
+passing, and left/right tiling explicitly confirmed clean). Confirmed this
+is a genuine round 2 of 1 prior evaluation, well under the 3-round cap.
+
+**Scored fresh on all three dimensions.**
+
+### Technique: 6/10
+- **The targeted defect is reduced but not resolved — still a real,
+  systematic bias, just smaller in magnitude.** First re-located the
+  strip's vertical extent after the regenerate (shifted slightly from
+  round 1's render: now roughly y=300-465 of the 768px canvas, vs. round
+  1's ~317-450). Re-ran matched-position sampling via `jimp` (script
+  executed from `tools/asset-prep/`, deleted after use): 15x15 patches at
+  a top band (y=310-325, 10-25px below the strip's upper edge) and a
+  bottom band (y=445-460, 5-20px above the strip's lower edge), at 6
+  independent x-segments spanning the full width (x=20/300/600/900/1200/
+  1380):
+  - Top band: 132.9-135.1 across all 6 segments (mean 134.1).
+  - Bottom band: 104.2-105.3 across all 6 segments (mean 104.6).
+  - **Gap: ~28.2%, essentially uniform across the entire sampled width**
+    (each individual x-segment's top-vs-bottom gap lands within ~1 point
+    of every other segment's gap) — this is the same *character* of
+    defect round 1 found (a deliberate, full-width top-lit bevel
+    treatment), reduced in *magnitude* from round 1's measured 35-38% gap
+    but not eliminated, and just as internally consistent/systematic as
+    round 1's finding (round 1's own top-band spread was 98.5-102.2, a
+    ~3.7-point range; this round's top-band spread is 132.9-135.1, a
+    ~2.2-point range — if anything tighter/more deliberate-looking, not
+    noisier).
+  - This is a materially different outcome from `window_corner`'s round-2
+    result (same feedback pattern, same underlying defect category): that
+    candidate's bias resolved to 1.1-3.2%, inside its own strips' internal
+    texture noise. This candidate's 28.2% gap is not inside any comparable
+    noise band — it reads as the same directional lighting choice as
+    round 1, just dialed back rather than removed.
+- Everything else about this piece's execution remains solid and
+  unaffected: the black-outline-stroke edge convention is intact (a
+  transect at x=700 shows the same tight cutout pattern as round 1),
+  rivets and panel-line/plate detailing are crisp and consistent with
+  `window_corner.jpg`'s style, no baked-in text/watermark/UI chrome, and
+  it reads clearly as a metal edge trim at ~48-64px scale.
+- Scored 6/10 rather than round 1's 5/10 to reflect the real, measured
+  reduction in bias magnitude (35-38% to 28.2%) — this is directionally
+  progress, not a non-response to the feedback — but still below the 7/10
+  pass threshold because the defect the prompt and feedback both
+  explicitly target (zero top/bottom bias) is still clearly present and
+  still systematic, not noise.
+
+### Style: 8/10
+- Unchanged from round 1's reasoning: same muted brushed-gunmetal palette
+  as `window_corner.jpg`, consistent with "muted, desaturated,
+  industrial... metallics." No genre-breaking elements.
+- Deduction keeping this at 8 rather than 9-10: same as round 1 — the
+  lighting-bias concern (still present, see Technique) is a style-language
+  departure from "strictly non-directional... utilitarian lighting" as
+  well as a Technique defect, not double-counted as a second hard failure
+  but worth naming again since it hasn't actually been fixed yet this
+  round, unlike `window_corner`.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 6 background patches (5x5-pixel averages) at all four corners
+  and two edge midpoints: topLeft dist 14.6, topMid dist 15.7, topRight
+  dist 16.3, bottomLeft dist 18.4, bottomMid dist 18.4, bottomRight dist
+  19.7. All 6 fall comfortably inside the ~25-30-unit compliant band, a
+  ~5.1-unit spread (14.6-19.7) — comparable to round 1's own 6.8-unit
+  spread (12.4-19.2), flat and uniform, not regressed.
+- **Left/right tiling explicitly re-verified per the feedback's own
+  instruction not to touch it — confirmed untouched and still clean:**
+  left edge 5x5 patch average `(134.0, 131.9, 133.0)` vs. right edge
+  `(134.0, 132.5, 133.4)` — under 1 unit per channel difference, matching
+  round 1's own sub-3-unit tiling match. The regenerate did not disturb
+  this despite shifting the strip's vertical position/thickness slightly.
+- Edge-fringing at the strip's top/bottom boundary remains tight, no
+  stray green bleeding onto the metal, no green-on-subject tension.
+
+### Fix list
+- **Technique (6/10, still below threshold):** The top-vs-bottom lighting
+  bias is reduced from round 1's 35-38% to a still-systematic ~28.2%,
+  uniform across the full 1408px width (each of 6 independently sampled
+  x-segments shows the same gap within ~1 point). The previous round's
+  feedback partially worked but didn't fully converge — regenerate again
+  with a more explicit, mechanical instruction: render the bottom long
+  edge's bevel/highlight treatment as an exact mirror/duplicate of the top
+  edge's, rather than keeping any independent shadow or bevel darkening
+  along the bottom — treat this as copying one edge's lighting onto the
+  other, not as "reducing" the bottom's darkness by degree. Left/right
+  tiling is confirmed still clean this round and does not need to be
+  touched again.
+
+VERDICT: flagged (round 2 of a 3-round cap — one round remains before the
+circuit breaker). Technique is the only dimension below 7 (Style 8, Format
+9 both pass).
+
+### Comparison paragraph
+Directly comparable to round 1 of the same `assetId` and to
+`window_corner`'s round 2 (same feedback pattern applied to a structurally
+similar defect): round 1 scored Technique 5/Style 8/Format 9; round 2
+scores Technique 6/Style 8/Format 9 — a real but partial improvement (bias
+reduced 35-38% to 28.2%) that doesn't clear the pass threshold, unlike
+`window_corner`'s round 2, which fully converged on the same category of
+fix in one round. `art-refiner-agent` has one round remaining under the
+3-round cap to close this gap with a more explicit "mirror the top edge
+exactly" instruction before this candidate would need to be escalated to a
+human rather than looped again.
+
+---
+
+## window_edge (round 3) — VERDICT: flagged
+
+**Candidate:** `tools/art-reviewer/assets/window_edge.jpg` (1408x768
+canvas, regenerated via the feedback endpoint since round 2)
+**Prompt (base, unchanged in `tools/art-reviewer/assets.json`):** same as
+rounds 1-2 — see round 1's entry above. Regeneration feedback sent by
+`art-refiner-agent` this round: "The previous lighting fix only partially
+worked -- a measured top-vs-bottom brightness gap still remains, uniformly
+about 28% across the full width. Do not apply ANY independent shadow,
+bevel, or darkening treatment to the bottom long edge of the strip.
+Instead, render the bottom edge as an EXACT mirror duplicate of the top
+edge's highlight and bevel treatment, flipped vertically -- both the top
+and bottom edges must use literally identical brightness values at every
+point along the strip's length, with completely flat, shadowless,
+non-directional lighting applied to the whole piece as if lit from
+directly overhead with no falloff toward either long edge. Left/right end
+tiling is already correct and must be preserved exactly as-is -- do not
+alter the crop or the left/right edges at all."
+
+**Round 0 check:** grepped `window_edge` across
+`docs/history/art-eval-log-*.md` before scoring — exactly two prior
+entries (round 1: Technique 5/Style 8/Format 9, flagged; round 2:
+Technique 6/Style 8/Format 9, flagged, bias reduced 35-38% to 28.2% but
+not resolved). Confirmed this is round 3 of 2 prior evaluations — **this
+is the last round permitted before the 3-round cap; if this round also
+fails, `art-refiner-agent` must not loop back again.**
+
+**Scored fresh on all three dimensions.**
+
+### Technique: 3/10
+- **The targeted defect did not converge this round — it materially
+  regressed instead.** The regenerate changed the strip's composition
+  substantially (now a multi-panel plate design with rounded bevel
+  corners, vs. rounds 1-2's simpler flat plate), which shifted the strip's
+  vertical extent to y=242-524 (thickness ~282px, up from round 2's
+  ~165px). Re-located the true edge-adjacent bevel zones on both long
+  edges (a 15x16px patch average at 0-16px inset from each edge, at 6
+  independent x-segments spanning the full 1408px width) via `jimp`
+  (script executed from `tools/asset-prep/`, deleted after use):
+  - Top edge-band: 164.2-201.3 across all 6 segments (mean 182.1).
+  - Bottom edge-band: 82.3-100.0 across all 6 segments (mean 93.2).
+  - **Gap: 95.3%, uniform across the entire width** (every one of the 6
+    x-segments individually shows the top edge roughly 1.7-2x brighter
+    than the mirrored bottom edge). This is nearly double round 1's
+    already-failing 35-38% gap and more than triple round 2's 28.2% gap —
+    the explicit "mirror the top edge exactly, flipped vertically"
+    instruction did not produce a mirrored result; if anything the model
+    appears to have rendered an even more pronounced single top-lit bevel
+    highlight this round (the top edge's peak brightness, ~182-221 in the
+    row-by-row profile below, is brighter in absolute terms than either
+    prior round's top band) while the bottom edge stayed comparably dark
+    to round 2's.
+  - A full row-by-row brightness profile (sampled every 4px down the
+    strip's full thickness, averaged across ~35 x-positions per row) was
+    also run to rule out a banding-choice artifact: it shows a clear,
+    monotonic-ish bright-to-dark character — very bright at y=242-254
+    (161.9-221.1), settling to a relatively flat ~100-115 through most of
+    the mid-body (y=310-442), then trailing down further to 51-98 near the
+    bottom edge (y=478-522, with one isolated bright outlier at y=498
+    that reads as a rivet/plate reflection, not an edge bevel, and does
+    not change the overall shape of the profile). This confirms the
+    95.3% edge-band figure isn't an artifact of exactly which rows were
+    picked — the whole piece reads as top-lit, not flat, and not
+    mirror-symmetric.
+- Everything else about execution quality remains solid: black-outline
+  edge convention intact, rivets/panel-line/plate detailing crisp and
+  consistent with the established window-frame-set style, no baked text.
+- Scored 3/10, below both prior rounds, because the specific instruction
+  this round was designed to test — an explicit, mechanical "mirror the
+  top edge onto the bottom" — produced a *worse* result on the exact
+  metric it targeted, not a partial improvement. This is a meaningful
+  signal in its own right (see Fix list / escalation below), not just a
+  lower score for its own sake.
+
+### Style: 8/10
+- Unchanged reasoning from rounds 1-2: muted brushed-gunmetal palette,
+  consistent with "muted, desaturated, industrial... metallics," no
+  genre-breaking elements, rivet/panel detailing reads utilitarian.
+- Deduction keeping this at 8 rather than 9-10: the same lighting-bias
+  concern, now more severe than either prior round (see Technique), is
+  still the single deduction reason.
+
+### Format: 9/10
+- Deterministic check ran successfully via `jimp` (script executed from
+  `tools/asset-prep/`, deleted after use; `Jimp.read` succeeded on the
+  1408x768 JPEG).
+- Sampled 6 background patches (5x5-pixel averages) at all four corners
+  and two edge midpoints: topLeft dist 9.3, topMid dist 11.2, topRight
+  dist 12.3, bottomLeft dist 12.5, bottomMid dist 15.2, bottomRight dist
+  15.0. All 6 fall comfortably inside the ~25-30-unit compliant band, a
+  tight ~5.9-unit spread (9.3-15.2) — flat and uniform, at least as good
+  as either prior round, not regressed by the composition change.
+- **Left/right tiling re-verified once more, despite the composition
+  change, and still holds:** 5x5 patch averages at the very left edge
+  `(94.0, 95.1, 98.4)` vs. very right edge `(92.8, 93.7, 97.3)` — within
+  ~1-2 units per channel, and a finer offset-by-offset comparison (0-14px
+  in from each side, y=380) shows the same close tracking at every
+  offset. The one genuinely correct instruction this round's feedback
+  gave ("do not touch left/right tiling") was followed correctly even
+  though the lighting instruction wasn't.
+
+### Fix list — not issued; see escalation below instead
+Per the 3-round cap (`art-refiner-agent.md`), this is the last permitted
+evaluation round for `window_edge`. Since Technique remains below
+threshold, no further regeneration follows this report.
+
+VERDICT: flagged (round 3 of a 3-round cap — **cap reached, no further
+rounds**). Technique is the only dimension below 7 (Style 8, Format 9 both
+pass), but it regressed rather than converged this round.
+
+### Comparison paragraph
+Score history across all three rounds for this `assetId`: round 1
+Technique 5/Style 8/Format 9 (bias ~35-38%); round 2 Technique 6/Style
+8/Format 9 (bias reduced to ~28.2%, directionally converging); round 3
+Technique 3/Style 8/Format 9 (bias measured at ~95.3% using the
+edge-adjacent bands the round's own feedback specifically targeted — a
+clear regression, not further convergence). Style and Format held flat
+and passing across all three rounds throughout — the failure is isolated
+entirely to Technique's directional-lighting metric, and specifically to
+the model's response to increasingly explicit lighting instructions: a
+general "apply flat non-directional lighting" request (round 2) produced
+real, partial progress, while a more mechanical, maximally explicit
+"exact mirror duplicate, flipped vertically" request (round 3) produced a
+worse result on the same measurement than either prior round. This
+non-monotonic response — feedback specificity increasing while the
+outcome got worse instead of better — is the pattern this project's GER
+loops treat as a signal to stop rather than keep iterating automatically.
+
+## Escalation: window_edge — 3-round cap reached, Technique unresolved
+
+**Status:** `tools/art-reviewer/feedback.json["window_edge"].status` left
+as `"needs_revision"` (not set to `"accepted"` — no round ever produced a
+`pass`). `tools/art-reviewer/assets.json`'s stored base `prompt` for
+`window_edge` is **left unchanged** from its original round-1 text — none
+of the three rounds' feedback strings have been folded in, per the rule
+against baselining an unproven fix.
+
+**What never cleared threshold:** Technique, specifically a directional
+top-vs-bottom lighting/bevel bias on the long edges of the strip, across
+all three rounds:
+- Round 1 (initial candidate): top band uniformly 98.5-102.2, bottom band
+  uniformly 63.1-66.6 — a consistent ~35-38% gap across the full 1408px
+  width. Technique 5/10.
+- Round 2 (feedback: "apply flat non-directional lighting to top and
+  bottom, eliminate the bias, don't touch left/right tiling"): gap reduced
+  to ~28.2%, still uniform across the full width. Technique 6/10 — real
+  but partial progress.
+- Round 3 (feedback: explicit mechanical instruction to render the bottom
+  edge as an exact vertically-flipped mirror of the top edge's highlight/
+  bevel treatment): gap **increased** to ~95.3% measured at the true
+  edge-adjacent bevel bands, the worst of the three rounds. Technique
+  3/10.
+
+**Why this doesn't look like it will converge with a fourth automated
+round:** the pattern across the three rounds is not "closing in on zero
+with diminishing returns" — round 2 legitimately narrowed the gap
+(35-38% to 28.2%), which is the trajectory a capped Evaluate-Refine loop
+is designed to ride out, but round 3's much more explicit, mechanical
+version of essentially the same instruction produced a result over 3x
+worse on the exact metric being targeted, not a smaller improvement or
+even a flat repeat. That non-monotonic reversal — more specific guidance
+producing a worse outcome — is the specific signal this agent's own
+instructions call out as a reason to stop rather than iterate again: it
+suggests the generation model has a strong, hard-to-override prior toward
+rendering this particular composition (a horizontal metal trim strip) with
+a conventional top-lit bevel treatment, and that prior may be reasserting
+itself more strongly, not less, as the composition becomes more detailed/
+elaborate (round 3's regenerate also introduced a materially different,
+more ornate multi-panel design than rounds 1-2 used, which may itself be
+part of why the bias got worse — more surface area of "bevel" language for
+the model to apply asymmetric shading to). Two rounds of prompt-level
+feedback alone were not enough to override this; a third, maximally
+explicit round moved backward. This reads as a case where the base
+prompt's approach — asking for a photorealistic-leaning "brushed-metal
+bevel" aesthetic while separately demanding zero directional lighting —
+may be an inherently awkward pairing for this generation model, worth a
+human rewrite (e.g. dropping the bevel/highlight language entirely in
+favor of a flatter, more graphic metal-panel treatment, or accepting a
+directional bevel and instead building the rotation-safety requirement
+into the asset pipeline via a code-level flip/rotate step rather than
+asking the model for physically-symmetric lighting) rather than a fourth
+automated Generate-Evaluate-Refine round.
+
+**Carried-forward final score set (round 3, the last evaluated round):**
+Technique 3/10, Style 8/10, Format 9/10 — Technique is the sole failing
+dimension, Style and Format have passed cleanly in every round including
+this one.
+
+**Sibling status for context:** `window_corner` (same batch, same defect
+category) converged cleanly in round 2 (Technique 6 to 8, Style 8 to 9,
+Format 9 to 9) and is now finalized (`assets.json` prompt updated,
+`feedback.json` status `"accepted"`) — the cap/escalation above is
+specific to `window_edge`, not a batch-wide problem with this defect
+category or with the Refine loop's general approach.
+
+## window_edge — addendum: resolved via deterministic post-process, not a 4th GER round
+
+Per the escalation note above, the project owner chose the "post-process a
+fix" path rather than a 4th automated regeneration or leaving the asset
+blocked. `tools/asset-prep/symmetrize-window-edge.js` (new script) does the
+code-level flip/rotate fix the escalation note suggested:
+
+1. Auto-detects the strip's vertical bounds (rows that aren't chroma-key
+   green) via a sampled-column scan — found rows 236-531 of the 1408x768
+   canvas (strip height 296px).
+2. Reflects the strip band around its own vertical center, sourcing every
+   row from the top half only (`srcRow = min(i, stripHeight-1-i)`) — the
+   top half was the more detailed, better-lit side across all 3 prior
+   rounds, so mirroring it onto the bottom guarantees the two long edges
+   are pixel-identical by construction, not just close.
+3. Left/right columns are untouched, so the tiling behavior that already
+   passed cleanly in round 1 (pixel-matched within 1-3 units at every
+   sampled offset) carries over unchanged.
+
+**Verification (`tools/asset-prep`, throwaway inline script, not saved):**
+top-band vs. bottom-band average brightness on the result: 108.47 vs.
+108.31 — a 0.15% difference, down from round 3's measured 95.3% and round
+1's 35-38%, and now inside ordinary JPEG-noise territory rather than a
+real asymmetry. Left-edge vs. right-edge column averages: 92.35 vs. 94.07,
+consistent with the tiling check that already passed.
+
+**Promoted to `tools/art-reviewer/assets/window_edge.jpg`** (the prior,
+round-3, 95%-biased file was overwritten). `tools/art-reviewer/feedback.json`
+updated: `window_edge.status` set to `"accepted"`, with the `feedback`
+field repurposed to record that this was a post-process acceptance, not a
+passing GER round, and pointing back to this addendum.
+`tools/art-reviewer/assets.json`'s stored prompt was deliberately **not**
+changed — the round-3 "exact mirror duplicate" prompt wording is what
+caused the regression when tried through the generation model, so it isn't
+safe language to fold in as a future starting point. A from-scratch
+regeneration of `window_edge` later would start from the original (round-1)
+prompt and would need this same post-process step again, or a genuinely
+different prompt strategy — not the round-3 wording.
+
+**All 4 window-frame assets are now `"accepted"`:** `window_corner`,
+`window_edge` (post-process), `window_titlebar`, `window_fill`.
+Compositing these into one baked 9-slice texture and wiring it into Phaser
+is separate, not-yet-started follow-up work.

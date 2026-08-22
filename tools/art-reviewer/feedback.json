@@ -62,5 +62,21 @@
   "nebula_field_3": {
     "status": "accepted",
     "feedback": ""
+  },
+  "window_corner": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "window_edge": {
+    "status": "accepted",
+    "feedback": "Accepted via deterministic post-process, not a passing GER round -- 3 rounds of AI regeneration couldn't converge on a non-directional top/bottom lighting bias (round 3 regressed to 95% bias). tools/asset-prep/symmetrize-window-edge.js mirrors the strip's top band onto its bottom band, guaranteeing exact vertical symmetry by construction. See docs/history/art-eval-log-2026-08-21.md for the full round history and this addendum."
+  },
+  "window_titlebar": {
+    "status": "accepted",
+    "feedback": ""
+  },
+  "window_fill": {
+    "status": "accepted",
+    "feedback": ""
   }
 }

@@ -106,5 +106,29 @@
         "name": "Near Background Stars",
         "path": "/assets/bg_stars_near.jpg",
         "prompt": "Seamless tileable pixel art starfield, simulate near stars my making the equivalent of far plane stars (all small size) but slightly brighter in color under 60 stars total, sparse, pure black background, 32-bit retro sci-fi.  1024 x 1024 pixels in size."
+    },
+    {
+        "id": "window_corner",
+        "name": "Window Frame Corner",
+        "path": "/assets/window_corner.jpg",
+        "prompt": "Isolated single sprite of a pixel art sci-fi UI window-frame corner piece: two thick brushed-gunmetal metal border strips of EQUAL width meeting at a clean 90-degree right angle in the upper-left of the image, forming an L-shape, with fine rivets and panel-line detailing, gritty dark sci-fi aesthetic, high-contrast but strictly NON-DIRECTIONAL utilitarian lighting -- no single-side highlight, no shadow bias favoring the top strip over the left strip or vice versa -- because this exact same piece will be rotated 90, 180, and 270 degrees in software to form the window's other three corners and must read correctly in every rotation, sharp pixel-grid edges, 32-bit retro pixel art style, NO environment, NO scene, NO text, on a solid bright chroma-key green (#00FF00) background filling everywhere outside the L-shaped border strip, no shading on the background. Apply completely flat, non-directional utilitarian lighting equally to both the top and left border strips -- eliminate any brightness advantage of one strip over the other entirely; both strips must render at the same brightness level at every matched position along their length, with zero shadow or highlight bias favoring either strip, so the piece reads identically after being rotated 90/180/270 degrees. Keep the rivet detailing, panel-line grooves, the black-outline-stroke edge convention, and the flat chroma-key green background."
+    },
+    {
+        "id": "window_edge",
+        "name": "Window Frame Edge",
+        "path": "/assets/window_edge.jpg",
+        "prompt": "Isolated single sprite of a pixel art sci-fi UI window-frame edge/border strip: one straight horizontal segment of thick brushed-gunmetal metal border trim, matching the rivet and panel-line detailing of the frame's corner piece, running the full width of the image with the strip cropped flush at the left and right image edges so it tiles seamlessly with copies of itself placed side by side, strictly NON-DIRECTIONAL utilitarian lighting with no highlight or shadow bias along its length or between its top/bottom long edges -- because this same piece is also rotated 90 degrees in software to serve as the frame's vertical edges and must read correctly rotated, sharp pixel-grid edges, 32-bit retro pixel art style, NO environment, NO scene, NO text, on a solid bright chroma-key green (#00FF00) background above and below the strip, no shading on the background."
+    },
+    {
+        "id": "window_titlebar",
+        "name": "Window Title Bar Plate",
+        "path": "/assets/window_titlebar.jpg",
+        "prompt": "Isolated single sprite of a pixel art sci-fi UI window title bar plate: a horizontal brushed-gunmetal metal header plate matching the same window frame's border style and rivet detailing, subtly recessed to read as a nameplate, with a flat, empty, slightly darker panel band across its center reserved for text -- absolutely NO letters, NO numbers, NO glyphs, NO text baked into the image -- with the plate cropped flush at the left and right image edges so the empty center band tiles seamlessly when the piece is repeated or stretched wider to fit a longer title, gritty dark sci-fi aesthetic, high-contrast utilitarian lighting, sharp pixel-grid edges, 32-bit retro pixel art style, NO environment, NO scene, on a solid bright chroma-key green (#00FF00) background above and below the plate, no shading on the background."
+    },
+    {
+        "id": "window_fill",
+        "name": "Window Interior Fill Texture",
+        "path": "/assets/window_fill.jpg",
+        "prompt": "Seamless tileable pixel art sci-fi UI panel texture: a flat dark gunmetal-grey metallic surface with very subtle fine noise, scratches, and faint panel seams, matching the same window frame set's material palette but noticeably darker and less detailed than the border trim so it reads as background rather than foreground, tiles seamlessly in all directions with no visible edge or seam when repeated, muted low-contrast even lighting with no vignette and no gradient, gritty dark sci-fi aesthetic, sharp pixel-grid texture, 32-bit retro pixel art style, NO environment, NO scene, NO text."
     }
 ]

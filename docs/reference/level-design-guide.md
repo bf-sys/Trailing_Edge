@@ -163,6 +163,118 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
   objective/resupply point. Checked by hand/by construction so far, not by
   an automated check — see §11's verification checklist.
 
+### Undulation — don't leave a long wall ruler-straight
+
+A perfectly straight chain of Debris Field instances reads as artificial
+next to hand-placed content (playtest feedback, 2026-08-24 — see
+`level-006.ts` through `level-008.ts` for the worked examples this section
+distills). `debrisWall()` should offset interior instances perpendicular to
+the wall's own axis instead of leaving every point exactly on the line
+between `(x1,y1)` and `(x2,y2)`. Updated helper (this is now the standard
+to copy — level-006 was the original prototype, `level-001`–`level-008` all
+carry a version of this):
+
+```ts
+const SWEEP_AMPLITUDE = 28;
+const SWEEP_PERIOD_INSTANCES = 12;
+const TEXTURE_AMPLITUDE = 4;
+const TEXTURE_PERIOD_INSTANCES = 4;
+const MIN_UNDULATE_COUNT = 8;
+const BOW_AMPLITUDE = 30;
+const MIN_BOW_COUNT = 4;
+
+function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 115): HazardPlacement[] {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
+  const count = Math.max(2, Math.round(length / spacing) + 1);
+  const mode = count >= MIN_UNDULATE_COUNT ? 'sweep' : count >= MIN_BOW_COUNT ? 'bow' : 'straight';
+  const perpX = -dy / length;
+  const perpY = dx / length;
+  const placements: HazardPlacement[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+    let x = x1 + dx * t;
+    let y = y1 + dy * t;
+    if (mode === 'sweep') {
+      const envelope = Math.sin(Math.PI * t); // 0 at both ends, 1 at the midpoint
+      const sweep = SWEEP_AMPLITUDE * Math.sin((i / SWEEP_PERIOD_INSTANCES) * Math.PI * 2);
+      const texture = TEXTURE_AMPLITUDE * Math.sin((i / TEXTURE_PERIOD_INSTANCES) * Math.PI * 2);
+      const offset = envelope * (sweep + texture);
+      x += perpX * offset;
+      y += perpY * offset;
+    } else if (mode === 'bow') {
+      const offset = Math.sin(Math.PI * t) * BOW_AMPLITUDE;
+      x += perpX * offset;
+      y += perpY * offset;
+    }
+    placements.push({
+      type: 'debrisField',
+      x,
+      y,
+      textureKey: DEBRIS_TEXTURES[i % DEBRIS_TEXTURES.length],
+      rotationRadians: (i * 0.83) % (Math.PI * 2),
+    });
+  }
+  return placements;
+}
+```
+
+- **Two shapes, picked automatically by instance count.** `count >= 8` gets
+  a two-term sine "sweep" — a slow ~2-period broad meander plus a faster
+  small-amplitude "texture" term, so a long wall doesn't read as one
+  perfectly repeating S-curve. `count` 4–7 gets a single-term "bow" instead
+  — just the envelope times one flat amplitude, a smooth one-directional
+  "C" bulge with no oscillation. **Don't use the sweep formula on a short
+  wall** — with too few points, a full sine period never completes and it
+  reads as a jerky zigzag rather than a meander; the bow was added
+  specifically because of that failure mode (`level-001`/`level-002`'s
+  ~550–600px walls, 2026-08-24). Below `MIN_BOW_COUNT` (4), there aren't
+  enough interior points for any offset to read as intentional, so the
+  wall stays straight — this is a real, not just theoretical, floor:
+  `count < 4` means 0–2 interior points, too few for even a bow.
+- **Both shapes pin the endpoints exactly** via the `sin(π·t)` envelope
+  (`0` at `t=0` and `t=1`) — `(x1,y1)`/`(x2,y2)` never move. This matters
+  beyond aesthetics: every existing clearance/gap-boundary comment in a
+  level file is measured from those endpoints (e.g. a maze wall's gap
+  start/end), so an offset that moved them would silently invalidate
+  documentation elsewhere in the same file.
+- **Pass `spacing = 100` explicitly on any wall call that will undulate**
+  (by either mode) instead of relying on the `115` default. This is a
+  safety requirement, not a style choice — see below.
+- **Safety math (why this isn't just eyeballed):** Debris Field is
+  `blocksMovement`, so the "no ship-width gap" guarantee depends on every
+  pair of neighboring instances staying within `2 × 60 = 120px` of each
+  other. A first pass at the default 115px spacing worked but left only a
+  ~2px margin — thin enough to be uncomfortable. The fix wasn't smaller
+  amplitude: the along-axis spacing so dominates
+  `sqrt(spacing² + offsetDelta²)` that even halving the offset barely moves
+  the result. Tightening spacing to 100px instead buys a real margin
+  (~18–19px, empirically verified by generating each candidate wall and
+  measuring actual worst-case neighbor distance, not just estimating it) —
+  do the same if you introduce a new amplitude/period/threshold
+  combination: generate the actual points and measure, don't trust the
+  formula alone (the margin doesn't scale linearly with amplitude the way
+  intuition suggests). `MIN_UNDULATE_COUNT = 8` (not level-006's original,
+  more conservative `16`) is the value actually verified safe down to
+  `count = 7` at `spacing = 100` — reuse `8`, not `16`, for a new level.
+- **Add a dev-time sanity check** alongside any new undulating wall,
+  mirroring `level-001.ts`–`level-008.ts`: re-inspect the actual generated
+  array(s) inside `if (import.meta.env.DEV)` and `console.warn` if any
+  neighbor pair exceeds `2 × 60`. Cheap, and it fails fast at import time
+  instead of silently shipping a wall with a hole in it if a future edit to
+  these constants breaks the margin.
+- **Doesn't apply to `debrisRing`** (below) — a sealed circle isn't a
+  "wall" in this sense. Undulating its radius is a separate, unvalidated
+  design question nobody's decided yet.
+- **Current adoption isn't uniform, by design, not oversight:** every real
+  level (`level-001`–`level-008`) has the sweep tier; only `level-001` and
+  `level-002` currently have the bow tier wired up (they're the only files
+  with walls short enough to need it) — nothing in `level-003`–`level-008`
+  currently produces `count` 4–7, so they never hit that branch. If a new
+  level introduces a short wall, use the bow tier rather than leaving it
+  straight or forcing the sweep formula onto it.
+
 ### The sealed ring — a deliberate exception, not a pattern
 
 ```ts
@@ -349,7 +461,15 @@ different levels afterward, confirmed in-browser, not just on paper.
 1. `npx tsc --noEmit -p .` — catches placement/type errors immediately.
 2. Confirm registration: the level id is in both `src/levels/index.ts`'s
    `LEVELS` map and appended (not inserted) to `LEVEL_ORDER`.
-3. Live-check in a real browser, not just by reading the file:
+3. For layout/shape checks specifically (wall undulation, clearance,
+   objective spacing) — `npm run level-viewer` (`tools/level-viewer/`) is a
+   standalone, read-only, Phaser-free visualizer that reads the same
+   `LevelConfig` the game does; pick the level from its dropdown and
+   scroll/drag to inspect a wall's shape up close, without needing to fly
+   the ship there. Much faster than a full playthrough for this kind of
+   check, though it doesn't replace step 4 below for anything that needs
+   real gameplay (collision, reachability, ability interactions).
+4. Live-check in a real browser, not just by reading the file:
    - `npm run dev`, open the game.
    - To jump straight to the level under test without playing through
      everything before it: `localStorage.setItem('trailing_edge_save', JSON.stringify({ levelId: 'level-NNN' }))`,
@@ -365,8 +485,8 @@ different levels afterward, confirmed in-browser, not just on paper.
      legitimate way to drive a test script without waiting out real
      playthrough time (e.g. granting abilities directly, or forcing a
      moving hazard's position to test `MovingHazardManager`'s wrap logic).
-4. Confirm **zero console errors** across the check.
-5. For anything with a hard reachability/collision requirement (a wall, a
+5. Confirm **zero console errors** across the check.
+6. For anything with a hard reachability/collision requirement (a wall, a
    sealed ring), verify by forcing the edge case rather than trusting the
    math alone — e.g. click-to-move directly at an enclosed objective to
    confirm normal movement is genuinely blocked; force a moving hazard's

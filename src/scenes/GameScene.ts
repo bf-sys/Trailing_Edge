@@ -22,6 +22,7 @@ import { abilityUnlockOrder } from '../config/abilityConfig';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
+import { ShipThrusterTrail } from '../objects/ShipThrusterTrail';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -69,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   private shipStatusArcs!: ShipStatusArcs;
   private hazardScanOverlay!: HazardScanOverlay;
   private teleportRangeRing!: TeleportRangeRing;
+  private shipThrusterTrail!: ShipThrusterTrail;
 
   constructor() {
     super(GAME_SCENE_KEY);
@@ -211,6 +213,7 @@ export class GameScene extends Phaser.Scene {
     this.hazardScanOverlay = new HazardScanOverlay(this, this.hazards);
     this.teleportRangeRing = new TeleportRangeRing(this);
     new DestinationMarker(this);
+    this.shipThrusterTrail = new ShipThrusterTrail(this);
 
     this.wireHardFailRestart();
     this.setUpObjectiveDebugReadout(tracker);
@@ -248,6 +251,7 @@ export class GameScene extends Phaser.Scene {
     this.shipStatusArcs.update();
     this.hazardScanOverlay.update(time);
     this.teleportRangeRing.update();
+    this.shipThrusterTrail.update();
   }
 
   // Real levelOrder resolution + SaveManager (GDD §11.8/§11.9, Phase 2a

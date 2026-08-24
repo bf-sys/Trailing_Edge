@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { createBackgroundSetPieceTextures } from '../objects/BackgroundSetPieces';
 import { createDestinationMarkerTexture } from '../objects/DestinationMarker';
+import { createThrusterParticleTexture } from '../objects/ShipThrusterTrail';
+import { createResupplySparkTexture } from '../objects/ResupplyPoint';
 
 export const BOOT_SCENE_KEY = 'BootScene';
 
@@ -36,6 +38,8 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     createBackgroundSetPieceTextures(this);
     createDestinationMarkerTexture(this);
+    createThrusterParticleTexture(this);
+    createResupplySparkTexture(this);
     this.scene.start('TitleScene');
   }
 }

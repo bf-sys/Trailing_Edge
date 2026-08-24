@@ -281,6 +281,14 @@ export class ExplorationController implements GameSystem {
     return this.teleportArmed;
   }
 
+  // Read-only query for ShipThrusterTrail (2026-08-24 follow-up to the
+  // normal thrust trail) -- lets the VFX layer swap to a longer/faster
+  // trail variant for the duration of a rocketBoost burst without owning
+  // any boost state itself.
+  isBoosting(): boolean {
+    return this.boosting !== null;
+  }
+
   getTeleportAimPoint(): { x: number; y: number } | null {
     if (!this.teleportArmed || !this.scene) return null;
     const pointer = this.scene.input.activePointer;

@@ -479,10 +479,30 @@ imports; **nobody hand-edits `create()`.**
   (`config/levelOrder.ts`'s `TEST_LEVEL_ID`) force-grants all three on
   entry via a `GameScene.create()` loop over `abilityUnlockOrder`, so its
   full ability surface is testable without first completing real levels.
-- **`ResupplyPoint`** (AsteroidField only) — Arcade overlap → repair
-  structure. No longer covers energy (passive regen instead) and no longer
+- **`ResupplyPoint`** (AsteroidField only) — repair structure while in
+  range. No longer covers energy (passive regen instead) and no longer
   registers a checkpoint (deferred). The Star variant is retired as a
   resupply object — see `EntryWormhole`/`ExitWormhole` above.
+  **Reworked 2026-08-24 (playtest-confirmed ramifications to existing level
+  content, accepted knowingly):** the asteroid is now a solid
+  `blocksMovement` obstacle, same immovable-body + `collider()` mechanism as
+  Debris Field/Meteoroid — a resupply stop is now a deliberate routing
+  decision, not a drive-through. That broke the old Arcade *overlap*-callback
+  repair trigger (a solid collider means Arcade's own separation keeps the
+  ship's center outside the physical collision radius, so requiring literal
+  overlap would mean repair could almost never fire) — repair range is now a
+  manual per-frame distance check against `radius + resupplyVfxConfig.
+  rangeBuffer`, the same fix `HazardZoneElement.applyResourceCost()` got
+  2026-08-11 for the same underlying reason (a callback-set flag only
+  updates on Arcade's own ~60Hz physics step, silently undercounting a
+  rate-based effect like `structureRepairPerSecond` on a >60Hz display).
+  Also added: a repair-laser VFX (`resupplyVfxConfig.ts`) — a `Graphics`
+  beam from the ship to a randomized point inside the asteroid (picked once
+  per repair session, on entering range, not re-randomized every frame) plus
+  a particle spark burst at that impact point, both display-only and gated
+  on the same in-range check that drives the repair itself. Reuses
+  `shipStatusArcConfig.structureColor` rather than a new color, so "this is
+  about structure" stays one consistent hue across the HUD.
 - **Authored data** — per-hazard `CostData`, per-ability `AbilityCostData`,
   required per-level object placement (`probeLocation`,
   `relayBeaconLocation`, `entryWormholeLocation`, `exitWormholeLocation`),

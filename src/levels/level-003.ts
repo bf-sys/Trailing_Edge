@@ -99,8 +99,7 @@ const PROBE_RING_COUNT = 9; // chord between neighbors ~103px at this radius/cou
 // ~4260px; Probe<->Exit, not consecutive, left close at ~805px), Debris
 // Field walls stay the primary hazard (four chained barriers, texture/
 // rotation variety), and Nebula Field returns placed with intent (bypass
-// tolls near wall gaps, an early-route toll, and one bridging the close
-// Probe<->Exit approach).
+// tolls near wall gaps, and an early-route toll).
 //
 // New this level: the Probe sits inside a sealed debrisRing (defined
 // above) instead of open ground -- unreachable by normal movement at all,
@@ -162,16 +161,15 @@ export const LEVEL_003: LevelConfig = {
 
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
-    // scattered: two toll the open bypass routes around Debris Field walls
-    // (A's south gap, D's south gap), one sits on Entry's early route out,
-    // one tolls the final approach to the Probe's sealed ring. Cycles the
-    // three sourced Nebula Field textures (2026-08-21, mirroring Debris
-    // Field's alt2/alt3 precedent) so four instances on one map don't read
-    // as one sprite copy-pasted four times.
+    // scattered: three toll open bypass routes around Debris Field walls
+    // (A's south gap, D's south gap, D's north gap), one sits on Entry's
+    // early route out. Cycles the three sourced Nebula Field textures
+    // (2026-08-21, mirroring Debris Field's alt2/alt3 precedent) so four
+    // instances on one map don't read as one sprite copy-pasted four times.
     { type: 'nebulaField', x: 2000, y: 1750, textureKey: NEBULA_TEXTURES[0] }, // Wall A's south bypass
     { type: 'nebulaField', x: 3900, y: 1750, textureKey: NEBULA_TEXTURES[1] }, // Wall D's south bypass
     { type: 'nebulaField', x: 1200, y: 900, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 4550, y: 950, textureKey: NEBULA_TEXTURES[0] }, // tolls the approach to the Probe's ring, between it and Exit
+    { type: 'nebulaField', x: 4125, y: 250, textureKey: NEBULA_TEXTURES[0] }, // Wall D's north bypass, moved 2026-08-24 from (4550, 950)
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager (see the
     // file-level comment above). Initial positions only, clear of every

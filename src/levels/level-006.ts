@@ -214,7 +214,7 @@ export const LEVEL_006: LevelConfig = {
     // sourced Nebula Field textures (2026-08-21, mirroring Debris Field's
     // alt2/alt3 precedent) so four instances on one map don't read as one
     // sprite copy-pasted four times.
-    { type: 'nebulaField', x: 2200, y: 3350, textureKey: NEBULA_TEXTURES[0] }, // tolls wall 0's bottom gap -- the maze's western entrance
+    { type: 'nebulaField', x: 2200, y: 2900, textureKey: NEBULA_TEXTURES[0] }, // tolls wall 0's bottom gap right at its threshold -- the maze's western entrance; moved 2026-08-24 from (2200, 3350), deeper in the gap
     { type: 'nebulaField', x: 5200, y: 300, textureKey: NEBULA_TEXTURES[1] }, // tolls wall 5's top gap -- the maze's eastern exit, right before the Beacon approach
     { type: 'nebulaField', x: 900, y: 2600, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the Probe/maze
     { type: 'nebulaField', x: 750, y: 1175, textureKey: NEBULA_TEXTURES[0] }, // bridges the close Probe<->Exit hop

@@ -82,9 +82,9 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // (§11.11) are pushed far apart (Probe<->Beacon ~4680px, Beacon<->Exit
 // ~4305px; Probe<->Exit, not consecutive, left close at ~740px), Debris
 // Field walls stay the primary hazard (four chained barriers, texture/
-// rotation variety), and Nebula Field is placed with intent -- two toll
-// the open bypass routes around Debris Field walls, one sits early on
-// Entry's route out, one bridges the close Probe<->Exit hop.
+// rotation variety), and Nebula Field is placed with intent -- three toll
+// open bypass routes around Debris Field walls, one sits early on Entry's
+// route out.
 //
 // Deliberately NOT repeating level-003's sealed debrisRing() around the
 // Probe: that was specific to reinforcing a just-granted ability
@@ -131,16 +131,15 @@ export const LEVEL_004: LevelConfig = {
 
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
-    // scattered: two toll the open bypass routes around Debris Field walls
-    // (A's north gap, D's north gap), one sits on Entry's early route out,
-    // one bridges the close Probe<->Exit hop. Cycles the three sourced
-    // Nebula Field textures (2026-08-21, mirroring Debris Field's
-    // alt2/alt3 precedent) so four instances on one map don't read as one
-    // sprite copy-pasted four times.
+    // scattered: three toll open bypass routes around Debris Field walls
+    // (A's north gap, A's south gap, D's north gap), one sits on Entry's
+    // early route out. Cycles the three sourced Nebula Field textures
+    // (2026-08-21, mirroring Debris Field's alt2/alt3 precedent) so four
+    // instances on one map don't read as one sprite copy-pasted four times.
     { type: 'nebulaField', x: 3375, y: 1238, textureKey: NEBULA_TEXTURES[0] }, // Wall A's north bypass
     { type: 'nebulaField', x: 1406, y: 1294, textureKey: NEBULA_TEXTURES[1] }, // Wall D's north bypass
     { type: 'nebulaField', x: 4050, y: 2138, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 900, y: 2138, textureKey: NEBULA_TEXTURES[0] }, // bridges the close Probe<->Exit hop
+    { type: 'nebulaField', x: 3375, y: 2900, textureKey: NEBULA_TEXTURES[0] }, // Wall A's south bypass, moved 2026-08-24 from (900, 2138)
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager (see the
     // file-level comment above). Initial positions only, clear of every

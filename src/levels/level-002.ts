@@ -97,8 +97,8 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // rather than as a third hazard type sprinkled in -- two toll the open
 // bypass routes around Debris Field walls so the "easy" detour still costs
 // energy rather than being free, one sits early on Entry's route out, and
-// one bridges the short Probe<->Exit hop so even that close pair isn't
-// hazard-free.
+// one covers the open south corridor beneath Walls A and D (moved there
+// 2026-08-24; originally bridged the short Probe<->Exit hop).
 //
 // 2026-08-15, second pass: every placement below is level-002's original
 // layout point-reflected through the map's center (x, y) -> (width - x,
@@ -145,7 +145,7 @@ export const LEVEL_002: LevelConfig = {
     { type: 'nebulaField', x: 2100, y: 775, textureKey: NEBULA_TEXTURES[0] }, // Wall A's north (wide) bypass
     { type: 'nebulaField', x: 900, y: 975, textureKey: NEBULA_TEXTURES[1] }, // Wall D's north bypass, guards the Probe/Exit corridor
     { type: 'nebulaField', x: 2700, y: 1325, textureKey: NEBULA_TEXTURES[2] }, // early on Entry's route toward the map center
-    { type: 'nebulaField', x: 700, y: 1375, textureKey: NEBULA_TEXTURES[0] }, // bridges the close Probe<->Exit hop
+    { type: 'nebulaField', x: 1900, y: 1900, textureKey: NEBULA_TEXTURES[0] }, // south bypass beneath Walls A and D, moved 2026-08-24 from (700, 1375)
 
     // Debris Field walls -- four chained barriers. None span a full map
     // dimension, so each leaves clear space at both ends to route around.

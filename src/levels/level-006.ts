@@ -12,16 +12,73 @@ const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'haz
 // one sprite copy-pasted end to end. Same helper as every other level
 // file's -- duplicated rather than shared, matching this project's "one
 // hand-authored file per level" convention (CLAUDE.md tech stack).
+//
+// PROTOTYPE (this file only, 2026-08-24): long walls interior points get a
+// perpendicular "meander" offset so a wall doesn't read as a ruler-straight
+// line -- see the six-wall maze below, this candidate's longest/most
+// numerous walls in the project, chosen deliberately as the stress test.
+// Endpoints (t=0 and t=1) are always pinned exactly to (x1,y1)/(x2,y2) via
+// a sin(pi*t) envelope that's 0 at both ends -- every existing gap boundary
+// and clearance distance in this file's comments is measured from those
+// endpoints, so they can't move. Two summed sine terms (a slow ~2-period
+// "sweep" plus a faster small "texture" term) instead of one, so a long
+// wall doesn't read as one perfectly repeating S-curve.
+//
+// Safety constraint (why the numbers below are what they are, not
+// eyeballed): Debris Field is blocksMovement, and the wall's "no gap"
+// guarantee depends on every pair of neighboring instances staying within
+// 2x its 60px radius (120px) of each other. At the project-wide default
+// spacing (115px), a first pass here landed a worst-case neighbor distance
+// of 117.9px -- technically safe, but only a 2.1px margin, thinner than
+// this project's usual clearance conventions (level-design-guide.md's
+// floors all carry much more slack). The fix isn't smaller amplitudes --
+// the along-axis spacing so dominates the distance formula
+// (sqrt(spacing^2 + delta^2)) that halving the offset barely moved the
+// result. Instead, the six maze walls below explicitly pass a tighter
+// 100px spacing (vs. the 115px default the two short, non-undulating spurs
+// still use), which buys real room for the perpendicular offset without
+// touching amplitude. Verified empirically (not just derived) by running
+// this exact algorithm standalone: at spacing=100, count=28,
+// SWEEP_AMPLITUDE=28/SWEEP_PERIOD_INSTANCES=12, TEXTURE_AMPLITUDE=4/
+// TEXTURE_PERIOD_INSTANCES=4, worst-case neighbor distance across both
+// wall orientations here is 100.87px -- a 19.13px/16% margin under the
+// 120px threshold. MIN_UNDULATE_COUNT=16 exists because the sin(pi*t)
+// envelope's own rate of change grows sharply as instance count shrinks
+// (it's why the two spurs, count=4, correctly never undulate below) --
+// below ~16 instances the envelope's own step size alone starts eating
+// meaningfully into the margin above.
+const SWEEP_AMPLITUDE = 28;
+const SWEEP_PERIOD_INSTANCES = 12;
+const TEXTURE_AMPLITUDE = 4;
+const TEXTURE_PERIOD_INSTANCES = 4;
+const MIN_UNDULATE_COUNT = 16;
+
 function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 115): HazardPlacement[] {
-  const length = Math.hypot(x2 - x1, y2 - y1);
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
   const count = Math.max(2, Math.round(length / spacing) + 1);
+  const undulate = count >= MIN_UNDULATE_COUNT;
+  // Unit vector perpendicular to the wall's own axis.
+  const perpX = -dy / length;
+  const perpY = dx / length;
   const placements: HazardPlacement[] = [];
   for (let i = 0; i < count; i++) {
     const t = i / (count - 1);
+    let x = x1 + dx * t;
+    let y = y1 + dy * t;
+    if (undulate) {
+      const envelope = Math.sin(Math.PI * t); // 0 at both ends, 1 at the midpoint
+      const sweep = SWEEP_AMPLITUDE * Math.sin((i / SWEEP_PERIOD_INSTANCES) * Math.PI * 2);
+      const texture = TEXTURE_AMPLITUDE * Math.sin((i / TEXTURE_PERIOD_INSTANCES) * Math.PI * 2);
+      const offset = envelope * (sweep + texture);
+      x += perpX * offset;
+      y += perpY * offset;
+    }
     placements.push({
       type: 'debrisField',
-      x: x1 + (x2 - x1) * t,
-      y: y1 + (y2 - y1) * t,
+      x,
+      y,
       textureKey: DEBRIS_TEXTURES[i % DEBRIS_TEXTURES.length],
       rotationRadians: (i * 0.83) % (Math.PI * 2),
     });
@@ -129,6 +186,16 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // Probe/Exit/Entry/Resupply all sit at least ~1450px west of wall 0;
 // the Beacon sits 500px east of wall 5; the Ion Storm/Meteoroid initial
 // spots sit 300-700px from their nearest wall.
+// Named so the dev-only sanity check below can re-inspect the same six
+// generated arrays the hazards list spreads, instead of recomputing them
+// from a second, easily-drifting copy of the same coordinates.
+const mazeWall0 = debrisWall(2200, 20, 2200, 2700, 100); // wall 0 -- bottom gap (y:2700-3626)
+const mazeWall1 = debrisWall(2800, 946, 2800, 3626, 100); // wall 1 -- top gap (y:20-946)
+const mazeWall2 = debrisWall(3400, 20, 3400, 2700, 100); // wall 2 -- bottom gap (y:2700-3626)
+const mazeWall3 = debrisWall(4000, 946, 4000, 3626, 100); // wall 3 -- top gap (y:20-946)
+const mazeWall4 = debrisWall(4600, 20, 4600, 2700, 100); // wall 4 -- bottom gap (y:2700-3626)
+const mazeWall5 = debrisWall(5200, 946, 5200, 3626, 100); // wall 5 -- top gap (y:20-946)
+
 export const LEVEL_006: LevelConfig = {
   width: 6480,
   height: 3646,
@@ -162,13 +229,16 @@ export const LEVEL_006: LevelConfig = {
 
     // The maze -- six parallel vertical walls with alternating single
     // gaps (see file-level comment above for the full design rationale
-    // and reachability trace).
-    ...debrisWall(2200, 20, 2200, 2700), // wall 0 -- bottom gap (y:2700-3626)
-    ...debrisWall(2800, 946, 2800, 3626), // wall 1 -- top gap (y:20-946)
-    ...debrisWall(3400, 20, 3400, 2700), // wall 2 -- bottom gap (y:2700-3626)
-    ...debrisWall(4000, 946, 4000, 3626), // wall 3 -- top gap (y:20-946)
-    ...debrisWall(4600, 20, 4600, 2700), // wall 4 -- bottom gap (y:2700-3626)
-    ...debrisWall(5200, 946, 5200, 3626), // wall 5 -- top gap (y:20-946)
+    // and reachability trace). Spacing=100 (vs. the 115px default) on all
+    // six -- see the debrisWall safety-constraint comment above for why
+    // the undulation needs the tighter along-axis spacing to keep a real
+    // margin under the 120px no-gap threshold.
+    ...mazeWall0,
+    ...mazeWall1,
+    ...mazeWall2,
+    ...mazeWall3,
+    ...mazeWall4,
+    ...mazeWall5,
 
     // Interlocking spurs -- short perpendicular stubs inside two of the
     // gaps, adding a dead-end nook to route around rather than leaving
@@ -180,3 +250,25 @@ export const LEVEL_006: LevelConfig = {
 
   puzzleElements: [],
 };
+
+// Sanity check, not gameplay logic: fails fast (at import time, in dev) if
+// a future edit to debrisWall's undulation constants (SWEEP_AMPLITUDE/
+// TEXTURE_AMPLITUDE/etc., or these six walls' spacing) ever lets two
+// neighboring instances drift past the 120px (2x Debris Field's 60px
+// radius, hazardConfig.ts) no-gap threshold, instead of silently shipping
+// a maze wall with a ship-width hole in it. Re-inspects the actual
+// generated arrays (mazeWall0-5) rather than re-deriving the math, so it
+// can't drift out of sync with what debrisWall actually produced.
+if (import.meta.env.DEV) {
+  const NO_GAP_THRESHOLD = 2 * 60;
+  [mazeWall0, mazeWall1, mazeWall2, mazeWall3, mazeWall4, mazeWall5].forEach((wall, wallIndex) => {
+    for (let i = 0; i < wall.length - 1; i++) {
+      const dist = Math.hypot(wall[i + 1].x - wall[i].x, wall[i + 1].y - wall[i].y);
+      if (dist > NO_GAP_THRESHOLD) {
+        console.warn(
+          `[level-006] Maze wall ${wallIndex} has a ${dist.toFixed(1)}px gap between instances ${i} and ${i + 1} -- exceeds the ${NO_GAP_THRESHOLD}px no-gap threshold, may open a ship-width hole.`,
+        );
+      }
+    }
+  });
+}

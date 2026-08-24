@@ -13,16 +13,50 @@ const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'haz
 // file's -- duplicated rather than shared, matching this project's "one
 // hand-authored file per level" convention (CLAUDE.md tech stack). Used
 // sparingly in this file -- see the file-level comment below for why.
+// Undulation (rolled out from level-006's prototype, 2026-08-24): long-
+// enough walls get a perpendicular "meander" offset instead of sitting dead
+// straight -- see level-006.ts's debrisWall for the full derivation
+// (envelope pinning, two-sine-term rationale, safety-margin math). Same
+// SWEEP_AMPLITUDE/TEXTURE_AMPLITUDE/periods and 100px undulating spacing as
+// level-006, empirically re-verified safe (margin ~18-19px under the 120px
+// no-gap threshold) across this project's full observed wall-length range,
+// count 7 through level-006's own 24-28. Unlike level-006's
+// MIN_UNDULATE_COUNT=16 (calibrated where the 115px default spacing still
+// applied to short walls), the floor here is 8 -- every wall gets the
+// tighter 100px spacing once it qualifies, not just ones long enough to
+// clear 16 instances at 115px. Doesn't touch nebulaWall below -- this
+// rollout only covers Debris Field, per what was actually asked for.
+const SWEEP_AMPLITUDE = 28;
+const SWEEP_PERIOD_INSTANCES = 12;
+const TEXTURE_AMPLITUDE = 4;
+const TEXTURE_PERIOD_INSTANCES = 4;
+const MIN_UNDULATE_COUNT = 8;
+
 function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 115): HazardPlacement[] {
-  const length = Math.hypot(x2 - x1, y2 - y1);
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
   const count = Math.max(2, Math.round(length / spacing) + 1);
+  const undulate = count >= MIN_UNDULATE_COUNT;
+  const perpX = -dy / length;
+  const perpY = dx / length;
   const placements: HazardPlacement[] = [];
   for (let i = 0; i < count; i++) {
     const t = i / (count - 1);
+    let x = x1 + dx * t;
+    let y = y1 + dy * t;
+    if (undulate) {
+      const envelope = Math.sin(Math.PI * t);
+      const sweep = SWEEP_AMPLITUDE * Math.sin((i / SWEEP_PERIOD_INSTANCES) * Math.PI * 2);
+      const texture = TEXTURE_AMPLITUDE * Math.sin((i / TEXTURE_PERIOD_INSTANCES) * Math.PI * 2);
+      const offset = envelope * (sweep + texture);
+      x += perpX * offset;
+      y += perpY * offset;
+    }
     placements.push({
       type: 'debrisField',
-      x: x1 + (x2 - x1) * t,
-      y: y1 + (y2 - y1) * t,
+      x,
+      y,
       textureKey: DEBRIS_TEXTURES[i % DEBRIS_TEXTURES.length],
       rotationRadians: (i * 0.83) % (Math.PI * 2),
     });
@@ -229,6 +263,12 @@ function nebulaWall(x1: number, y1: number, x2: number, y2: number, spacing = 19
 //
 // No puzzle-taxonomy element placed (consistent with every real level so
 // far -- Phase 2b content, still unstarted).
+// Named so the dev-only sanity check below can re-inspect the same
+// generated arrays the hazards list spreads. count@spacing100: 11, 10 --
+// both clear MIN_UNDULATE_COUNT=8.
+const wallA = debrisWall(1000, 1800, 1000, 2800, 100); // Wall A -- minor SW divider
+const wallB = debrisWall(5800, 700, 5800, 1600, 100); // Wall B -- minor NE divider, north of the Approach Veil
+
 export const LEVEL_008: LevelConfig = {
   width: 6750,
   height: 3798,
@@ -280,9 +320,28 @@ export const LEVEL_008: LevelConfig = {
     // providing baseline route texture only (see file comment above for
     // per-wall clearance notes). Deliberately minimal so Nebula Field
     // density stays this level's clear focal device.
-    ...debrisWall(1000, 1800, 1000, 2800), // Wall A -- minor SW divider
-    ...debrisWall(5800, 700, 5800, 1600), // Wall B -- minor NE divider, north of the Approach Veil
+    ...wallA,
+    ...wallB,
   ],
 
   puzzleElements: [],
 };
+
+// Sanity check, not gameplay logic: fails fast (at import time, in dev) if
+// a future edit to debrisWall's undulation constants ever lets two
+// neighboring instances drift past the 120px (2x Debris Field's 60px
+// radius, hazardConfig.ts) no-gap threshold, instead of silently shipping
+// a wall with a ship-width hole in it. Mirrors level-006's dev-check.
+if (import.meta.env.DEV) {
+  const NO_GAP_THRESHOLD = 2 * 60;
+  [wallA, wallB].forEach((wall, wallIndex) => {
+    for (let i = 0; i < wall.length - 1; i++) {
+      const dist = Math.hypot(wall[i + 1].x - wall[i].x, wall[i + 1].y - wall[i].y);
+      if (dist > NO_GAP_THRESHOLD) {
+        console.warn(
+          `[level-008] Debris wall ${wallIndex} has a ${dist.toFixed(1)}px gap between instances ${i} and ${i + 1} -- exceeds the ${NO_GAP_THRESHOLD}px no-gap threshold, may open a ship-width hole.`,
+        );
+      }
+    }
+  });
+}

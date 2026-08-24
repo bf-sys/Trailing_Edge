@@ -15,18 +15,24 @@ export function hexColor(n: number): string {
   return '#' + n.toString(16).padStart(6, '0');
 }
 
-// Debris Field has no placeholderTexture in hazardConfig.ts -- it's the one
-// hazard with final sourced art already loaded in-game, so there's no
-// placeholder hex to reuse. Neutral rock/ice brown chosen to read as "solid
-// obstacle" distinct from the other four hazards' saturated placeholder hues.
+// Debris Field, Ion Storm, Nebula Field, and Meteoroid have no
+// placeholderTexture in hazardConfig.ts -- all four now have final sourced
+// art loaded in-game (Ion Storm/Nebula Field/Meteoroid since 2026-08-21/22's
+// art/collision passes), so there's no placeholder hex to reuse. Fallback
+// hues chosen only for legibility/distinctness against the dark canvas and
+// each other. Solar Flare is the only hazard still on placeholder art as of
+// this tool's last update -- see docs/STATUS.md.
 const DEBRIS_FIELD_COLOR = '#8a7f6b';
+const ION_STORM_COLOR = '#818cf8';
+const NEBULA_FIELD_COLOR = '#c084fc';
+const METEOROID_COLOR = '#f87171';
 
 export const HAZARD_COLORS: Record<HazardType, string> = {
   debrisField: DEBRIS_FIELD_COLOR,
   solarFlare: hexColor(hazardConfig.solarFlare.placeholderTexture!.color),
-  ionStorm: hexColor(hazardConfig.ionStorm.placeholderTexture!.color),
-  nebulaField: hexColor(hazardConfig.nebulaField.placeholderTexture!.color),
-  meteoroid: hexColor(hazardConfig.meteoroid.placeholderTexture!.color),
+  ionStorm: ION_STORM_COLOR,
+  nebulaField: NEBULA_FIELD_COLOR,
+  meteoroid: METEOROID_COLOR,
 };
 
 export const HAZARD_LABELS: Record<HazardType, string> = {

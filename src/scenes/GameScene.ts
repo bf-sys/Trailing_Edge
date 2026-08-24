@@ -4,6 +4,7 @@ import '../systems'; // side-effect import: registers any systems that exist so 
 import { getPlayerShip } from '../systems/ExplorationController';
 import { HazardZoneElement } from '../objects/HazardZoneElement';
 import { MovingHazardManager } from '../objects/MovingHazardManager';
+import { EnergyNodeManager } from '../objects/EnergyNodeManager';
 import { HazardScanOverlay } from '../objects/HazardScanOverlay';
 import { TeleportRangeRing } from '../objects/TeleportRangeRing';
 import { ResupplyPoint } from '../objects/ResupplyPoint';
@@ -64,6 +65,7 @@ export class GameScene extends Phaser.Scene {
   private hazards: HazardZoneElement[] = [];
   private movingHazards: HazardZoneElement[] = [];
   private movingHazardManager!: MovingHazardManager;
+  private energyNodeManager!: EnergyNodeManager;
   private resupplyPoints: ResupplyPoint[] = [];
   private puzzleElements: PuzzleElementBase[] = [];
   private hudOverlay!: HudOverlay;
@@ -172,6 +174,18 @@ export class GameScene extends Phaser.Scene {
     // constructed here rather than alongside the hazard-placement loop.
     this.movingHazardManager = new MovingHazardManager(this.movingHazards, tracker, this.levelWidth, this.levelHeight);
 
+    // Energy pickups (2026-08-24) -- constructed here since it needs both
+    // this.hazards (for blocksMovement keep-out) and tracker (for
+    // objective-weighted respawn), same as movingHazardManager above.
+    this.energyNodeManager = new EnergyNodeManager(
+      this,
+      this.hazards,
+      tracker,
+      config.entryWormholeLocation,
+      this.levelWidth,
+      this.levelHeight,
+    );
+
     new ProbeObject(this, { ...config.probeLocation, textureKey: 'probe', radius: 27 }, tracker);
 
     new RelayBeaconObject(
@@ -245,6 +259,7 @@ export class GameScene extends Phaser.Scene {
     SystemRegistry.all().forEach((system) => system.update?.(time, delta));
     this.hazards.forEach((hazard) => hazard.update(time, delta));
     this.movingHazardManager.update();
+    this.energyNodeManager.update(time, delta);
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
     this.puzzleElements.forEach((element) => element.update(time, delta));
     this.hudOverlay.update();

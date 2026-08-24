@@ -29,7 +29,11 @@ export class ShipSurvivalComponent extends Phaser.Events.EventEmitter {
   constructor() {
     super();
     this.maxEnergy = survivalConfig.maxEnergy;
-    this.currentEnergy = this.maxEnergy;
+    // Starts empty, not full (2026-08-24, alongside EnergyNodeElement
+    // pickups) -- no level requires energy on arrival, so starting full
+    // just meant the first pickup or two of passive regen went unnoticed.
+    // Structure still starts full -- only energy's start value changed.
+    this.currentEnergy = 0;
     this.maxStructure = survivalConfig.maxStructure;
     this.currentStructure = this.maxStructure;
   }
@@ -75,6 +79,16 @@ export class ShipSurvivalComponent extends Phaser.Events.EventEmitter {
   repairStructure(amount: number): void {
     if (amount <= 0 || this.currentStructure >= this.maxStructure) return;
     this.currentStructure = Math.min(this.maxStructure, this.currentStructure + amount);
+    this.emitResourceChanged();
+  }
+
+  // EnergyNodeElement pickups only (added 2026-08-24, alongside dropping
+  // survivalConfig.energyRegenPerSecond 8 -> 2) -- energy's equivalent of
+  // repairStructure above: a flat, immediate grant rather than a per-second
+  // rate.
+  rechargeEnergy(amount: number): void {
+    if (amount <= 0 || this.currentEnergy >= this.maxEnergy) return;
+    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + amount);
     this.emitResourceChanged();
   }
 

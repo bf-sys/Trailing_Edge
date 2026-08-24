@@ -4,6 +4,7 @@ import { createBackgroundSetPieceTextures } from '../objects/BackgroundSetPieces
 import { createDestinationMarkerTexture } from '../objects/DestinationMarker';
 import { createThrusterParticleTexture } from '../objects/ShipThrusterTrail';
 import { createResupplySparkTexture } from '../objects/ResupplyPoint';
+import { createEnergyNodeTexture } from '../objects/EnergyNodeElement';
 
 export const BOOT_SCENE_KEY = 'BootScene';
 
@@ -40,6 +41,7 @@ export class BootScene extends Phaser.Scene {
     createDestinationMarkerTexture(this);
     createThrusterParticleTexture(this);
     createResupplySparkTexture(this);
+    createEnergyNodeTexture(this);
     this.scene.start('TitleScene');
   }
 }

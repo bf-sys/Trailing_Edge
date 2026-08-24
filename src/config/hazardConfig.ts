@@ -71,11 +71,14 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   },
 
   // 2026-08-11: energy costs below bumped so all three energy-draining
-  // hazards clearly outdrain survivalConfig.energyRegenPerSecond (8/s) --
-  // at the old values (solarFlare avg 4.8/s, ionStorm/nebulaField 6/s),
-  // passive regen ran ahead of drain every frame (regenEnergy() runs before
-  // hazard update() in GameScene.update()), so the energy bar visibly held
-  // near max instead of draining. No regen-side change made -- regen is
+  // hazards clearly outdrain survivalConfig.energyRegenPerSecond (8/s at
+  // the time -- dropped to 2/s 2026-08-24 alongside energyNodeConfig.ts's
+  // pickups, so these values outdrain the current baseline even more
+  // clearly than when they were tuned). At the old pre-2026-08-11 values
+  // (solarFlare avg 4.8/s, ionStorm/nebulaField 6/s), passive regen ran
+  // ahead of drain every frame (regenEnergy() runs before hazard update()
+  // in GameScene.update()), so the energy bar visibly held near max
+  // instead of draining. No regen-side change made here -- regen is
   // already the smallest lever in the system, and "weaker regen inside a
   // hazard" is equivalent to a bigger hazard-side number anyway.
   solarFlare: {

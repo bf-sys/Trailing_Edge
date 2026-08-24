@@ -161,6 +161,33 @@ purpose — it's what makes it possible, later, to also give Debris Field a
 small structure cost without further code changes (not decided/scoped
 yet, purely kept easy).
 
+**Energy Node pickups added (2026-08-24, user request/design pass).**
+SubSpace's "greens," scaled down: `EnergyNodeElement`/`EnergyNodeManager`
+(new, see Architecture contract below) scatter a fixed pool of pickups
+per level that grant a flat energy amount on contact and reappear
+elsewhere (weighted toward the current objective) after a short cooldown.
+Landed alongside dropping `survivalConfig.energyRegenPerSecond` `8` → `2`
+so the pickups are load-bearing rather than pure upside on top of an
+already-adequate passive trickle — this is the first energy-economy lever
+pulled specifically to add moment-to-moment routing decisions (Meso/
+Exploration pillar), distinct from the existing hazard/ability costs.
+Playtested in-browser on `level-001` (spawn/keep-out, glow/pulse/burst
+VFX, collect → cooldown → respawn-elsewhere all confirmed via direct
+game-state inspection, zero console errors); tuning values
+(`poolSize: 5`, `rechargeAmount: 10`, `respawnCooldownSeconds: 6`) are a
+first pass, not playtested for feel over a full run yet — expect these to
+move once the regen-rate drop is played against real levels.
+
+**Ships start each level at 0 energy, not full (2026-08-24, same-day
+follow-up).** `ShipSurvivalComponent`'s constructor now sets
+`currentEnergy = 0` (structure still starts full) — no level requires
+energy on arrival, so starting full just meant a few seconds of passive
+regen (and the first pickup or two) went unnoticed before the player ever
+felt short on energy. Applies uniformly to a fresh level start and a
+hard-fail `scene.restart()` (both construct a fresh `ShipSurvivalComponent`
+via `PlayerShip`) — consistent with the existing "resets ... energy to
+the level's starting values" contract language, not a special case.
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
 but not yet sourced, see its 2026-08-08 entry). Other reference docs live
@@ -228,7 +255,10 @@ imports; **nobody hand-edits `create()`.**
   mana-like ability-gating resource that regenerates passively and never
   fails the level on its own. **Hard rule: no puzzle element, hazard, or
   ability may touch these fields directly** — only
-  `consumeEnergy`/`consumeStructure`/`regenEnergy`/`repairStructure`.
+  `consumeEnergy`/`consumeStructure`/`regenEnergy`/`repairStructure`/
+  `rechargeEnergy` (the last added 2026-08-24 for `EnergyNodeElement`
+  pickups — energy's equivalent of `repairStructure`: a flat, immediate
+  grant rather than a per-second rate).
   **Regression to watch for:** don't let any code path treat energy
   depletion as a failure condition — that was deliberately removed.
 - **`CheckpointManager`** — **deferred, not built for the initial 5-week
@@ -596,6 +626,40 @@ imports; **nobody hand-edits `create()`.**
   every frame via `getTeleportAimPoint()`, same reasoning
   `ShipStatusArcs.update()` already uses for continuous ship-relative
   tracking.
+- **`EnergyNodeElement`/`EnergyNodeManager`** — added 2026-08-24 (see
+  Current project state above). `EnergyNodeManager` owns a fixed pool
+  (`energyNodeConfig.poolSize`) of `EnergyNodeElement` pickups per level —
+  same `GameScene`-owned, reset-per-`create()`, not-a-`SystemRegistry`-
+  singleton lifecycle as `MovingHazardManager`, and the same "wrap, don't
+  destroy/respawn" design (a fixed instance toggles visible/hidden and
+  its Arcade body's `enable` flag rather than being recreated). Each
+  pickup is an instant overlap-trigger, same arrival pattern as
+  `ProbeObject`, granting `energyNodeConfig.rechargeAmount` via
+  `ShipSurvivalComponent.rechargeEnergy()` on contact, then starts a
+  `respawnCooldownSeconds` timer before `EnergyNodeManager` repositions it.
+  Placement (both the initial scatter and every respawn) is rejection-
+  sampled against three keep-outs: never inside a `blocksMovement` hazard's
+  own footprint, never within `entryKeepOutRadius` of the level's Entry
+  Wormhole, and (added 2026-08-24, same-day follow-up) never within
+  `edgeMargin` of any level boundary — a respawn's objective bias points
+  toward the objective, not away from map edges, so an objective placed
+  near a wall was producing nodes visibly flush against it before this.
+  A respawn additionally biases toward the current
+  objective — the same aim-a-point-near-the-target-plus-jitter idea
+  `MovingHazardManager` uses for a hazard's respawn heading
+  (`objectiveJitterRadius`), except here the jittered point IS the
+  landing position (`respawnJitterRadius`, a scatter radius sampled
+  uniform-in-disk, same technique as `ResupplyPoint.pickImpactPoint()`),
+  not a direction to travel through. No sourced art exists for this
+  pickup — a generated blue/white glow texture (reusing
+  `shipStatusArcConfig.energyColor`) is the icon itself, not just its
+  particle trail, with a breathing scale/alpha tween, a continuous
+  ambient sparkle emitter, and a one-shot burst emitter on collection
+  (`energyNodeVfxConfig.ts`). Landed alongside dropping
+  `survivalConfig.energyRegenPerSecond` `8` → `2` (see Current project
+  state above) so passive regen alone is no longer sufficient — the
+  pickups are a deliberate routing incentive, not a bonus on top of an
+  already-adequate trickle.
 
 ## Development plan shape (GDD §12)
 

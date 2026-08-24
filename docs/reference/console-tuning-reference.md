@@ -68,7 +68,7 @@ resource, energy just gates ability use and never fails the level).
 |---|---|---|
 | `maxEnergy` | `100` | Energy pool size |
 | `maxStructure` | `100` | Structure pool size |
-| `energyRegenPerSecond` | `8` | Passive energy regen rate — always on, no resupply object needed |
+| `energyRegenPerSecond` | `2` (dropped from `8` 2026-08-24 alongside `energyNode` below) | Passive energy regen rate — always on, no resupply object needed |
 | `structureRepairPerSecond` | `20` | Repair rate while overlapping an AsteroidField resupply point |
 
 ```js
@@ -76,6 +76,38 @@ window.tuning.survival.structureRepairPerSecond = 50  // faster repair at Astero
 window.tuning.survival.energyRegenPerSecond = 20      // faster passive energy regen
 window.tuning.survival.maxStructure = 200             // bigger structure pool (won't heal existing run above the old max mid-level)
 ```
+
+## `window.tuning.energyNode` (`src/config/energyNodeConfig.ts`)
+
+SubSpace-style "green" pickups (added 2026-08-24, alongside dropping
+`survival.energyRegenPerSecond` `8` → `2`) — a fixed pool of
+`EnergyNodeElement` instances scattered per level (`EnergyNodeManager`),
+each granting a flat energy amount on contact and reappearing elsewhere,
+weighted toward the current objective, after a cooldown.
+
+| Field | Default | What it does |
+|---|---|---|
+| `poolSize` | `5` | Nodes live on a level at once |
+| `rechargeAmount` | `10` | Flat energy granted per pickup |
+| `respawnCooldownSeconds` | `6` | Delay after collection before a node reappears |
+| `radius` | `16` | Collision/visual radius |
+| `entryKeepOutRadius` | `300` | Never place within this distance (px) of the level's Entry Wormhole |
+| `hazardKeepOutBuffer` | `40` | Extra clearance (px) beyond a `blocksMovement` hazard's own radius |
+| `edgeMargin` | `200` | Never place within this distance (px) of any level boundary — added so a respawn biased toward an objective near the map edge doesn't land flush against the wall |
+| `placementAttempts` | `20` | Rejection-sampling retry cap before a candidate position is accepted unchecked |
+| `respawnJitterRadius` | `600` | Scatter radius (px) around the current objective target that a respawn position is sampled from |
+
+```js
+window.tuning.energyNode.poolSize = 8            // more pickups live at once
+window.tuning.energyNode.rechargeAmount = 25     // bigger grant per pickup
+window.tuning.energyNode.respawnCooldownSeconds = 2  // pickups come back faster
+```
+
+**Note:** `poolSize` is only read once, in `GameScene.create()` (it sizes
+the pool `EnergyNodeManager` constructs) — a console edit needs a level
+restart to take effect. Every other field above is read fresh at the
+relevant moment (collection, cooldown countdown, respawn placement), so
+edits apply to the next pickup/respawn with no restart needed.
 
 ## `window.tuning.waypointTint` (`src/config/waypointTintConfig.ts`)
 

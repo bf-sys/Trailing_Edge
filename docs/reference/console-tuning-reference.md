@@ -98,6 +98,7 @@ current objective, after a cooldown.
 | `edgeMargin` | `200` | Never place within this distance (px) of any level boundary — added so a respawn biased toward an objective near the map edge doesn't land flush against the wall |
 | `placementAttempts` | `20` | Rejection-sampling retry cap before a candidate position is accepted unchecked |
 | `respawnJitterRadius` | `600` | Scatter radius (px) around the current objective target that a respawn position is sampled from |
+| `maxNodesNearObjective` | `5` | Cap on how many *live* nodes may sit within `respawnJitterRadius` of the current objective at once — once that many are already there, further respawns fall back to plain uniform placement instead of piling on |
 
 **Pool size scales with level area (2026-08-25)**, via
 `computeEnergyNodePoolSize(levelWidth, levelHeight)` — the actual live

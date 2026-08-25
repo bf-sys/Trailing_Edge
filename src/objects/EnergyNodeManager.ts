@@ -20,7 +20,9 @@ import { energyNodeConfig, computeEnergyNodePoolSize } from '../config/energyNod
 // the same aim-a-point-near-the-target-plus-jitter idea
 // MovingHazardManager uses for a hazard's respawn heading, except here the
 // jittered point IS the landing position (a scatter radius), not a
-// direction to travel through.
+// direction to travel through -- capped by maxNodesNearObjective so that
+// bias can't pile an unbounded number of nodes on one spot (see
+// pickRespawnPosition below).
 export class EnergyNodeManager {
   private readonly nodes: EnergyNodeElement[] = [];
 
@@ -62,8 +64,26 @@ export class EnergyNodeManager {
   // current objective target, same technique ResupplyPoint.pickImpactPoint()
   // uses -- a plain `Math.random() * radius` would cluster points toward the
   // center instead of spreading evenly across the disk.
+  //
+  // Capped by maxNodesNearObjective (2026-08-25): every node in the pool
+  // biases toward the same single objective, so on a large, scaled-up pool
+  // a player lingering near one objective could otherwise cause a
+  // comically dense pickup cluster to accumulate there over time. Checked
+  // fresh on every call (a live count, not a running tally), so it
+  // self-corrects as nodes move away and needs no reset when the objective
+  // changes.
   private pickRespawnPosition(): Point {
     const target = this.tracker.getCurrentObjectiveTarget();
+    const nodesNearObjective = this.nodes.filter(
+      (node) =>
+        node.isLive() &&
+        Phaser.Math.Distance.Between(node.getPosition().x, node.getPosition().y, target.x, target.y) <=
+          energyNodeConfig.respawnJitterRadius,
+    ).length;
+    if (nodesNearObjective >= energyNodeConfig.maxNodesNearObjective) {
+      return this.pickScatterPosition();
+    }
+
     for (let attempt = 0; attempt < energyNodeConfig.placementAttempts; attempt++) {
       const r = energyNodeConfig.respawnJitterRadius * Math.sqrt(Math.random());
       const angle = Math.random() * Math.PI * 2;

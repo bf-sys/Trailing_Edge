@@ -198,6 +198,29 @@ Not yet playtested for feel on a larger level (level-007 would now spawn
 ~43 nodes vs. the old flat 5) — the formula fixes the density math but the
 resulting absolute counts on the largest levels haven't been played yet.
 
+**Energy Node respawns capped near a single objective (2026-08-25, same-day
+follow-up, user request).** Every node in the pool biases its respawn
+toward the same current objective (`LevelObjectiveTracker.
+getCurrentObjectiveTarget()`); on a small baseline-sized pool that's
+invisible, but on a scaled-up pool (see the pool-size entry directly above)
+a player lingering near one objective could gradually pull a comically
+dense pickup cluster there over time, since collecting a node near the
+objective just makes it respawn near the same objective again a few
+seconds later. Fixed with `energyNodeConfig.maxNodesNearObjective` (5,
+deliberately equal to `baselinePoolSize` so the baseline level's behavior
+is unchanged — its whole pool already fits under this cap): before
+running the existing objective-biased sampling, `EnergyNodeManager.
+pickRespawnPosition()` now counts how many *live* nodes are already within
+`respawnJitterRadius` of the current target, and if that count has already
+hit the cap, falls back to `pickScatterPosition()`'s plain uniform
+placement for that one respawn instead. A live count checked fresh on
+every call, not a running lifetime tally — deliberately, so it
+self-corrects as nodes move away and needs no reset when the objective
+changes (a lifetime counter would exhaust its budget near the first
+objective and never re-enable biasing for the rest of the level). Required
+a new `EnergyNodeElement.isLive()` getter (`!collected`) so the manager can
+tell which pool members currently count.
+
 **Ships start each level at 0 energy, not full (2026-08-24, same-day
 follow-up).** `ShipSurvivalComponent`'s constructor now sets
 `currentEnergy = 0` (structure still starts full) — no level requires
@@ -673,7 +696,14 @@ imports; **nobody hand-edits `create()`.**
   (`objectiveJitterRadius`), except here the jittered point IS the
   landing position (`respawnJitterRadius`, a scatter radius sampled
   uniform-in-disk, same technique as `ResupplyPoint.pickImpactPoint()`),
-  not a direction to travel through. No sourced art exists for this
+  not a direction to travel through. Capped by
+  `energyNodeConfig.maxNodesNearObjective` (2026-08-25, see that entry
+  under Current project state above) — `pickRespawnPosition()` counts live
+  (`EnergyNodeElement.isLive()`, i.e. not currently collected/cooling down)
+  nodes already within `respawnJitterRadius` of the target before biasing,
+  falling back to `pickScatterPosition()`'s plain uniform placement once
+  the cap is hit, so a scaled-up pool can't pile an unbounded cluster onto
+  one objective. No sourced art exists for this
   pickup — a generated blue/white glow texture (reusing
   `shipStatusArcConfig.energyColor`) is the icon itself, not just its
   particle trail, with a breathing scale/alpha tween, a continuous

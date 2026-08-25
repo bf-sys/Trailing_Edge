@@ -101,6 +101,13 @@ export class EnergyNodeElement {
     return { x: this.zone.x, y: this.zone.y };
   }
 
+  // Read by EnergyNodeManager's maxNodesNearObjective cap -- a collected
+  // node (hidden, cooling down) doesn't count toward "how many are
+  // currently sitting near the objective."
+  isLive(): boolean {
+    return !this.collected;
+  }
+
   // EnergyNodeManager-only mutation surface, same contract as
   // HazardZoneElement.reposition() -- every other consumer is read-only.
   respawnAt(x: number, y: number): void {

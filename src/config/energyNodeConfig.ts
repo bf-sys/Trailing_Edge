@@ -50,6 +50,23 @@ export const energyNodeConfig = {
   // point IS the landing position (a scatter radius), not a heading to aim
   // a straight-line path through.
   respawnJitterRadius: 600,
+
+  // Cap on how many *live* nodes may sit within respawnJitterRadius of the
+  // current objective at once (2026-08-25, addresses pool size now scaling
+  // with level area) -- once that many are already stationed there, further
+  // respawns fall back to pickScatterPosition()'s plain uniform placement
+  // instead of piling on. Without this, every respawn from every node in
+  // the pool biases toward the same single point, so a large pool (a big
+  // level) could gradually accumulate a comically dense pickup cluster at
+  // one objective the longer a player lingers near it. Deliberately equal
+  // to baselinePoolSize: at the baseline level size the whole pool already
+  // fits under this cap, so behavior there is unchanged from before this
+  // cap existed -- only pools scaled up past baseline are actually
+  // throttled. A live count (checked fresh every respawn), not a lifetime
+  // counter, so it self-corrects as nodes move away and naturally
+  // re-applies at each new objective rather than needing a reset when the
+  // objective changes.
+  maxNodesNearObjective: 5,
 };
 
 registerTuning('energyNode', energyNodeConfig);

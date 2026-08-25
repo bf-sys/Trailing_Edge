@@ -130,13 +130,19 @@ export class GameScene extends Phaser.Scene {
     // Hazard placements (GDD §9/§11.3): x/y is this level's authored
     // content; shape/movement/cost per hazard type stays in hazardConfig.ts
     // (CLAUDE.md's "hazard ... costs" config-module convention).
-    // 'linear' movement hazards (Ion Storm, Meteoroid) additionally get
-    // tracked in movingHazards -- see MovingHazardManager, constructed
-    // below once the tracker it needs exists.
+    // 'linear'/'trochoid' movement hazards (Ion Storm, Meteoroid)
+    // additionally get tracked in movingHazards -- see MovingHazardManager,
+    // constructed below once the tracker it needs exists. 'trochoid' (added
+    // 2026-08-25) still wraps/respawns the same way 'linear' always has --
+    // MovingHazardManager only ever reads the hazard's actual drawn position
+    // (HazardZoneElement.getPosition()), which already accounts for the
+    // orbit offset, so no manager-side change was needed for it.
     config.hazards.forEach((placement) => {
       const typeConfig = hazardConfig[placement.type];
       const hazard = this.placeHazard(placement, typeConfig);
-      if (typeConfig.movementPattern === 'linear') this.movingHazards.push(hazard);
+      if (typeConfig.movementPattern === 'linear' || typeConfig.movementPattern === 'trochoid') {
+        this.movingHazards.push(hazard);
+      }
     });
 
     // Resupply points (AsteroidField -- structure repair only).

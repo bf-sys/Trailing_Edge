@@ -6,7 +6,15 @@ export type HazardShape =
   | { kind: 'circle'; radius: number }
   | { kind: 'rectangle'; width: number; height: number };
 
-export type HazardMovementPattern = 'static' | 'linear' | 'patrol';
+// 'trochoid' (added 2026-08-25, Ion Storm experiment -- user request): an
+// invisible "carrier" point advances in a straight line exactly like
+// 'linear' (same speed/headingRadians), but the hazard's actual drawn
+// position orbits that carrier at orbitRadius/orbitAngularSpeedRadiansPerSecond
+// instead of sitting on it -- a corkscrewing/spirograph path that sweeps a
+// band roughly 2x orbitRadius wide across the map instead of a single
+// infinitely-thin line, on purpose distinct from Meteoroid's straight
+// charge. See HazardZoneElement's initTrochoid()/update() for the math.
+export type HazardMovementPattern = 'static' | 'linear' | 'trochoid' | 'patrol';
 // 'impact' applies resourceCost as a one-time lump on contact rather than a
 // per-second/per-pulse rate, gated by hitCooldownSeconds so a lingering
 // overlap (e.g. getting shoved out by a blocksMovement collider) doesn't
@@ -85,6 +93,17 @@ export interface HazardZoneConfig {
   // rotation). Purely visual -- doesn't touch the Arcade body, same as
   // rotationRadians above.
   spinRadiansPerSecond?: number;
+  // Radius (px) of the loop around the carrier point -- only meaningful
+  // when movementPattern is 'trochoid'. 0/undefined degenerates to plain
+  // linear travel (the offset term vanishes), so this is safe to leave
+  // unset on any non-trochoid hazard.
+  orbitRadius?: number;
+  // Angular speed (radians/s) of that loop -- only meaningful alongside
+  // orbitRadius. Independent of spinRadiansPerSecond (that's the sprite's
+  // own cosmetic self-rotation; this is the path's geometry) -- a hazard
+  // can have both at once, spiraling through the map while its texture
+  // also spins in place.
+  orbitAngularSpeedRadiansPerSecond?: number;
   // Render layer override (added 2026-08-24, Ion Storm/Meteoroid): unset
   // means "leave at Phaser's default depth 0," same layer as every other
   // static world object (Debris Field, Nebula Field, Solar Flare, Probe,
@@ -107,6 +126,17 @@ export class HazardZoneElement {
   private readonly zone: Phaser.Physics.Arcade.Image;
   private pulseElapsedSeconds = 0;
   private lastHitTimeMs = -Infinity; // allows an 'impact' hazard's first contact to land immediately
+
+  // 'trochoid' movement state -- the carrier is an invisible point that
+  // advances in a straight line (same math 'linear' uses for its Arcade
+  // velocity, just hand-tracked instead of handed to the physics body);
+  // the hazard's actual drawn position is the carrier plus a rotating
+  // offset (trochoidAngle around orbitRadius). Unused/left at zero for
+  // every other movementPattern.
+  private trochoidCarrierX = 0;
+  private trochoidCarrierY = 0;
+  private trochoidHeadingRadians = 0;
+  private trochoidAngle = 0;
 
   constructor(scene: Phaser.Scene, config: HazardZoneConfig) {
     this.scene = scene;
@@ -170,6 +200,14 @@ export class HazardZoneElement {
   // (GDD §9/§11.3 -- keeps HazardScanOverlay's one-label-per-hazard,
   // built-once assumption valid, since the hazard count never changes).
   reposition(x: number, y: number, headingRadians: number): void {
+    if (this.config.movementPattern === 'trochoid') {
+      this.initTrochoid(x, y, headingRadians);
+      if (this.config.spriteFacingOffsetRadians !== undefined) {
+        this.zone.setRotation(headingRadians + this.config.spriteFacingOffsetRadians);
+      }
+      return;
+    }
+
     this.zone.setPosition(x, y);
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(Math.cos(headingRadians) * this.config.speed, Math.sin(headingRadians) * this.config.speed);
@@ -178,8 +216,38 @@ export class HazardZoneElement {
     }
   }
 
+  // Resets the carrier/angle for a fresh 'trochoid' leg (construction or a
+  // MovingHazardManager wrap). Angle always restarts at 0, and the carrier
+  // is placed orbitRadius *behind* (x, y) along the angle-0 direction so the
+  // hazard's actual displayed position lands exactly on (x, y) this frame --
+  // otherwise the visible sprite would jump orbitRadius away from whatever
+  // point a level author/MovingHazardManager actually asked for. Also zeroes
+  // Arcade velocity, since position is hand-driven every frame in update()
+  // rather than left to the physics body's own integration.
+  private initTrochoid(x: number, y: number, headingRadians: number): void {
+    const radius = this.config.orbitRadius ?? 0;
+    this.trochoidHeadingRadians = headingRadians;
+    this.trochoidAngle = 0;
+    this.trochoidCarrierX = x - radius;
+    this.trochoidCarrierY = y;
+    (this.zone.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+    this.zone.setPosition(x, y);
+  }
+
   update(time: number, delta: number): void {
     const dt = delta / 1000;
+
+    if (this.config.movementPattern === 'trochoid') {
+      const radius = this.config.orbitRadius ?? 0;
+      const angularSpeed = this.config.orbitAngularSpeedRadiansPerSecond ?? 0;
+      this.trochoidCarrierX += Math.cos(this.trochoidHeadingRadians) * this.config.speed * dt;
+      this.trochoidCarrierY += Math.sin(this.trochoidHeadingRadians) * this.config.speed * dt;
+      this.trochoidAngle += angularSpeed * dt;
+      this.zone.setPosition(
+        this.trochoidCarrierX + Math.cos(this.trochoidAngle) * radius,
+        this.trochoidCarrierY + Math.sin(this.trochoidAngle) * radius,
+      );
+    }
 
     if (this.config.spinRadiansPerSecond) this.zone.rotation += this.config.spinRadiansPerSecond * dt;
 
@@ -276,6 +344,11 @@ export class HazardZoneElement {
       if (this.config.spriteFacingOffsetRadians !== undefined) {
         this.zone.setRotation(heading + this.config.spriteFacingOffsetRadians);
       }
+      return;
+    }
+
+    if (movementPattern === 'trochoid') {
+      this.initTrochoid(this.config.x, this.config.y, this.config.headingRadians ?? 0);
       return;
     }
 

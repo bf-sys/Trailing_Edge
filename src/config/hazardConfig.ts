@@ -38,6 +38,11 @@ export interface HazardTypeConfig {
   // Continuous cosmetic spin (added 2026-08-21, Ion Storm), independent of
   // spriteFacingOffsetRadians/heading -- see HazardZoneConfig's comment.
   spinRadiansPerSecond?: number;
+  // 'trochoid' movementPattern only (added 2026-08-25, Ion Storm experiment)
+  // -- radius/angular speed of the loop around the carrier point. See
+  // HazardZoneConfig's comment in HazardZoneElement.ts for the math.
+  orbitRadius?: number;
+  orbitAngularSpeedRadiansPerSecond?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
   hitCooldownSeconds?: number;
@@ -105,18 +110,33 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // Speed bumped 30 -> 140 -> 200 (2026-08-25, live console tuning) -- still
   // under Meteoroid's (280), so the relative drift-vs-threat read is
   // preserved even though this is no longer a slow crawl in absolute terms.
+  //
+  // movementPattern switched 'linear' -> 'trochoid' (2026-08-25, user
+  // request/experiment): an invisible carrier still advances in a straight
+  // line at `speed`/`headingRadians` exactly like before, but the hazard's
+  // actual drawn position now loops around that carrier (orbitRadius 220,
+  // one revolution every 5s) instead of sitting on it -- sweeps a ~440px-wide
+  // band across the map instead of a single-pixel-wide line, and reads as
+  // visibly distinct from Meteoroid's straight charge. Tangential loop speed
+  // (radius * angularSpeed ~= 276px/s) intentionally exceeds the carrier's
+  // forward speed (200px/s) -- that's what makes it trace visible loop-the-
+  // loops (a true trochoid, not just a wavy line) rather than a gentle
+  // sideways wobble. Meteoroid stays 'linear' on purpose -- see
+  // HazardMovementPattern's 'trochoid' comment in HazardZoneElement.ts.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
     displayName: 'ION STORM',
     shape: { kind: 'circle', radius: 110 },
-    movementPattern: 'linear',
+    movementPattern: 'trochoid',
     speed: 200,
     headingRadians: Math.PI,
+    orbitRadius: 220,
+    orbitAngularSpeedRadiansPerSecond: (Math.PI * 2) / 5, // one loop every 5s
     // Swirling-cloud spin (2026-08-21, tuned same day: 8s -> 16s -> 24s) --
     // clockwise, one full rotation every 24s. Purely cosmetic (doesn't
     // touch the circular collision body, which is rotation-invariant);
-    // independent of headingRadians, so it spins in place regardless of
-    // drift direction.
+    // independent of headingRadians/the trochoid loop above, so it spins in
+    // place regardless of drift direction or where it is on the loop.
     spinRadiansPerSecond: (Math.PI * 2) / 24,
     activation: 'continuous',
     resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen

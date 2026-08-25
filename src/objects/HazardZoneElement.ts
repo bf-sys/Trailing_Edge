@@ -104,6 +104,20 @@ export interface HazardZoneConfig {
   // can have both at once, spiraling through the map while its texture
   // also spins in place.
   orbitAngularSpeedRadiansPerSecond?: number;
+  // 'continuous' activation only (added 2026-08-25, Nebula Field, user
+  // request) -- linearly ramps resourceCost's effective rate the longer the
+  // ship stays continuously inside this hazard, so lingering is punished
+  // more than proportionally to time while a quick pass-through stays
+  // nearly unaffected. Effective rate at a given moment is
+  // `resourceCost * (1 + exposureRampPerSecond * continuousExposureSeconds)`
+  // -- see update()/applyResourceCost(). continuousExposureSeconds resets to
+  // 0 the instant the ship leaves the zone (same reset-on-exit pattern
+  // pulseElapsedSeconds already uses), so there's no "banked" penalty across
+  // separate passes. Unset/0 means no ramp -- the exact pre-2026-08-25
+  // behavior, still the default for every other hazard (deliberately not
+  // applied to Ion Storm -- see the field's own decision note in
+  // hazardConfig.ts).
+  exposureRampPerSecond?: number;
   // Render layer override (added 2026-08-24, Ion Storm/Meteoroid): unset
   // means "leave at Phaser's default depth 0," same layer as every other
   // static world object (Debris Field, Nebula Field, Solar Flare, Probe,
@@ -126,6 +140,7 @@ export class HazardZoneElement {
   private readonly zone: Phaser.Physics.Arcade.Image;
   private pulseElapsedSeconds = 0;
   private lastHitTimeMs = -Infinity; // allows an 'impact' hazard's first contact to land immediately
+  private continuousExposureSeconds = 0; // exposureRampPerSecond's input -- see that field's comment
 
   // 'trochoid' movement state -- the carrier is an invisible point that
   // advances in a straight line (same math 'linear' uses for its Arcade
@@ -287,9 +302,16 @@ export class HazardZoneElement {
     }
 
     if (this.isOverlappingShip()) {
+      // exposureRampPerSecond's clock -- counts up only while actually
+      // inside a 'continuous' hazard. Incremented before applyResourceCost()
+      // reads it below; whether the ramp uses the pre- or post-increment
+      // value doesn't matter in practice, a single frame's dt is negligible
+      // against the ramp's own timescale.
+      if (this.config.activation === 'continuous') this.continuousExposureSeconds += dt;
       this.applyResourceCost(dt);
-    } else if (this.config.activation === 'pulsed') {
-      this.pulseElapsedSeconds = 0; // no partial credit carried across an exit
+    } else {
+      this.continuousExposureSeconds = 0; // no partial credit carried across an exit
+      if (this.config.activation === 'pulsed') this.pulseElapsedSeconds = 0;
     }
   }
 
@@ -369,8 +391,14 @@ export class HazardZoneElement {
     const { activation, resourceCost, pulseIntervalSeconds } = this.config;
 
     if (activation === 'continuous') {
-      if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy * dt, 'hazard-zone');
-      if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure * dt, 'hazard-zone');
+      // exposureRampPerSecond (2026-08-25, Nebula Field): linearly scales
+      // the effective rate by how long the ship's been continuously inside
+      // this hazard. Unset/0 -> ramp is always 1, i.e. the exact
+      // pre-2026-08-25 flat-rate behavior every other 'continuous' hazard
+      // still uses.
+      const ramp = 1 + (this.config.exposureRampPerSecond ?? 0) * this.continuousExposureSeconds;
+      if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy * ramp * dt, 'hazard-zone');
+      if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure * ramp * dt, 'hazard-zone');
       return;
     }
 

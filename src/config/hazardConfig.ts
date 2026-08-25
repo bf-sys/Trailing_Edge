@@ -43,6 +43,9 @@ export interface HazardTypeConfig {
   // HazardZoneConfig's comment in HazardZoneElement.ts for the math.
   orbitRadius?: number;
   orbitAngularSpeedRadiansPerSecond?: number;
+  // 'continuous' activation only (added 2026-08-25, Nebula Field). See
+  // HazardZoneConfig's comment in HazardZoneElement.ts for the math.
+  exposureRampPerSecond?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
   hitCooldownSeconds?: number;
@@ -95,7 +98,19 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     speed: 0,
     activation: 'pulsed',
     pulseIntervalSeconds: 2.5,
-    resourceCost: { energy: 28, structure: 0 }, // 11.2/s avg, delivered as a visible ~28% chunk per pulse
+    // structure added 2026-08-25 (brought in line with Nebula Field/Ion
+    // Storm's same-day structure additions, for completeness -- see
+    // CLAUDE.md's Current project state -- even though Solar Flare has no
+    // placement precedent in any real level yet). 35 per pulse, not derived
+    // from a played rate the way Nebula/Ion Storm's per-second values were --
+    // this hazard delivers cost in discrete lumps (like Meteoroid's impact
+    // hit) rather than continuously, so a per-pulse lump is the closer
+    // comparison than a per-second rate; picked as a middle value between
+    // Meteoroid's 25/hit (1s cooldown) and what continuous exposure to
+    // Nebula/Ion Storm would total over one 2.5s pulse interval (50-62.5).
+    // First-pass, unplayed -- retune once this hazard actually appears in a
+    // level.
+    resourceCost: { energy: 28, structure: 35 }, // 11.2/s avg energy, delivered as a visible ~28% chunk per pulse
     placeholderTexture: { color: 0xff6644, alpha: 0.55 },
   },
 
@@ -139,7 +154,17 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     // place regardless of drift direction or where it is on the loop.
     spinRadiansPerSecond: (Math.PI * 2) / 24,
     activation: 'continuous',
-    resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
+    // structure added 2026-08-25 (user request/design decision -- see the
+    // "more tension via run-fail risk" discussion this followed): Ion Storm
+    // is no longer purely ability-limiting, it's now a real fail-stakes
+    // hazard alongside Meteoroid. Energy cost is kept alongside it (not
+    // replaced) -- still costs ability-fuel too.
+    // Retuned same day, second pass (user request): energy 15->25,
+    // structure 25->20 -- Ion Storm now leans more energy-heavy relative to
+    // Nebula Field (below), which leans more structure-heavy. Not derived
+    // from a stated rationale beyond the swap itself; retune further as it
+    // plays.
+    resourceCost: { energy: 25, structure: 20 },
     // 2026-08-24: 'linear' hazards render above the static world layer
     // (Debris/Nebula/Solar Flare, resupply, objectives -- all left at
     // Phaser's default depth 0) but below PlayerShip (depth 10, see
@@ -164,16 +189,45 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     movementPattern: 'static',
     speed: 0,
     activation: 'continuous',
-    resourceCost: { energy: 15, structure: 0 }, // matches ionStorm -- same family, same rate
+    // structure added 2026-08-25 (user request/design decision, same pass
+    // as Ion Storm's -- see that field's comment): Nebula Field is static
+    // and, per every level's design so far, trivial to route around, so
+    // real punishment for lingering/being sloppy in one is fine.
+    // Retuned same day, second pass (user request): energy 15->20, structure
+    // 20->25 -- Nebula Field now leans more structure-heavy relative to Ion
+    // Storm (above), which leans more energy-heavy. Not derived from a
+    // stated rationale beyond the swap itself; retune further as it plays.
+    resourceCost: { energy: 20, structure: 25 },
+    // exposureRampPerSecond added 2026-08-25 (user request), Nebula Field
+    // only -- deliberately NOT applied to Ion Storm: it's a moving hazard
+    // whose trochoid path can carry it over the ship involuntarily, whereas
+    // Nebula Field is static and trivially easy to just leave, so punishing
+    // lingering here doesn't risk punishing a player for something outside
+    // their control the way it could for Ion Storm. Linear, gentle by
+    // design (user: "reinforcement not to stick around," not
+    // over-punishing) -- at 0.15, a quick ~0.77s pass-through (200px
+    // diameter at max ship speed) is barely affected (+11.5% for that
+    // instant), but standing still long enough to matter escalates fast:
+    // total structure drained reaches the 100 max at ~3.2s of continuous
+    // stationary exposure (vs. ~4s unramped) -- see CLAUDE.md's Current
+    // project state for the full math. First-pass value, easy to retune via
+    // window.tuning.hazard.nebulaField.exposureRampPerSecond.
+    exposureRampPerSecond: 0.15,
   },
 
-  // The sole structure-draining open-world hazard (GDD §9, since Debris
-  // Field's 2026-08-07 re-scope) -- carries the real fail-stakes side of
-  // the structure-vs-energy asymmetry. Collision rework (2026-08-21): now a
-  // blocksMovement solid collider (ship physically bounces off instead of
-  // flying through it) that also deals a one-time impact hit rather than a
-  // per-second drain -- hitCooldownSeconds stops repeat hits while Arcade's
-  // collision separation is still shoving the ship clear.
+  // No longer the *sole* structure-draining open-world hazard as of
+  // 2026-08-25 (Nebula Field/Ion Storm above both gained structure cost,
+  // same pass -- see their comments) -- that "one dedicated fail-stakes
+  // hazard" asymmetry from GDD §9's 2026-08-07 re-scope is deliberately
+  // retired, not an oversight; CLAUDE.md's Open design questions section
+  // needs a matching update. Meteoroid's own distinct identity is now its
+  // *delivery* (a one-time impact hit + physical knockback, via
+  // blocksMovement collision) rather than being the only hazard that can
+  // hard-fail a run. Collision rework (2026-08-21): a blocksMovement solid
+  // collider (ship physically bounces off instead of flying through it)
+  // that deals a one-time impact hit rather than a per-second drain --
+  // hitCooldownSeconds stops repeat hits while Arcade's collision
+  // separation is still shoving the ship clear.
   meteoroid: {
     textureKey: 'hazard_meteoroid',
     displayName: 'METEOROID',

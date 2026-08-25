@@ -231,6 +231,94 @@ hard-fail `scene.restart()` (both construct a fresh `ShipSurvivalComponent`
 via `PlayerShip`) — consistent with the existing "resets ... energy to
 the level's starting values" contract language, not a special case.
 
+**Ion Storm and Nebula Field now also drain structure, not just energy
+(2026-08-25, user request/design decision).** `hazardConfig.ts`:
+`ionStorm.resourceCost.structure` 0 → 25, `nebulaField.resourceCost.structure`
+0 → 20, both alongside their unchanged energy costs (stacked, not replaced —
+an explicit choice over the alternative of converting them to pure
+structure-drain hazards). Also switched Ion Storm's `movementPattern` to a
+new `'trochoid'` value the same day (see the next entry) and bumped both
+hazards' speeds via live console tuning earlier the same day — three
+separate changes to the same two hazards in one session, landed together.
+**Deliberately reverses the "Meteoroid is the only structure-draining
+hazard" asymmetry GDD §9's 2026-08-07 Debris Field re-scope established** —
+flagged to the user as a GDD-level design question (not silently resolved)
+before making the change; the user's call, made knowingly: the game needs
+more run-fail tension, moving/ambient hazards aren't threatening enough
+without it, and a time limit or similar wasn't wanted as the alternative
+lever. Original pass: Nebula Field's structure rate (20/s) was deliberately
+lower than Ion Storm's (25/s) — Nebula Field is static and, per every level
+built so far, trivial to route around, so real punishment for lingering in
+one is fine; Ion Storm is the "isn't always present" moving hazard, so a
+brief incidental clip needs to read as properly dangerous rather than a
+minor toll. **Retuned same day, second pass (user request, `hazardConfig.ts`
+comments carry the same note): the two hazards' energy/structure now swap
+which one leans heavier** — Ion Storm: energy 15→25, structure 25→20; Nebula
+Field: energy 15→20, structure 20→25. No stated rationale beyond the swap
+itself (not derived from the original pass's reasoning above, which no
+longer describes the current numbers) — retune further as it plays.
+**Solar Flare
+brought in line the same day, follow-up request ("for completeness"):**
+`resourceCost.structure` 0 → 35 despite having no placement precedent in any
+real level yet. Its number isn't derived the same way as Nebula/Ion Storm's
+-- Solar Flare delivers cost in discrete pulses (`activation: 'pulsed'`,
+every 2.5s) rather than continuously, so a per-pulse lump is the closer
+comparison to Meteoroid's 25/hit `'impact'` lump than to a per-second rate;
+35 was picked as a middle value between that and what continuous Nebula/Ion
+Storm exposure would total over one 2.5s interval (50-62.5) -- a first-pass,
+unplayed number, expect it to move once Solar Flare actually appears in a
+level. Debris Field remains the only hazard with zero resource cost of
+either kind. Known consequences not yet acted on, explicitly discussed and
+deferred: every existing level's Nebula
+Field placement (especially level-008's dense, semi-unavoidable-by-design
+"Drift Expanse" gauntlet) was authored/evaluated assuming energy-only cost;
+the user's stated mitigation if this proves too punishing is treating dense
+formations the same routing-choice way level-006's maze is played (thread
+through deliberately, don't treat it as unavoidable), and/or adding an
+extra `ResupplyPoint` to larger levels — neither implemented yet, revisit
+once this is played against real levels. Also flagged, not yet built: the
+user wants a future ability-driven way to read a hazard's *severity* (not
+just its structure/energy split) — separate follow-up work, not scoped
+here. See CLAUDE.md's "Open design questions" section (the former
+structure-vs-energy stakes legibility item) for the fuller writeup of what
+this does and doesn't resolve.
+
+**Ion Storm's `movementPattern` switched from `'linear'` to a new
+`'trochoid'` value (2026-08-25, user request/experiment).** A trochoid hazard
+tracks an invisible "carrier" point that advances in a straight line exactly
+like `'linear'` (same `speed`/`headingRadians`), but the hazard's actual
+drawn position loops around that carrier (`orbitRadius`/
+`orbitAngularSpeedRadiansPerSecond`, both new `HazardZoneConfig` fields) —
+`HazardZoneElement` hand-drives position every frame for this pattern
+(zeroing Arcade velocity so the physics body can't fight it), the same
+"`setPosition()` directly, per-frame" technique `reposition()` already used
+for wrapping, just continuous instead of one-shot. Ion Storm's tuning
+(`orbitRadius: 220`, one loop per 5s) deliberately makes tangential loop
+speed (~276px/s) exceed the carrier's forward speed (200px/s), which is what
+produces genuine loop-the-loops rather than a gentle sideways wobble — the
+explicit goal (user's own framing) was a hazard that "covers a lot more
+space" and "shakes up its movement pattern" compared to Meteoroid's straight
+charge, addressing large levels where a single straight-line pass felt too
+brief/rare to register. Meteoroid stays `'linear'` on purpose, so the two
+moving hazards keep reading as distinct threats. `MovingHazardManager`
+needed zero changes — it only ever reads `HazardZoneElement.getPosition()`
+(the actual drawn position, already inclusive of the loop offset) for
+wrap/out-of-bounds detection, so the existing wrap-and-respawn contract
+applies unmodified. Verified live in-browser via `window.game.loop.step()`-
+driven frame stepping (not just `tsc`): confirmed genuine loop-back
+trajectories, correct wrap/respawn at map bounds, no NaN positions, zero
+console errors. **Superseded same day, reverted same day, not part of the
+shipped state:** an earlier same-day attempt at this same "large levels
+swallow the hazard" problem — an orbit/dwell *loiter* triggered when a
+`'linear'` hazard got close to its aim point mid-transit — was built,
+verified working, then reverted after direct playtest feedback that it made
+hazards move in ways that read as buggy rather than deliberate. Only the
+aim-point route-bias half of that pass survived (`MovingHazardManager`'s
+`pickAimPoint()` now samples along the live player→objective segment,
+`movingHazardConfig.routeBiasMin`/`Max`) — the orbit/loiter mechanism itself
+was fully removed from `HazardZoneElement`/`MovingHazardManager`; don't
+reintroduce it without re-confirming the user wants another attempt.
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open — e.g. Ion Storm/Nebula Field cloud art is planned
 but not yet sourced, see its 2026-08-08 entry). Other reference docs live
@@ -353,12 +441,19 @@ imports; **nobody hand-edits `create()`.**
     `pulseIntervalSeconds`, `resourceCost`, and (added 2026-08-07)
     `blocksMovement`. **Don't build five/six hazard classes — this collapse
     is a confirmed decision, not an open question**; `blocksMovement` is one
-    more parameter on the same class, not a new one. Meteoroid is now the
-    *only* structure-draining hazard with real fail stakes — Debris Field no
-    longer drains anything (see below); energy-draining hazards (Solar
-    Flare, Ion Storm, Nebula Field) stay lower-stakes/ability-limiting —
-    worth telegraphing that difference visually, not just each hazard's
-    identity.
+    more parameter on the same class, not a new one. **Meteoroid is no
+    longer the *only* structure-draining hazard as of 2026-08-25** (see
+    Current project state above) — Nebula Field and Ion Storm both gained a
+    `resourceCost.structure` value alongside their existing energy cost, a
+    deliberate reversal of the "one dedicated fail-stakes hazard" asymmetry
+    this bullet used to describe, made to raise run-fail tension on the two
+    hazards the player encounters far more often than Meteoroid. Solar Flare
+    got the same treatment the same day, for completeness, despite having no
+    placement precedent in any real level yet (`resourceCost.structure` 0 →
+    35, a per-pulse lump rather than a per-second rate — see that entry's
+    `hazardConfig.ts` comment for why the number isn't derived the same way
+    Nebula/Ion Storm's were). Debris Field alone now stays zero-cost (see
+    below) — the only hazard type that does.
   - Hard rule: `onHazardContact()` only calls
     `ShipSurvivalComponent.consumeEnergy/consumeStructure` — never sets
     resource values itself. `blocksMovement: true` no longer implies zero
@@ -469,6 +564,28 @@ imports; **nobody hand-edits `create()`.**
     the user wanted more time with the plain velocity version first before
     deciding — so the current shipped behavior is velocity-only, with the
     snap fix known and available to reapply if wanted later.
+  - **`movementPattern: 'trochoid'`, added 2026-08-25 (Ion Storm
+    experiment/user request):** a fourth `HazardMovementPattern` alongside
+    `static`/`linear`/`patrol` (the last still reserved/unimplemented). An
+    invisible carrier point advances in a straight line exactly like
+    `'linear'` (same `speed`/`headingRadians`), but the hazard's actual
+    drawn position orbits that carrier at `orbitRadius`/
+    `orbitAngularSpeedRadiansPerSecond` (two new `HazardZoneConfig` fields,
+    only meaningful for this pattern) instead of sitting on it — a
+    spirograph/trochoid path sweeping a band roughly `2 * orbitRadius` wide
+    across the map instead of a single-pixel-wide line. Implemented via
+    hand-driven `setPosition()` every frame (Arcade velocity zeroed so the
+    physics body can't fight it) — the same technique `reposition()` already
+    used for one-shot wrap teleports, just applied continuously.
+    `MovingHazardManager` needed no changes: it only reads
+    `HazardZoneElement.getPosition()` (the real drawn position, already
+    inclusive of the orbit offset) for its wrap/out-of-bounds check. Ion
+    Storm is the only hazard using it (`orbitRadius: 220`, one loop per 5s,
+    tuned so tangential loop speed exceeds carrier speed — that's what
+    produces genuine loop-backs rather than a gentle wobble); Meteoroid
+    stays `'linear'` on purpose, so the two moving hazards read as distinct
+    threats. See Current project state's 2026-08-25 entry for the full
+    rationale and the reverted orbit/loiter experiment that preceded it.
   - **Debris Field re-scoped 2026-08-07 (GDD §9):** was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship
@@ -766,14 +883,20 @@ Sequential vertical slice first, **then** fan out — and the fan-out is a
 **Open-world hazards** (drain resources, encountered while flying — except
 Debris Field, see below): Debris Field (static, **blocks movement, no
 resource drain — re-scoped and implemented 2026-08-07**), Solar Flare
-(dynamic/timed burst, energy), Ion Storm (dynamic/slow-drift, energy —
-visually same family as Nebula Field, motion is the *only* difference,
-**still an open art-differentiation question; the shared 2-3-variant
-cloud-texture production approach for both is decided as of 2026-08-08, see
-Open design questions below**), Nebula Field (static, energy), Meteoroid
-(dynamic/moving, structure — renamed from "Rogue Comet" to avoid colliding
-with the puzzle element below, and now the *only* structure-draining
-open-world hazard).
+(dynamic/timed burst, energy + structure as of 2026-08-25 — unplaced in any
+real level yet), Ion
+Storm (**trochoid drift as of 2026-08-25 — see Current project state
+above**, energy + structure — visually same family as Nebula Field, motion
+is the *only* difference, **still an open art-differentiation question; the
+shared 2-3-variant cloud-texture production approach for both is decided as
+of 2026-08-08, see Open design questions below**), Nebula Field (static,
+energy + structure as of 2026-08-25), Meteoroid (dynamic/moving, structure
+only — renamed from "Rogue Comet" to avoid colliding with the puzzle
+element below). **Meteoroid is no longer the sole structure-draining
+hazard** (see Current project state's 2026-08-25 entry and the
+`HazardZoneElement` bullet in Architecture contract) — its distinct identity
+is now its one-time impact-hit + knockback delivery, not exclusivity on
+fail-stakes.
 
 **Puzzle-site elements** (optional/additive, cost-neutral by default):
 Signal Array (sequence — renamed from "Relay Beacon," see below), Scan
@@ -830,15 +953,24 @@ nebula is diffuse gas rather than countable objects), each stretched via
 `setDisplaySize()`. See `docs/reference/art-production-guidelines.md`'s
 "Nebula Field / Ion Storm cloud art" section. Nothing sourced yet.
 
-Also newly open: structure-vs-energy stakes legibility. Since only
-structure can end a level (energy is a non-fail, ability-gating resource),
-Meteoroid — now the sole structure-draining hazard, since Debris Field's
-2026-08-07 re-scope removed it from this list (see "Debris Field re-scoped"
-above) — carries real fail stakes while the energy-draining hazards (Solar
-Flare, Ion Storm, Nebula Field) and the movement-blocking Debris Field
-don't. Whether the current visual language communicates that difference is
-untested, and now a sharper question with only one hazard on the fail-stakes
-side. Same validation timing as the item above.
+**Superseded (2026-08-25), not a validation-pending open item anymore:**
+structure-vs-energy stakes legibility used to be framed as "only Meteoroid
+carries real fail stakes, is the visual language clear about that" — that
+framing no longer applies. Nebula Field and Ion Storm both gained
+`resourceCost.structure` (see Current project state's 2026-08-25 entry and
+the `HazardZoneElement` bullet in Architecture contract) at the user's
+explicit direction, specifically to raise run-fail tension on the two
+hazards actually encountered often (moving/present hazards create tension
+mainly through fail-risk, absent something like a time limit, which wasn't
+wanted). Debris Field remains the only hazard with zero resource cost of
+either kind. This was a deliberate reversal of the "one dedicated
+fail-stakes hazard" asymmetry the GDD's 2026-08-07 Debris Field re-scope
+established, not an oversight — flagging the drift from that section of the
+GDD explicitly rather than silently updating it. What's still genuinely open
+underneath this: whether the *visual* language (structure vs. energy color
+coding, `HazardScanOverlay`'s orange/blue) still reads clearly now that more
+hazards carry the orange (structure-cost) treatment — that part of the
+original question isn't resolved by this change, just reframed by it.
 
 **Resolved (2026-07-31):** off-screen objective visibility (raised
 2026-07-30, §8's levels are "bounded," not "screen-sized," so the

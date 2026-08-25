@@ -7,6 +7,8 @@ import { LEVEL_005 } from './level-005';
 import { LEVEL_006 } from './level-006';
 import { LEVEL_007 } from './level-007';
 import { LEVEL_008 } from './level-008';
+import { LEVEL_009 } from './level-009';
+import { LEVEL_010 } from './level-010';
 import type { LevelConfig } from './levelTypes';
 
 // Content agents append their level's file + entry here, per
@@ -23,6 +25,8 @@ const LEVELS: Record<string, LevelConfig> = {
   'level-006': LEVEL_006,
   'level-007': LEVEL_007,
   'level-008': LEVEL_008,
+  'level-009': LEVEL_009,
+  'level-010': LEVEL_010,
 };
 
 export function getLevelConfig(levelId: string): LevelConfig {

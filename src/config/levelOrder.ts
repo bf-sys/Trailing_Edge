@@ -69,6 +69,48 @@
 // and the SW Ion Storm placement, both fixed and re-verified) -- see
 // level-008.ts's header comment and docs/history/level-eval-log-2026-08-17.md
 // for the full evaluation history.
+//
+// 2026-08-25: level-010 appended (level-009 not yet registered at the time
+// this entry was appended -- a sibling GER batch, authored/evaluated
+// concurrently; see docs/history/level-eval-log-2026-08-25.md for both
+// candidates' entries). Also sits in the post-full-unlock experimentation
+// zone; its axis is a serpentine four-wall Debris Field maze with a fully
+// enclosed Debris Field vault embedded directly in one of the maze's own
+// lanes, sealing the Probe, reachable only by teleport -- structurally
+// distinct from level-006's maze-with-no-seal and level-007's
+// triple-corner-pocket seals (this is the first level to combine a maze
+// and a seal on the same structure). Registered after passing Evaluate on
+// round 1 (flagged one [placement] issue: 5 of 7 Ion Storm/Meteoroid
+// placements physically embedded in a maze wall during their fixed-heading
+// first leg, since this maze's four parallel walls with disjoint-band gaps
+// left no y-value that clears every wall for an interior-lane placement --
+// fixed by relocating every Ion Storm west of the maze and every Meteoroid
+// east of it, the only placements structurally guaranteed clean, and
+// re-verified via a fresh full-first-leg trajectory simulation) -- see
+// level-010.ts's header comment and
+// docs/history/level-eval-log-2026-08-25.md for the full evaluation/fix
+// history.
+//
+// 2026-08-25 (later same day): level-009 appended immediately before
+// level-010, per the note above -- its candidate predates level-010's in
+// the same concurrent GER batch, so it's inserted in front rather than
+// appended after (the array itself is still append-only from the tail;
+// this is the one-time reordering the level-010 entry above flagged as
+// expected). Also sits in the post-full-unlock experimentation zone; its
+// axis is the highest-yet combined Ion Storm+Meteoroid count (12 total)
+// plus the project's first real Solar Flare placement, structurally
+// distinct from level-010's maze+seal combination and every other level's
+// axis. Registered after passing Evaluate on round 1 (flagged one
+// [placement] issue: 5 of 7 Ion Storm and 2 of 5 Meteoroid placements
+// physically overlapped a wall/objective/resupply point during their
+// fixed-heading first leg, since the Generate stage's clearance check only
+// covered each hazard's initial point, not the fact that Ion Storm/
+// Meteoroid hold a constant perpendicular coordinate for their entire first
+// leg -- fixed by re-simulating each flagged hazard's full first-leg
+// trajectory and relocating it to a y/x that clears every static feature by
+// 250px+ throughout, re-verified the same way) -- see level-009.ts's header
+// comment and docs/history/level-eval-log-2026-08-25.md for the full
+// evaluation/fix history.
 export const LEVEL_ORDER: string[] = [
   'level-001',
   'level-002',
@@ -78,6 +120,8 @@ export const LEVEL_ORDER: string[] = [
   'level-006',
   'level-007',
   'level-008',
+  'level-009',
+  'level-010',
 ];
 
 // Reachable only via TitleScene's "Test Level" entry point, never through

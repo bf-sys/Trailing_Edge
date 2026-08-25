@@ -80,14 +80,16 @@ window.tuning.survival.maxStructure = 200             // bigger structure pool (
 ## `window.tuning.energyNode` (`src/config/energyNodeConfig.ts`)
 
 SubSpace-style "green" pickups (added 2026-08-24, alongside dropping
-`survival.energyRegenPerSecond` `8` → `2`) — a fixed pool of
-`EnergyNodeElement` instances scattered per level (`EnergyNodeManager`),
-each granting a flat energy amount on contact and reappearing elsewhere,
-weighted toward the current objective, after a cooldown.
+`survival.energyRegenPerSecond` `8` → `2`) — a pool of `EnergyNodeElement`
+instances scattered per level (`EnergyNodeManager`), each granting a flat
+energy amount on contact and reappearing elsewhere, weighted toward the
+current objective, after a cooldown.
 
 | Field | Default | What it does |
 |---|---|---|
-| `poolSize` | `5` | Nodes live on a level at once |
+| `baselinePoolSize` | `5` | Node count at the baseline footprint below — see `computeEnergyNodePoolSize` below, not a per-level count |
+| `baselineWidth` / `baselineHeight` | `2400` / `1350` | The footprint `baselinePoolSize` was tuned/playtested against (the test level, also level-001's size) |
+| `minPoolSize` | `5` | Floor on the scaled pool size — never fewer nodes than this |
 | `rechargeAmount` | `10` | Flat energy granted per pickup |
 | `respawnCooldownSeconds` | `6` | Delay after collection before a node reappears |
 | `radius` | `16` | Collision/visual radius |
@@ -97,17 +99,25 @@ weighted toward the current objective, after a cooldown.
 | `placementAttempts` | `20` | Rejection-sampling retry cap before a candidate position is accepted unchecked |
 | `respawnJitterRadius` | `600` | Scatter radius (px) around the current objective target that a respawn position is sampled from |
 
+**Pool size scales with level area (2026-08-25)**, via
+`computeEnergyNodePoolSize(levelWidth, levelHeight)` — the actual live
+count is `max(minPoolSize, round(baselinePoolSize * (levelWidth * levelHeight) / (baselineWidth * baselineHeight)))`,
+not a flat number, so a bigger level gets proportionally more pickups
+instead of the same fixed pool reading as sparse.
+
 ```js
-window.tuning.energyNode.poolSize = 8            // more pickups live at once
+window.tuning.energyNode.baselinePoolSize = 8    // more pickups live at once, scaled by each level's area
 window.tuning.energyNode.rechargeAmount = 25     // bigger grant per pickup
 window.tuning.energyNode.respawnCooldownSeconds = 2  // pickups come back faster
 ```
 
-**Note:** `poolSize` is only read once, in `GameScene.create()` (it sizes
-the pool `EnergyNodeManager` constructs) — a console edit needs a level
-restart to take effect. Every other field above is read fresh at the
-relevant moment (collection, cooldown countdown, respawn placement), so
-edits apply to the next pickup/respawn with no restart needed.
+**Note:** the four fields `computeEnergyNodePoolSize` reads
+(`baselinePoolSize`/`baselineWidth`/`baselineHeight`/`minPoolSize`) are only
+read once, in `GameScene.create()` (they size the pool `EnergyNodeManager`
+constructs) — a console edit needs a level restart to take effect. Every
+other field above is read fresh at the relevant moment (collection,
+cooldown countdown, respawn placement), so edits apply to the next
+pickup/respawn with no restart needed.
 
 ## `window.tuning.waypointTint` (`src/config/waypointTintConfig.ts`)
 

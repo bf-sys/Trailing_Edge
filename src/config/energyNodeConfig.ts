@@ -9,10 +9,23 @@ import { registerTuning } from './devTuning';
 // the pickups actually matter instead of being pure upside on an already-
 // adequate trickle.
 export const energyNodeConfig = {
-  // How many nodes are live on a level at once -- a global tunable, not
-  // per-level authored data, since placement itself is fully procedural
-  // (chosen specifically so this feature needs zero per-level content work).
-  poolSize: 5,
+  // How many nodes are live on a level at once scales with level area
+  // (2026-08-25) rather than being one fixed number -- a flat count tuned
+  // against a small map reads as sparse on a much bigger one (spacing
+  // between pickups grows with the map, since area grows with the square
+  // of a level's linear dimensions under this project's "uniform scale-up"
+  // sizing convention, level-design-guide.md §2). Still a global tunable,
+  // not per-level authored data (placement itself stays fully procedural,
+  // so this needs zero per-level content work either way) -- see
+  // computeEnergyNodePoolSize below for the formula. baselinePoolSize/
+  // Width/Height anchor the scale to the test level's 2400x1350 footprint
+  // (also level-001's, identically sized) -- the actual size this feature
+  // was tuned and playtested against on 2026-08-24 (CLAUDE.md's Current
+  // project state), rather than re-deriving a density from scratch.
+  baselinePoolSize: 5,
+  baselineWidth: 2400,
+  baselineHeight: 1350,
+  minPoolSize: 5, // floor -- never fewer nodes than this, even on a level smaller than baseline
   rechargeAmount: 10, // flat energy granted per pickup
   respawnCooldownSeconds: 6,
   radius: 16,
@@ -40,3 +53,16 @@ export const energyNodeConfig = {
 };
 
 registerTuning('energyNode', energyNodeConfig);
+
+// Scales baselinePoolSize by how much bigger (or smaller) a level's area is
+// than the baseline footprint, so density (average spacing between live
+// pickups) stays roughly constant across level sizes instead of thinning
+// out as maps grow -- see energyNodeConfig.baselinePoolSize above for why.
+// Read fresh by EnergyNodeManager's constructor (once per level load), so a
+// console edit to any of the four fields it depends on needs a level
+// restart to take effect, same caveat as the old flat poolSize had.
+export function computeEnergyNodePoolSize(levelWidth: number, levelHeight: number): number {
+  const { baselinePoolSize, baselineWidth, baselineHeight, minPoolSize } = energyNodeConfig;
+  const areaRatio = (levelWidth * levelHeight) / (baselineWidth * baselineHeight);
+  return Math.max(minPoolSize, Math.round(baselinePoolSize * areaRatio));
+}

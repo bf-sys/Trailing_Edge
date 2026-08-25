@@ -174,9 +174,29 @@ Exploration pillar), distinct from the existing hazard/ability costs.
 Playtested in-browser on `level-001` (spawn/keep-out, glow/pulse/burst
 VFX, collect → cooldown → respawn-elsewhere all confirmed via direct
 game-state inspection, zero console errors); tuning values
-(`poolSize: 5`, `rechargeAmount: 10`, `respawnCooldownSeconds: 6`) are a
-first pass, not playtested for feel over a full run yet — expect these to
-move once the regen-rate drop is played against real levels.
+(`rechargeAmount: 10`, `respawnCooldownSeconds: 6`) are a first pass, not
+playtested for feel over a full run yet — expect these to move once the
+regen-rate drop is played against real levels.
+
+**Energy Node pool size now scales with level area (2026-08-25, user
+request).** The flat `poolSize: 5` above was tuned/playtested only against
+`level-001`'s (and the test level's, identically sized) 2400x1350
+footprint; since level area grows with the square of a level's linear
+dimensions under this project's "uniform scale-up" sizing convention
+(level-design-guide.md §2), a fixed pickup count read as increasingly
+sparse on later, much larger levels (level-007 is ~8.5x that baseline
+area) — exactly the "feel" concern that prompted this. Replaced with
+`computeEnergyNodePoolSize(levelWidth, levelHeight)` in
+`energyNodeConfig.ts`: `max(minPoolSize, round(baselinePoolSize *
+areaRatio))`, where `baselinePoolSize`/`baselineWidth`/`baselineHeight`
+anchor the scale to that same already-playtested 2400x1350/5 pairing
+(rather than re-deriving a density from scratch) and `minPoolSize` (5)
+floors it so no level ever gets fewer nodes than the original baseline.
+Still a global tunable, not per-level authored data — placement stays
+fully procedural, so this needed zero per-level content work either way.
+Not yet playtested for feel on a larger level (level-007 would now spawn
+~43 nodes vs. the old flat 5) — the formula fixes the density math but the
+resulting absolute counts on the largest levels haven't been played yet.
 
 **Ships start each level at 0 energy, not full (2026-08-24, same-day
 follow-up).** `ShipSurvivalComponent`'s constructor now sets
@@ -627,9 +647,12 @@ imports; **nobody hand-edits `create()`.**
   `ShipStatusArcs.update()` already uses for continuous ship-relative
   tracking.
 - **`EnergyNodeElement`/`EnergyNodeManager`** — added 2026-08-24 (see
-  Current project state above). `EnergyNodeManager` owns a fixed pool
-  (`energyNodeConfig.poolSize`) of `EnergyNodeElement` pickups per level —
-  same `GameScene`-owned, reset-per-`create()`, not-a-`SystemRegistry`-
+  Current project state above). `EnergyNodeManager` owns a fixed pool of
+  `EnergyNodeElement` pickups per level, sized via
+  `computeEnergyNodePoolSize(levelWidth, levelHeight)` (scales with level
+  area as of 2026-08-25 — see that entry under Current project state below
+  for why; was a flat `energyNodeConfig.poolSize` before) — same
+  `GameScene`-owned, reset-per-`create()`, not-a-`SystemRegistry`-
   singleton lifecycle as `MovingHazardManager`, and the same "wrap, don't
   destroy/respawn" design (a fixed instance toggles visible/hidden and
   its Arcade body's `enable` flag rather than being recreated). Each

@@ -3,15 +3,15 @@ import { EnergyNodeElement } from './EnergyNodeElement';
 import type { HazardZoneElement } from './HazardZoneElement';
 import type { LevelObjectiveTracker } from './LevelObjectiveTracker';
 import type { Point } from '../levels/levelTypes';
-import { energyNodeConfig } from '../config/energyNodeConfig';
+import { energyNodeConfig, computeEnergyNodePoolSize } from '../config/energyNodeConfig';
 
 // Owns the fixed pool of EnergyNodeElement pickups for one level (2026-08-24
 // energy-node feature). Same GameScene-owned, reset-per-create(), not-a-
 // SystemRegistry-singleton lifecycle as MovingHazardManager, since node
 // positions/cooldowns have no reason to survive a hard-fail restart. Wraps a
-// fixed set of instances (energyNodeConfig.poolSize) rather than destroying/
-// creating on pickup -- same "wrap, don't replace" choice MovingHazardManager
-// made for hazards.
+// fixed set of instances (sized via computeEnergyNodePoolSize -- scales with
+// this level's area, 2026-08-25) rather than destroying/creating on pickup --
+// same "wrap, don't replace" choice MovingHazardManager made for hazards.
 //
 // Placement (both the initial scatter and every respawn) is rejection-
 // sampled against two keep-outs: never inside a blocksMovement hazard's own
@@ -32,7 +32,8 @@ export class EnergyNodeManager {
     private readonly levelWidth: number,
     private readonly levelHeight: number,
   ) {
-    for (let i = 0; i < energyNodeConfig.poolSize; i++) {
+    const poolSize = computeEnergyNodePoolSize(levelWidth, levelHeight);
+    for (let i = 0; i < poolSize; i++) {
       this.nodes.push(new EnergyNodeElement(scene, this.pickScatterPosition()));
     }
   }

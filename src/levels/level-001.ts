@@ -88,9 +88,11 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // explored earlier the same day is intentionally not this level; that
 // larger, heavier-hazard shape is earmarked for a level 2+ once scan is
 // unlocked, not level-001's first pass. What carries over from that
-// exploration: heavily-chained Debris Field walls as the sole hazard
-// (Nebula Field dropped 2026-08-15 -- debris-only for this pass; still no
-// puzzle-taxonomy content), and non-uniform objective spacing -- only
+// exploration: heavily-chained Debris Field walls as the primary hazard
+// (Nebula Field was dropped 2026-08-15 for a debris-only pass, then
+// reintroduced 2026-08-25 as a single bypass-toll instance -- see the
+// hazards list below; still no puzzle-taxonomy content), and non-uniform
+// objective spacing -- only
 // *consecutive* steps in LevelObjectiveTracker's Probe -> Relay Beacon ->
 // Exit Wormhole sequence (§11.11) are pushed apart; Probe and Exit aren't
 // consecutive, so they're deliberately left close together (~350px) while
@@ -121,8 +123,19 @@ export const LEVEL_001: LevelConfig = {
   resupplyPoints: [{ x: 1550, y: 1050, textureKey: 'asteroid_large', radius: 40 }],
 
   hazards: [
-    // Debris Field walls -- the sole hazard for this pass (Nebula Field
-    // dropped 2026-08-15). Three chained barriers carving the map into
+    // Nebula Field, added 2026-08-25 (user request) -- reintroduces the
+    // hazard type to level-001 for the first time since it was dropped
+    // 2026-08-15 (debris-only pass, see below). Sits in the open corner
+    // pocket between upperCenterWall's bottom end (~1000,700) and
+    // midRightWall's left end (~1200,750) -- the natural diagonal shortcut
+    // connecting the upper-left region to the mid-right one. A bypass-toll
+    // placement in the level-design-guide.md §6 sense: threatens that
+    // shortcut without blocking it (Nebula Field never blocks movement),
+    // and the pocket is roomy enough (~700x600px) that routing around it
+    // instead is always an option, not a squeeze.
+    { type: 'nebulaField', x: 1200, y: 500 },
+
+    // Debris Field walls -- three chained barriers carving the map into
     // routing decisions (Meso/Exploration pillar). None span a full map
     // dimension, so each leaves clear space at both ends to route around.
     ...upperCenterWall,

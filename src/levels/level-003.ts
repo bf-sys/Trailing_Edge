@@ -195,6 +195,11 @@ export const LEVEL_003: LevelConfig = {
     { type: 'ionStorm', x: 3200, y: 900 },
     { type: 'ionStorm', x: 1600, y: 1100 },
     { type: 'meteoroid', x: 900, y: 2200 },
+    // Second Meteoroid, added 2026-08-25 (user request) -- opposite corner
+    // from the first (bottom-right vs. bottom-left), clear of every wall/
+    // pocket/objective/resupply point by 250px+ (nearest: Wall B's east end
+    // at ~860px).
+    { type: 'meteoroid', x: 4300, y: 2400 },
 
     // Debris Field walls -- four chained barriers, same as level-001/002.
     // None span a full map dimension, so each leaves clear space at both

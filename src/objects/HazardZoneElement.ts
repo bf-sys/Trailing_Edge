@@ -85,6 +85,14 @@ export interface HazardZoneConfig {
   // rotation). Purely visual -- doesn't touch the Arcade body, same as
   // rotationRadians above.
   spinRadiansPerSecond?: number;
+  // Render layer override (added 2026-08-24, Ion Storm/Meteoroid): unset
+  // means "leave at Phaser's default depth 0," same layer as every other
+  // static world object (Debris Field, Nebula Field, Solar Flare, Probe,
+  // resupply, wormholes, ...). Set on the two 'linear' hazards so they
+  // draw above that static layer but still below PlayerShip's depth 10
+  // (see PlayerShip.ts) -- the codebase's established depth ladder,
+  // documented alongside destinationMarkerConfig/thrusterVfxConfig/etc.
+  depth?: number;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
@@ -105,6 +113,7 @@ export class HazardZoneElement {
     this.config = config;
 
     this.zone = scene.physics.add.image(config.x, config.y, config.textureKey);
+    if (config.depth !== undefined) this.zone.setDepth(config.depth);
     if (config.rotationRadians) this.zone.setRotation(config.rotationRadians);
     this.applyShape();
     this.applyMovement();

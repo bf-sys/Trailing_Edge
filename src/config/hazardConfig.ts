@@ -45,6 +45,7 @@ export interface HazardTypeConfig {
   blocksMovement?: boolean;
   cancelTargetOnContact?: boolean;
   knockbackSpeed?: number;
+  depth?: number;
   // Solar Flare has no sourced art yet (docs/STATUS.md) -- GameScene
   // generates a flat placeholder circle texture at this color/alpha under
   // `textureKey`. Debris Field, Ion Storm, Nebula Field, and Meteoroid all
@@ -116,6 +117,14 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     spinRadiansPerSecond: (Math.PI * 2) / 24,
     activation: 'continuous',
     resourceCost: { energy: 15, structure: 0 }, // net -7/s against regen
+    // 2026-08-24: 'linear' hazards render above the static world layer
+    // (Debris/Nebula/Solar Flare, resupply, objectives -- all left at
+    // Phaser's default depth 0) but below PlayerShip (depth 10, see
+    // PlayerShip.ts) -- they're the two things on the map that actually
+    // move, so they read as passing over static scenery rather than
+    // blending into it. Meteoroid (8) sits above Ion Storm (7) on request,
+    // so a Meteoroid crossing an Ion Storm's cloud stays visible on top.
+    depth: 7,
   },
 
   // Three sourced art variants as of 2026-08-21 (hazard_nebula_field,
@@ -200,6 +209,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     // a straight-on hit's radial direction is just "back the way the ship
     // came," which a still-moving hazard simply catches back up to.
     knockbackSpeed: 260,
+    depth: 8, // above ionStorm's 7 -- see that field's comment
   },
 };
 

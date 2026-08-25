@@ -1,5 +1,7 @@
 import type { HazardPlacement, LevelConfig } from './levelTypes';
 import { abilityConfig } from '../config/abilityConfig';
+import { hazardConfig } from '../config/hazardConfig';
+import { energyNodeConfig } from '../config/energyNodeConfig';
 
 const DEBRIS_TEXTURES = ['debris_large', 'debris_large_alt2', 'debris_large_alt3'];
 const NEBULA_TEXTURES = ['hazard_nebula_field', 'hazard_nebula_field_alt2', 'hazard_nebula_field_alt3'];
@@ -66,36 +68,27 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
   return placements;
 }
 
-// Places `count` Debris Field instances evenly around a closed circle of
-// the given radius, centered on (cx, cy) -- a *sealed* barrier (every gap
-// between neighbors overlaps, same 2x-radius margin as debrisWall above),
-// not a line with open ends. Introduced in level-003 to enclose its Probe,
-// reachable only by `teleport` (the one ability whose plain setPosition()
-// passes through blocksMovement colliders, GDD §7/§11.4a). This level
-// reuses it three times over -- see the file-level comment below.
-function debrisRing(cx: number, cy: number, radius: number, count: number): HazardPlacement[] {
-  const placements: HazardPlacement[] = [];
-  for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2;
-    placements.push({
-      type: 'debrisField',
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      textureKey: DEBRIS_TEXTURES[i % DEBRIS_TEXTURES.length],
-      rotationRadians: (i * 0.83) % (Math.PI * 2),
-    });
-  }
-  return placements;
-}
+// Probe/Relay Beacon pocket geometry (corner pockets, replacing the
+// original sealed debrisRing() pockets 2026-08-25 -- see the file-level
+// comment below). Each is two Debris Field walls, plus two of the map's
+// own world bounds (GameScene.ts sets collideWorldBounds on the ship, so a
+// level edge is already a solid barrier), enclosing the nearest corner to
+// that objective. Shared clearance constant so the range math (how far
+// each objective sits from its pocket's walls) only needs deriving once --
+// same role level-003's PROBE_WALL_CLEARANCE plays.
+const POCKET_WALL_CLEARANCE = 150;
 
-// Shared by all three sealed rings below -- same radius/count level-003
-// proved out, reused rather than re-derived per pocket so the range math
-// only has to be verified once (see the sanity check at the bottom of this
-// file). Chord between neighbors at radius 150 / count 9 is ~103px, well
-// under the 120px (2x60 debris radius) overlap threshold, so no ring has a
-// gap anywhere.
-const SEALED_RING_RADIUS = 150;
-const SEALED_RING_COUNT = 9;
+// Probe pocket -- top-left corner, nearest to the Probe's (1000, 700).
+// Wall positions are derived directly from the Probe's location plus
+// POCKET_WALL_CLEARANCE, so moving the Probe and re-deriving these two
+// values keeps the clearance invariant automatically.
+const PROBE_POCKET_WALL_X = 1000 + POCKET_WALL_CLEARANCE; // 1150 -- vertical wall's x
+const PROBE_POCKET_WALL_Y = 700 + POCKET_WALL_CLEARANCE; // 850 -- horizontal wall's y
+
+// Relay Beacon pocket -- bottom-right corner, nearest to the Beacon's
+// (6300, 3400).
+const BEACON_POCKET_WALL_X = 6300 - POCKET_WALL_CLEARANCE; // 6150 -- vertical wall's x
+const BEACON_POCKET_WALL_Y = 3400 - POCKET_WALL_CLEARANCE; // 3250 -- horizontal wall's y
 
 // Seventh real level. Generated via the level GER loop (content-agent ->
 // level-evaluator-agent -> level-refiner-agent, per level-design-guide.md
@@ -115,21 +108,45 @@ const SEALED_RING_COUNT = 9;
 // Creative axis for this candidate: MULTIPLE SEALED SECTIONS. level-003
 // used debrisRing() exactly once, deliberately restricted (per §5's "not a
 // pattern to repeat" framing at the time) to reinforcing teleport right
-// after it was granted. (level-003 itself moved its Probe off debrisRing()
-// to a walled corner pocket 2026-08-25 -- see that file's header comment --
-// once energy-node pickups made a *tightly* sealed ring unfun to wait out;
-// the design history and rationale below are otherwise unaffected.) §8
-// explicitly lifts that restriction for any level
+// after it was granted. §8 explicitly lifts that restriction for any level
 // past the unlock sequence: "a section gated behind any one of them is fair
-// game as a recurring device." This candidate takes that literally and
-// seals THREE separate pockets with debrisRing() instead of one -- the
-// Probe, the Relay Beacon, and (new, not attempted by level-003) the
-// AsteroidField resupply point itself, so even mid-level structure repair
-// costs a teleport in and a teleport out rather than a free flyby. Neither
-// level-005 (moving-hazard density) nor level-006 (a single elaborate
-// maze, explicitly built to NOT use debrisRing() at all -- see that file's
-// comment) touches this axis, so the three candidates read as genuinely
-// different experiments rather than variations on one theme.
+// game as a recurring device." This candidate took that literally and
+// originally sealed THREE separate pockets with debrisRing() instead of
+// one -- the Probe, the Relay Beacon, and the AsteroidField resupply point
+// itself. Neither level-005 (moving-hazard density) nor level-006 (a
+// single elaborate maze, explicitly built to NOT use debrisRing() at all --
+// see that file's comment) touches this axis, so the three candidates read
+// as genuinely different experiments rather than variations on one theme.
+//
+// Follow-up, 2026-08-25 (two changes, both driven by the same root cause --
+// see level-003's header comment for the fuller writeup):
+// 1. Probe and Relay Beacon moved from a sealed debrisRing() to a walled
+//    corner pocket (two straight Debris Field walls plus two of the map's
+//    own world bounds, same device level-003 introduced for its Probe).
+//    A tight 150px-radius ring left only a ~34px-radius disk clear of
+//    energyNodeConfig's placement keep-out -- once energy-node pickups
+//    (2026-08-24) made passive regen alone too slow to lean on, a player
+//    teleporting into a ring that tight had nowhere for a pickup to ever
+//    land. A corner pocket keeps the same teleport-only access with far
+//    more interior room (see PROBE_POCKET_WALL_X/Y and
+//    BEACON_POCKET_WALL_X/Y below, and the dev sanity checks at the bottom
+//    of this file for the exact interior figures).
+// 2. The Resupply pocket is removed outright, not converted -- unlike the
+//    Probe/Beacon, AsteroidField itself became a solid blocksMovement
+//    collider in the same 2026-08-24 pass (CLAUDE.md's ResupplyPoint
+//    rework), so sealing it inside a tight ring left no space for the ship
+//    to actually get near enough to repair: two solid obstacles (the ring
+//    and the asteroid) sharing one small pocket, with no clearance between
+//    them for a ship body to fit through. Converting it to a corner pocket
+//    the way Probe/Beacon were wouldn't fix that -- the problem is the
+//    asteroid's own footprint crowding the interior, not the pocket's
+//    shape -- and (3800, 2000) sits in the map's interior anyway, with no
+//    nearby corner to relocate it against. Simplest fix: drop the seal
+//    entirely: AsteroidField repair (already a deliberate routing decision
+//    since that same rework -- the asteroid blocks a drive-through, but
+//    the ship can still fly up to it) reverts to what level-003's own
+//    AsteroidField placement already does elsewhere in this project,
+//    unsealed and reachable by normal movement.
 //
 // Sizing: 7020x3949, i.e. level-003/004's 5400x3038 footprint scaled by
 // 7020/5400 = 3949/3038 = 1.3x -- both target dimensions share that one
@@ -138,31 +155,32 @@ const SEALED_RING_COUNT = 9;
 // 6480x3646 (the largest level built so far), per this guide's explicit
 // floor ("holding steady or growing... is fine, don't go smaller").
 //
-// THE THREE SEALED POCKETS (this candidate's axis):
-// - Probe pocket, centered on the Probe itself at (1000, 700).
-// - Resupply pocket, centered on the AsteroidField at (3800, 2000) -- new:
-//   no prior level has sealed its resupply point. Repairing structure now
-//   costs a deliberate teleport in/out rather than a free flyby, adding a
-//   genuine macro/survival decision (is it worth the 30-energy round trip
-//   right now?) that no earlier level's resupply placement has asked.
-// - Relay Beacon pocket, centered on the Beacon at (6300, 3400) -- the
-//   first level to seal a *mandatory* waypoint other than the Probe.
-// All three use the identical SEALED_RING_RADIUS/SEALED_RING_COUNT above,
-// so the range math only needs deriving once: a ship's body (shipConfig:
-// 46x56 display size) stops against a ring's outer edge at roughly
-// SEALED_RING_RADIUS (150) + 60 (debris radius) + ~28 (ship half-size) =
-// 238px from the pocket's center -- comfortably inside teleport's fixed
-// 350px maxRange (abilityConfig.teleport.maxRange), leaving 112px of slack
+// THE SEALED POCKETS (this candidate's axis; originally three, now two --
+// see the 2026-08-25 follow-up above):
+// - Probe pocket, top-left corner, nearest to the Probe itself at
+//   (1000, 700).
+// - Relay Beacon pocket, bottom-right corner, nearest to the Beacon at
+//   (6300, 3400) -- the first level to seal a *mandatory* waypoint other
+//   than the Probe.
+// - Resupply, at the AsteroidField (3800, 2000), is deliberately unsealed
+//   (see above) -- no seal, no pocket, plain open-ground placement.
+// Both remaining pockets share POCKET_WALL_CLEARANCE (150px, each
+// objective's distance from its own pocket's two walls), so the range math
+// only needs deriving once: a ship's body (shipConfig: 46x56 display size)
+// stops against a pocket wall's outer edge at roughly
+// POCKET_WALL_CLEARANCE (150) + 60 (debris radius) + ~28 (ship half-size)
+// = 238px from the objective -- comfortably inside teleport's fixed 350px
+// maxRange (abilityConfig.teleport.maxRange), leaving 112px of slack
 // regardless of approach angle, identical to level-003's verified math.
-// Once inside any of the three, normal movement can't get back out either
-// -- the player waits out teleport's 8s cooldown to blink back out.
-// Deliberate every time, not a softlock: the wait is short and no hazard
-// drains anything inside a ring. The Exit Wormhole is deliberately left
-// UNSEALED (open ground, reachable by normal movement) -- sealing every
-// core-loop object would make the level about waiting out cooldowns rather
-// than routing, and Exit's own gameplay gate (LevelObjectiveTracker.canReturn(),
+// Once inside either, normal movement can't get back out either -- the
+// player waits out teleport's 8s cooldown to blink back out. Deliberate
+// every time, not a softlock: the wait is short and no hazard drains
+// anything inside a pocket. The Exit Wormhole is deliberately left UNSEALED
+// (open ground, reachable by normal movement) -- sealing every core-loop
+// object would make the level about waiting out cooldowns rather than
+// routing, and Exit's own gameplay gate (LevelObjectiveTracker.canReturn(),
 // tinted inactive until the Beacon is reached) already gives it a
-// meaningful closed state without a physical ring on top.
+// meaningful closed state without a physical wall on top.
 //
 // Objectives (§3 -- only *consecutive* Probe<->Beacon and Beacon<->Exit
 // need to be pushed far apart; non-consecutive Probe<->Exit is
@@ -182,34 +200,37 @@ const SEALED_RING_COUNT = 9;
 // Debris Field: three conventional, non-sealed walls (A/B/C below) provide
 // the level's baseline routing texture, deliberately kept modest (same
 // "don't also push a maze" restraint level-005 used to keep its own axis
-// legible) so the three rings stay the clear focal device rather than
+// legible) so the two pockets stay the clear focal device rather than
 // competing with a maze for attention. None spans a full map dimension;
 // each is open at both ends per §5's baseline (this level doesn't reuse
-// level-006's single-gap maze pattern). Every wall segment and every ring
-// keeps 250px+ clearance from every objective/resupply point (verified by
-// distance below, not just eyeballed) -- note the rings' *own* enclosed
-// objective/resupply point is naturally < 250px from its own ring by
-// design (that's the point of a sealed pocket); the clearance rule is
-// checked against every *other* wall/ring instead.
+// level-006's single-gap maze pattern). Every wall segment keeps 250px+
+// clearance from every objective/resupply point/pocket wall (verified by
+// distance below, not just eyeballed) -- note a pocket's *own* enclosed
+// objective is naturally < 250px from its own pocket walls by design
+// (that's the point of a sealed pocket); the clearance rule is checked
+// against every *other* wall/pocket instead. Distances below are
+// edge-to-edge (raw center distance minus both radii involved), recomputed
+// 2026-08-25 for the two bullets that used to reference a ring.
 // - Wall A: (2400,2200)-(2400,3400), vertical, between the Entry/SW region
-//   and the map's center. Closest point to the Resupply ring's outer edge
-//   is ~1204px; to Entry ~1906px; to Meteoroid's initial spot ~361px.
-// - Wall B: (4800,1200)-(4800,2600), vertical, between the Resupply pocket
-//   and the Beacon pocket. Closest point to the Resupply ring's outer edge
-//   is ~790px; to the Beacon ring's outer edge is ~1539px.
+//   and the map's center. Closest point to the (now-unsealed) Resupply
+//   asteroid is ~1314px; to Entry ~1906px (raw); to Meteoroid's initial
+//   spot ~361px (raw).
+// - Wall B: (4800,1200)-(4800,2600), vertical, between the Resupply point
+//   and the Beacon pocket. Closest point to the Resupply asteroid is
+//   ~900px; to the Beacon pocket's nearest wall is ~1378px.
 // - Wall C: (1200,2000)-(2200,2000), horizontal, a short early divider on
-//   the Entry-to-Probe route. Closest point to the Probe ring's outer edge
-//   is ~1105px; to Exit ~850px.
+//   the Entry-to-Probe route. Closest point to the Probe pocket's nearest
+//   wall is ~1031px; to Exit ~850px (raw).
 //
 // Nebula Field (§6, four instances, placed with intent): a bypass toll at
 // Wall A's open south end (also doubling as the last obstacle before
 // Entry, 1900px+ clear of it), an early-route toll on Entry's way toward
 // the Probe pocket and Wall C, a bridging toll on the close Probe<->Exit
-// hop (sitting between the Probe ring's outer edge and Exit, ~373px/~381px
-// clear of each respectively), and a toll on the route from the
-// Resupply/Wall B area toward the Beacon pocket. Two are allowed to sit
-// close to a Debris Field wall's open end per §6 ("fine, even good...
-// reads as a compound obstacle").
+// hop (sitting near the Probe pocket's nearest wall, ~221px clear of it
+// edge-to-edge, and ~381px raw-center clear of Exit), and a toll on the
+// route from the Resupply/Wall B area toward the Beacon pocket. Two are
+// allowed to sit close to a Debris Field wall's open end per §6 ("fine,
+// even good... reads as a compound obstacle").
 //
 // Moving hazards (§7): held at the established baseline (2 Ion Storm, 1
 // Meteoroid), same reasoning level-006 used for its own non-axis
@@ -217,7 +238,7 @@ const SEALED_RING_COUNT = 9;
 // moving-hazard density (that's a different candidate's job), so pushing
 // both at once would blur the comparison the GER loop's Evaluate stage is
 // meant to make. All three initial placements keep 250px+ clearance from
-// every wall/ring/objective/resupply point (verified by distance in the
+// every wall/pocket/objective/resupply point (verified by distance in the
 // placement comments below).
 //
 // No puzzle-taxonomy element placed (consistent with every real level so
@@ -228,6 +249,23 @@ const SEALED_RING_COUNT = 9;
 const wallA = debrisWall(2400, 2200, 2400, 3400, 100); // Wall A -- Entry/SW region divider
 const wallB = debrisWall(4800, 1200, 4800, 2600, 100); // Wall B -- Resupply/Beacon region divider
 const wallC = debrisWall(1200, 2000, 2200, 2000, 100); // Wall C -- short early Entry-to-Probe divider
+
+// Probe pocket -- vertical wall down from the top edge, horizontal wall in
+// from the left edge, meeting at (PROBE_POCKET_WALL_X, PROBE_POCKET_WALL_Y).
+// The horizontal wall's start is offset one spacing unit (100px) past that
+// join instead of exactly on it, same reasoning as level-003's pocket: the
+// two walls overlap-seal the corner (well under the 120px no-gap
+// threshold) without stacking a duplicate debris instance on the exact
+// same point.
+const probePocketWallDown = debrisWall(PROBE_POCKET_WALL_X, 0, PROBE_POCKET_WALL_X, PROBE_POCKET_WALL_Y, 100);
+const probePocketWallLeft = debrisWall(PROBE_POCKET_WALL_X - 100, PROBE_POCKET_WALL_Y, 0, PROBE_POCKET_WALL_Y, 100);
+
+// Relay Beacon pocket -- vertical wall up from the bottom edge, horizontal
+// wall in from the right edge, meeting at (BEACON_POCKET_WALL_X,
+// BEACON_POCKET_WALL_Y). Same corner-join offset trick as the Probe pocket
+// above, mirrored: the horizontal wall's start is offset past the join.
+const beaconPocketWallUp = debrisWall(BEACON_POCKET_WALL_X, BEACON_POCKET_WALL_Y, BEACON_POCKET_WALL_X, 3949, 100);
+const beaconPocketWallRight = debrisWall(BEACON_POCKET_WALL_X + 100, BEACON_POCKET_WALL_Y, 7020, BEACON_POCKET_WALL_Y, 100);
 
 export const LEVEL_007: LevelConfig = {
   width: 7020,
@@ -253,7 +291,7 @@ export const LEVEL_007: LevelConfig = {
     // Ion Storm / Meteoroid -- managed by MovingHazardManager. Initial
     // positions only, held at the established 2-1 baseline (this
     // candidate's axis is sealed sections, not moving-hazard density),
-    // clear of every wall/ring/objective/resupply point.
+    // clear of every wall/pocket/objective/resupply point.
     { type: 'ionStorm', x: 3200, y: 900 },
     { type: 'ionStorm', x: 5300, y: 1800 }, // Refine round 1: nudged +100px from x=5200 -- that
     // position sat exactly at the 250px clearance floor from Wall B
@@ -266,19 +304,20 @@ export const LEVEL_007: LevelConfig = {
 
     // Debris Field -- three conventional, non-sealed walls providing
     // baseline routing texture (see file comment above for per-wall
-    // clearance notes). Deliberately modest so the three sealed rings
+    // clearance notes). Deliberately modest so the two sealed pockets
     // below stay this level's clear focal device.
     ...wallA,
     ...wallB,
     ...wallC,
 
-    // THE THREE SEALED POCKETS -- this candidate's axis (see file-level
-    // comment above for the shared range math and the reasoning behind
-    // sealing each of these three specifically, and for why Exit is
-    // deliberately left unsealed).
-    ...debrisRing(1000, 700, SEALED_RING_RADIUS, SEALED_RING_COUNT), // Probe pocket
-    ...debrisRing(3800, 2000, SEALED_RING_RADIUS, SEALED_RING_COUNT), // Resupply pocket
-    ...debrisRing(6300, 3400, SEALED_RING_RADIUS, SEALED_RING_COUNT), // Relay Beacon pocket
+    // THE SEALED POCKETS -- this candidate's axis (see file-level comment
+    // above for the shared range math and the 2026-08-25 follow-up
+    // explaining why these are corner pockets now, why Resupply's is gone,
+    // and why Exit is deliberately left unsealed).
+    ...probePocketWallDown,
+    ...probePocketWallLeft,
+    ...beaconPocketWallUp,
+    ...beaconPocketWallRight,
   ],
 
   puzzleElements: [],
@@ -291,26 +330,76 @@ export const LEVEL_007: LevelConfig = {
 // a wall with a ship-width hole in it. Mirrors level-006's dev-check.
 if (import.meta.env.DEV) {
   const NO_GAP_THRESHOLD = 2 * 60;
-  [wallA, wallB, wallC].forEach((wall, wallIndex) => {
-    for (let i = 0; i < wall.length - 1; i++) {
-      const dist = Math.hypot(wall[i + 1].x - wall[i].x, wall[i + 1].y - wall[i].y);
-      if (dist > NO_GAP_THRESHOLD) {
-        console.warn(
-          `[level-007] Debris wall ${wallIndex} has a ${dist.toFixed(1)}px gap between instances ${i} and ${i + 1} -- exceeds the ${NO_GAP_THRESHOLD}px no-gap threshold, may open a ship-width hole.`,
-        );
+  [wallA, wallB, wallC, probePocketWallDown, probePocketWallLeft, beaconPocketWallUp, beaconPocketWallRight].forEach(
+    (wall, wallIndex) => {
+      for (let i = 0; i < wall.length - 1; i++) {
+        const dist = Math.hypot(wall[i + 1].x - wall[i].x, wall[i + 1].y - wall[i].y);
+        if (dist > NO_GAP_THRESHOLD) {
+          console.warn(
+            `[level-007] Debris wall ${wallIndex} has a ${dist.toFixed(1)}px gap between instances ${i} and ${i + 1} -- exceeds the ${NO_GAP_THRESHOLD}px no-gap threshold, may open a ship-width hole.`,
+          );
+        }
       }
+    },
+  );
+
+  // Each pocket's two walls are checked separately above (each internally
+  // gap-free), but that doesn't confirm they seal *each other* off at the
+  // corner they share -- check both joins explicitly, same as level-003.
+  const joins: Array<[string, HazardPlacement, HazardPlacement]> = [
+    ['Probe', probePocketWallDown[probePocketWallDown.length - 1], probePocketWallLeft[0]],
+    ['Beacon', beaconPocketWallUp[0], beaconPocketWallRight[0]],
+  ];
+  joins.forEach(([label, a, b]) => {
+    const joinDist = Math.hypot(b.x - a.x, b.y - a.y);
+    if (joinDist > NO_GAP_THRESHOLD) {
+      console.warn(
+        `[level-007] ${label} pocket's two walls don't seal at their corner (${joinDist.toFixed(1)}px gap) -- exceeds the ${NO_GAP_THRESHOLD}px no-gap threshold, may open a ship-width hole.`,
+      );
     }
   });
 }
 
 // Sanity check, not gameplay logic: fails fast (at import time, in dev) if
-// a future edit to SEALED_RING_RADIUS or abilityConfig.teleport.maxRange
+// a future edit to POCKET_WALL_CLEARANCE or abilityConfig.teleport.maxRange
 // ever breaks the range math the file comment above walks through, instead
-// of silently shipping an unreachable Probe/Resupply/Beacon. Covers all
-// three rings at once since they share the same radius.
-const ringApproachDistance = SEALED_RING_RADIUS + 60 + 28;
-if (import.meta.env.DEV && ringApproachDistance >= abilityConfig.teleport.maxRange!) {
+// of silently shipping an unreachable Probe/Beacon. Covers both pockets at
+// once since they share the same clearance.
+const pocketApproachDistance = POCKET_WALL_CLEARANCE + 60 + 28;
+if (import.meta.env.DEV && pocketApproachDistance >= abilityConfig.teleport.maxRange!) {
   console.warn(
-    `[level-007] Sealed ring approach distance (${ringApproachDistance}px) is not comfortably under teleport's maxRange (${abilityConfig.teleport.maxRange}px) -- the Probe/Resupply/Beacon pockets may be unreachable.`,
+    `[level-007] Pocket approach distance (${pocketApproachDistance}px) is not comfortably under teleport's maxRange (${abilityConfig.teleport.maxRange}px) -- the Probe/Beacon pockets may be unreachable.`,
   );
+}
+
+// Sanity check, not gameplay logic: warns at import time (dev only) if
+// either pocket's interior -- clear of both its walls' energy-node keep-out
+// (debris radius + node radius + hazardKeepOutBuffer) and
+// energyNodeConfig.edgeMargin off the two map edges each pocket relies on --
+// shrinks too small for a pickup to ever land inside, re-creating the old
+// sealed-ring problem these pockets replaced (see the file-level comment
+// above).
+const nodeWallKeepOut =
+  hazardConfig.debrisField.shape.kind === 'circle'
+    ? hazardConfig.debrisField.shape.radius + energyNodeConfig.radius + energyNodeConfig.hazardKeepOutBuffer
+    : 0;
+const MIN_POCKET_INTERIOR = 100; // px, arbitrary "clearly usable" floor -- not tied to any other config value
+
+const probeInteriorWidth = PROBE_POCKET_WALL_X - nodeWallKeepOut - energyNodeConfig.edgeMargin;
+const probeInteriorHeight = PROBE_POCKET_WALL_Y - nodeWallKeepOut - energyNodeConfig.edgeMargin;
+const beaconInteriorWidth = 7020 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_X + nodeWallKeepOut);
+const beaconInteriorHeight = 3949 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_Y + nodeWallKeepOut);
+
+const pocketInteriors: Array<[string, number, number]> = [
+  ['Probe', probeInteriorWidth, probeInteriorHeight],
+  ['Beacon', beaconInteriorWidth, beaconInteriorHeight],
+];
+if (import.meta.env.DEV) {
+  pocketInteriors.forEach(([label, w, h]) => {
+    if (w < MIN_POCKET_INTERIOR || h < MIN_POCKET_INTERIOR) {
+      console.warn(
+        `[level-007] ${label} pocket interior (${w.toFixed(0)}x${h.toFixed(0)}px) is too small for energy nodes to reliably respawn inside it.`,
+      );
+    }
+  });
 }

@@ -115,7 +115,11 @@ const SEALED_RING_COUNT = 9;
 // Creative axis for this candidate: MULTIPLE SEALED SECTIONS. level-003
 // used debrisRing() exactly once, deliberately restricted (per §5's "not a
 // pattern to repeat" framing at the time) to reinforcing teleport right
-// after it was granted. §8 explicitly lifts that restriction for any level
+// after it was granted. (level-003 itself moved its Probe off debrisRing()
+// to a walled corner pocket 2026-08-25 -- see that file's header comment --
+// once energy-node pickups made a *tightly* sealed ring unfun to wait out;
+// the design history and rationale below are otherwise unaffected.) §8
+// explicitly lifts that restriction for any level
 // past the unlock sequence: "a section gated behind any one of them is fair
 // game as a recurring device." This candidate takes that literally and
 // seals THREE separate pockets with debrisRing() instead of one -- the

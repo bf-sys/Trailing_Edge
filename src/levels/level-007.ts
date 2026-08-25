@@ -301,6 +301,13 @@ export const LEVEL_007: LevelConfig = {
     // in line with every other measured pairing in this file (see
     // docs/history/level-eval-log-2026-08-17.md for the flag).
     { type: 'meteoroid', x: 2700, y: 3600 },
+    // Two more of each, added 2026-08-25 (user request) -- spread across
+    // the open interior's four quadrants (NW/NE/SW/SE relative to Wall A/B),
+    // each 250px+ clear of every wall/pocket/objective/resupply point.
+    { type: 'ionStorm', x: 2000, y: 1500 }, // NW, ~381px clear of Exit, ~806px of Wall A
+    { type: 'ionStorm', x: 1800, y: 3000 }, // SW, ~600px clear of Wall A
+    { type: 'meteoroid', x: 5600, y: 900 }, // NE, ~854px clear of Wall B
+    { type: 'meteoroid', x: 4200, y: 3600 }, // SE, ~1166px clear of Wall B, ~1500px from the first Meteoroid
 
     // Debris Field -- three conventional, non-sealed walls providing
     // baseline routing texture (see file comment above for per-wall

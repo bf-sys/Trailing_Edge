@@ -226,6 +226,17 @@ export const LEVEL_006: LevelConfig = {
     { type: 'ionStorm', x: 1700, y: 1000 },
     { type: 'ionStorm', x: 3700, y: 1800 },
     { type: 'meteoroid', x: 5900, y: 1500 },
+    // Two more of each, added 2026-08-25 (user request) -- one per
+    // previously-empty maze lane, each centered 300px from both bounding
+    // walls (same symmetric placement the baseline entries above already
+    // use, since a 600px lane can't clear a strict 250px net of both a
+    // wall's 60px debris radius and Ion Storm's 110px/Meteoroid's 56px
+    // radius on both sides at once -- matching established precedent
+    // rather than a stricter reading this maze's lane width can't satisfy).
+    { type: 'meteoroid', x: 2500, y: 1600 }, // lane 1 (walls at 2200/2800)
+    { type: 'meteoroid', x: 4300, y: 2400 }, // lane 4 (walls at 4000/4600)
+    { type: 'ionStorm', x: 3100, y: 2600 }, // lane 2 (walls at 2800/3400)
+    { type: 'ionStorm', x: 4900, y: 1000 }, // lane 5 (walls at 4600/5200)
 
     // The maze -- six parallel vertical walls with alternating single
     // gaps (see file-level comment above for the full design rationale

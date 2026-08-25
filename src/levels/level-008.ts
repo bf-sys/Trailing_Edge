@@ -315,6 +315,14 @@ export const LEVEL_008: LevelConfig = {
     { type: 'ionStorm', x: 5000, y: 700 }, // NE open pocket, north of the Approach Veil
     { type: 'ionStorm', x: 1500, y: 2600 }, // SW open pocket, east of Debris Wall A. Moved +100px east 2026-08-17 (level-eval-log-2026-08-17.md round 1, [placement] flag #2) -- was exactly 250.0px net of Debris Wall A's collision edge (sitting on the clearance floor, not clear of it); now ~350px net.
     { type: 'meteoroid', x: 4200, y: 900 }, // open pocket between the Drift Expanse and the Approach Veil
+    // Two more of each, added 2026-08-25 (user request) -- placed in open
+    // gaps between formations, 250px+ clear of Debris Wall A/B and every
+    // objective/resupply point (Nebula Field isn't blocksMovement, so
+    // overlapping a formation isn't a clearance concern the way a wall is).
+    { type: 'ionStorm', x: 2200, y: 2000 }, // gap west of the Drift Expanse, ~1200px clear of Wall A
+    { type: 'ionStorm', x: 4400, y: 2800 }, // gap between the Drift Expanse and the Approach Veil
+    { type: 'meteoroid', x: 600, y: 1600 }, // west of Wall A, ~447px clear of it
+    { type: 'meteoroid', x: 6000, y: 2200 }, // east of Wall B, ~632px clear of it
 
     // Debris Field -- two short, conventional, both-ends-open walls
     // providing baseline route texture only (see file comment above for

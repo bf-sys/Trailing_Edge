@@ -153,6 +153,20 @@ export const LEVEL_002: LevelConfig = {
     ...upperMidLeftWall,
     ...upperRightDiagonalWall,
     ...lowerLeftWall,
+
+    // Meteoroid + Ion Storm, added 2026-08-25 at explicit user request (aware
+    // of, and repeating, the same deviation from docs/reference/
+    // level-design-guide.md §7 as level-001's Meteoroid: normal introduction
+    // point is level-003+, once scan+teleport are unlocked; level-002 grants
+    // only scan at most, depending on how it's reached). Both use
+    // hazardConfig.ts's fixed default heading for their first leg (Meteoroid
+    // due east, Ion Storm due west) -- placed on opposite sides of the map so
+    // each gets a long, sweeping first pass rather than immediately wrapping.
+    // Both 250px+ clear of every objective/resupply/wall per §7's placement
+    // rule (nearest: Meteoroid to Probe at ~360px, Ion Storm to Entry at
+    // ~358px); MovingHazardManager takes over wrapping/respawn after that.
+    { type: 'meteoroid', x: 150, y: 1450 }, // far west edge, sweeps east across the map
+    { type: 'ionStorm', x: 3300, y: 1900 }, // far east edge (below Entry), sweeps west
   ],
 
   puzzleElements: [],

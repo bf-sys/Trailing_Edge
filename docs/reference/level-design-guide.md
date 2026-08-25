@@ -104,12 +104,14 @@ Flare has no placement precedent yet** — it's still available whenever the
 next escalation point in the design makes sense.
 
 **Exception, by explicit request (2026-08-25):** `level-001` now also has a
-single Meteoroid instance, despite granting zero abilities — flagged to the
-user before adding (the player has no `scan` to identify it and no
-`teleport`/`rocketBoost` to dodge it) and confirmed anyway. Don't read
-`level-001`'s hazard roster as Debris-Field-only precedent going forward;
-this was a deliberate one-off override of this section's normal ordering,
-not a revision of the convention itself.
+single Meteoroid instance, and `level-002` now has one Meteoroid plus one
+Ion Storm, despite both granting few or no abilities — flagged to the user
+before `level-001`'s addition (the player has no `scan` to identify either
+hazard and no `teleport`/`rocketBoost` to dodge them), and repeated
+knowingly for `level-002`. Don't read `level-001`/`level-002`'s hazard
+rosters as Debris-Field-(+Nebula-Field)-only precedent going forward; this
+is a deliberate, repeated override of this section's normal ordering, not a
+revision of the convention itself.
 
 General principle carried through every level so far: match a level's
 hazard complexity/threat to the abilities the player actually has by the

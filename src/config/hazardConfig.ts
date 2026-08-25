@@ -102,15 +102,15 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // as a *drift*, not a threat requiring reflexes -- the GDD's "slow-moving
   // hazard area" framing for Ion Storm vs. Nebula Field's fully static one
   // is unchanged, just more visibly in motion than the old barely-there 15.
-  // Speed bumped 30 -> 140 (2026-08-25, live console tuning) -- still half
-  // Meteoroid's (now 280), so the relative drift-vs-threat read is preserved
-  // even though this is no longer a slow crawl in absolute terms.
+  // Speed bumped 30 -> 140 -> 200 (2026-08-25, live console tuning) -- still
+  // under Meteoroid's (280), so the relative drift-vs-threat read is
+  // preserved even though this is no longer a slow crawl in absolute terms.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
     displayName: 'ION STORM',
     shape: { kind: 'circle', radius: 110 },
     movementPattern: 'linear',
-    speed: 140,
+    speed: 200,
     headingRadians: Math.PI,
     // Swirling-cloud spin (2026-08-21, tuned same day: 8s -> 16s -> 24s) --
     // clockwise, one full rotation every 24s. Purely cosmetic (doesn't

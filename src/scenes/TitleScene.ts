@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
 import { hasSaveData, loadProgress } from '../objects/SaveManager';
+import { getProgressionManager } from '../systems/ProgressionManager';
 
 export const TITLE_SCENE_KEY = 'TitleScene';
 
@@ -54,5 +55,42 @@ export class TitleScene extends Phaser.Scene {
     testLevelText.on('pointerdown', () => {
       this.scene.start('GameScene', { levelId: TEST_LEVEL_ID });
     });
+
+    // Dev-only level select (import.meta.env.DEV, same gate as
+    // devTuning.ts's window.tuning) -- lets a real LEVEL_ORDER entry be
+    // playtested directly instead of playing through everything before it.
+    // Never present in a release build. Jumping in force-grants exactly the
+    // abilities a normal playthrough would already have by that point
+    // (grantNextAbility() called once per level before the target, same
+    // abilityUnlockOrder a real completion advances one at a time) so a
+    // level authored assuming e.g. teleport is already unlocked (level-003+,
+    // see levelOrder.ts's comments) isn't gated on an ability the player
+    // never earned. Unlike Test Level, this goes through the normal
+    // LEVEL_ORDER completion path (save write, next-ability grant,
+    // AbilityUnlockScene) rather than TEST_LEVEL_ID's no-save sandbox
+    // handling -- completing a jumped-to level will overwrite any existing
+    // save, which is fine for dev testing but worth knowing before using it
+    // over a save you care about.
+    if (import.meta.env.DEV) {
+      this.add
+        .text(width / 2, height / 2 + 136, 'Dev: Jump to Level', { fontSize: '13px', color: '#5a6a77' })
+        .setOrigin(0.5);
+
+      const startX = width / 2 - ((LEVEL_ORDER.length - 1) * 60) / 2;
+      LEVEL_ORDER.forEach((levelId, index) => {
+        const levelText = this.add
+          .text(startX + index * 60, height / 2 + 164, levelId.replace('level-', ''), {
+            fontSize: '14px',
+            color: '#5a6a77',
+          })
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        levelText.on('pointerdown', () => {
+          for (let i = 0; i < index; i++) getProgressionManager().grantNextAbility();
+          this.scene.start('GameScene', { levelId });
+        });
+      });
+    }
   }
 }

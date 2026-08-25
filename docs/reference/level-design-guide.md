@@ -103,6 +103,14 @@ once `scan` and `teleport` were both already unlocked (see §7). **Solar
 Flare has no placement precedent yet** — it's still available whenever the
 next escalation point in the design makes sense.
 
+**Exception, by explicit request (2026-08-25):** `level-001` now also has a
+single Meteoroid instance, despite granting zero abilities — flagged to the
+user before adding (the player has no `scan` to identify it and no
+`teleport`/`rocketBoost` to dodge it) and confirmed anyway. Don't read
+`level-001`'s hazard roster as Debris-Field-only precedent going forward;
+this was a deliberate one-off override of this section's normal ordering,
+not a revision of the convention itself.
+
 General principle carried through every level so far: match a level's
 hazard complexity/threat to the abilities the player actually has by the
 time they reach it. Don't require an ability the player can't yet have

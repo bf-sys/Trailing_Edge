@@ -98,16 +98,19 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // behavioral difference: a slow linear drift vs. fully static. Size/speed
   // bumped 2026-08-21 (same "make it a little bigger and faster" pass as
   // Meteoroid) -- no collision change, still pure fly-through/drain, no
-  // blocksMovement. Kept well under Meteoroid's 140 px/s so it still reads
+  // blocksMovement. Originally kept well under Meteoroid's speed so it read
   // as a *drift*, not a threat requiring reflexes -- the GDD's "slow-moving
   // hazard area" framing for Ion Storm vs. Nebula Field's fully static one
   // is unchanged, just more visibly in motion than the old barely-there 15.
+  // Speed bumped 30 -> 140 (2026-08-25, live console tuning) -- still half
+  // Meteoroid's (now 280), so the relative drift-vs-threat read is preserved
+  // even though this is no longer a slow crawl in absolute terms.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
     displayName: 'ION STORM',
     shape: { kind: 'circle', radius: 110 },
     movementPattern: 'linear',
-    speed: 30,
+    speed: 140,
     headingRadians: Math.PI,
     // Swirling-cloud spin (2026-08-21, tuned same day: 8s -> 16s -> 24s) --
     // clockwise, one full rotation every 24s. Purely cosmetic (doesn't
@@ -156,7 +159,7 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     displayName: 'METEOROID',
     shape: { kind: 'circle', radius: 56 },
     movementPattern: 'linear',
-    speed: 140,
+    speed: 280, // bumped from 140, 2026-08-25 (live console tuning)
     headingRadians: 0,
     // hazard_meteoroid.png's rock+ember-trail art faces down-and-left at
     // zero rotation, not due east -- same "measure the art, name the

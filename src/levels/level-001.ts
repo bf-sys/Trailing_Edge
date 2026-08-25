@@ -128,6 +128,20 @@ export const LEVEL_001: LevelConfig = {
     ...upperCenterWall,
     ...midRightWall,
     ...lowerLeftDiagonalWall,
+
+    // Meteoroid, added 2026-08-25 at explicit user request -- a deliberate
+    // deviation from docs/reference/level-design-guide.md §7's normal
+    // introduction point (level-003+, once scan+teleport are unlocked).
+    // level-001 grants zero abilities, so this is the sole structure-
+    // draining, hard-fail-capable hazard reaching a player with no scan to
+    // identify it and no teleport/rocketBoost to dodge it -- flagged to the
+    // user before adding, confirmed anyway. Placed in the open lower-right
+    // quadrant (x:1900,y:1200), 250px+ clear of every objective/resupply/
+    // wall per §7's placement rule (nearest: resupply at ~380px, midRightWall
+    // at ~474px) -- authored x/y only governs its first leg (heading is
+    // hazardConfig.ts's fixed default, due east) before MovingHazardManager
+    // takes over wrapping/respawn for the rest of the level.
+    { type: 'meteoroid', x: 1900, y: 1200 },
   ],
 
   puzzleElements: [],

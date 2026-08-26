@@ -28,6 +28,7 @@ import { ShipThrusterTrail } from '../objects/ShipThrusterTrail';
 import { ScanActivationVfx } from '../objects/ScanActivationVfx';
 import { TeleportBlinkVfx } from '../objects/TeleportBlinkVfx';
 import { ShipDamageFlash } from '../objects/ShipDamageFlash';
+import { ShipExplosionVfx } from '../objects/ShipExplosionVfx';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -78,6 +79,7 @@ export class GameScene extends Phaser.Scene {
   private teleportRangeRing!: TeleportRangeRing;
   private shipThrusterTrail!: ShipThrusterTrail;
   private shipDamageFlash!: ShipDamageFlash;
+  private shipExplosionVfx!: ShipExplosionVfx;
   private levelIntroBanner!: LevelIntroBanner;
 
   constructor() {
@@ -242,6 +244,7 @@ export class GameScene extends Phaser.Scene {
     new ScanActivationVfx(this);
     new TeleportBlinkVfx(this);
     this.shipDamageFlash = new ShipDamageFlash(this);
+    this.shipExplosionVfx = new ShipExplosionVfx(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
     this.levelIntroBanner = new LevelIntroBanner(this);
 
@@ -362,13 +365,30 @@ export class GameScene extends Phaser.Scene {
   // position, structure, and energy to the level's starting values via a
   // full scene.restart() — no CheckpointManager, no partial state carried
   // over. levelId flows back through init() the same way scene.start() does.
+  //
+  // 2026-08-26 (owner request): the restart is no longer immediate -- input
+  // is disabled and physics paused so nothing else can happen mid-death,
+  // the real ship sprite is hidden, and a quick arcade-style explosion
+  // (ShipExplosionVfx) plays at its last position before scene.restart()
+  // actually fires, arcade-style "die, then respawn" pacing instead of an
+  // instant cut. scene.restart() tears down the whole scene (including
+  // these input/physics changes) regardless, so nothing needs to be
+  // re-enabled manually before it fires.
   private wireHardFailRestart(): void {
     const ship = getPlayerShip();
     if (!ship) return;
 
     ship.survival.on(SHIP_SURVIVAL_EVENTS.StructureDepleted, () => {
-      console.warn('[survival] structure depleted — restarting level');
-      this.scene.restart({ levelId: this.levelId });
+      console.warn('[survival] structure depleted — playing death sequence');
+      this.input.enabled = false;
+      if (this.input.keyboard) this.input.keyboard.enabled = false;
+      this.physics.pause();
+
+      const { x, y } = ship.image;
+      ship.image.setVisible(false);
+      this.shipExplosionVfx.play(x, y, () => {
+        this.scene.restart({ levelId: this.levelId });
+      });
     });
   }
 

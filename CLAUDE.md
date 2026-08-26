@@ -250,6 +250,24 @@ Re-verified against the original repro sweep (all 8 y-offsets, including
 the 2 that previously froze) with zero freezes after the fix; full traces
 in `tools/adversarial-qa/reports/`.
 
+**Hard-fail restart is no longer instant — a quick arcade-style death
+sequence plays first (2026-08-26, owner request).** On
+`SHIP_SURVIVAL_EVENTS.StructureDepleted`, `GameScene.wireHardFailRestart()`
+now disables input (`this.input.enabled`/`this.input.keyboard.enabled`),
+pauses physics (`this.physics.pause()`), hides the real ship sprite, and
+plays `ShipExplosionVfx` (a one-shot particle burst + light camera shake)
+at the ship's last position before calling `scene.restart()` — previously
+that call fired immediately on the event with no death beat at all.
+`scene.restart()` tears down the whole scene regardless, so nothing needs
+re-enabling before it fires. Particle burst + shake only, no debris
+scatter — considered directly, decided against (owner: "the particles
+look great," no follow-up wanted), not a placeholder awaiting one.
+**Known, accepted minor gap:** `this.physics.pause()` only stops
+Arcade's own step — hazards driven by hand-set position (`'trochoid'`) or
+per-frame `HazardZoneElement.update()` logic keep animating/ticking during
+the frozen beat (harmless: structure is already floored at 0, so no
+further `StructureHit` fires), not worth solving for a first pass.
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open). Other reference docs live in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
@@ -641,6 +659,20 @@ file's age. `CheckpointManager` remains deferred by design.
   untouched (`phase1-manifest-and-tasks.md`). It would need its own
   re-sourcing/regeneration pass against the current ship art, not just a
   `scene.anims` config, before it's usable for anything.
+- **`ShipExplosionVfx`** (added 2026-08-26) — world-space, display-only,
+  but the first VFX class in this codebase that isn't purely reactive: it
+  exposes `play(x, y, onComplete)` rather than subscribing to an event
+  itself, since `GameScene.wireHardFailRestart()` needs to sequence input-
+  disable/physics-pause/ship-hide around it and only knows when to call
+  `scene.restart()` via the `onComplete` callback — a deliberate, scoped
+  exception to every other VFX class's "only react, never gate gameplay"
+  convention, not a violation of it. A one-shot particle burst
+  (`emitter.explode()`) plus a light `cameras.main.shake()`, played at the
+  ship's last position; `shipExplosionVfxConfig.totalDurationMs` gates how
+  long `GameScene` waits before actually restarting. A debris-scatter
+  addition was considered and explicitly declined (owner: the particle
+  burst alone "looks great") — this is the settled design, not a
+  placeholder.
 - **`EnergyNodeElement`/`EnergyNodeManager`** (added 2026-08-24) —
   `EnergyNodeManager` owns a fixed pool of pickups per level, sized via
   `computeEnergyNodePoolSize(levelWidth, levelHeight)` (scales with level

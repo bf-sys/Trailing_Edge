@@ -115,6 +115,12 @@ into a VFX system directly. This keeps the same separation CLAUDE.md
 already establishes for `HudOverlay`: it queries/reacts, it doesn't gate or
 drive gameplay.
 
+**One deliberate, scoped exception (2026-08-26):** `ShipExplosionVfx`
+(Status below) has to delay `scene.restart()` until its animation finishes
+— that's the entire point of it — so it's called directly rather than
+subscribing to an event itself. Treat this as the one case where gating
+gameplay timing is the actual ask, not a precedent for VFX generally.
+
 Tunable effect parameters (particle counts, tween durations, colors) should
 live in a config module following the same convention as `shipConfig.ts`/
 `survivalConfig.ts` — plain data, exposed on `window.tuning` in dev builds,
@@ -166,3 +172,19 @@ composited for the original placeholder ship art, orphaned when
 re-sourcing/regeneration pass against the current ship before it's usable.
 `DestinationMarker`'s click-to-move ping is an earlier instance of the
 plain expanding-ring tween technique, for reference.
+
+`ShipExplosionVfx` (added same day, owner request: "have the ship explode
+when it dies... delay the respawn until the ship vfx finishes") uses the
+particle-emitter technique too, but as a one-shot `emitter.explode()`
+burst rather than a continuous stream, paired with a light
+`cameras.main.shake()`. It's also the first VFX class here that isn't
+purely reactive: every other one above only decorates an already-instant
+event, but this one has to actually delay `scene.restart()` until it
+finishes, so it exposes `play(x, y, onComplete)` instead of subscribing to
+an event itself — `GameScene.wireHardFailRestart()` calls it directly as
+part of sequencing input-disable/physics-pause/ship-hide around it. A
+deliberate, scoped exception to the "VFX only reacts, never gates
+gameplay" architectural fit note above, not a reason to revisit it
+generally. A debris-scatter addition was considered and explicitly
+declined (owner: the particle burst alone "looks great") — burst + shake
+is the settled design, not a placeholder awaiting a follow-up.

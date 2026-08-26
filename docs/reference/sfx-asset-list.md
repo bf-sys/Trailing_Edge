@@ -287,7 +287,20 @@ precedent), so it's a usable fallback, not a hard blocker.
   moment (puzzle-solved, §2.2; ability-unlocked or win, §1.8/§2.3) than the
   main background loop itself.
 
-### 6.3 Suggested sourcing order
+### 6.3 Owner's local Kenney library — automated triage
+
+The project owner has a local Kenney audio library (Dropbox, 13 relevant
+packs, ~1090 files, all confirmed CC0) that already covers most of §6.1's
+recommendations directly. `tools/audio-triage/scan-kenney-audio.mjs`
+(added 2026-08-26) does filename/keyword triage against it — **not**
+perceptual evaluation (nothing listens to a file) — matching each category
+in §1/§2 above to candidate stems in the library, grouped and deduplicated
+so a human listening pass has a short list instead of 1090 files. Output:
+`docs/reference/sfx-sourcing-candidates.md`. Rerun after adding/removing
+packs from the source library; the source path is hardcoded to this
+machine's Dropbox layout and isn't portable as-is.
+
+### 6.4 Suggested sourcing order
 
 Kenney (covers most of §1.8 UI plus a chunk of §1.1/§1.7) + the two
 OpenGameArt CC0 sci-fi packs (covers most of §1.2 hazards, §1.4 wormhole,

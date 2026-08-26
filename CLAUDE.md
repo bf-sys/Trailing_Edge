@@ -259,6 +259,7 @@ Living reference guides (for the human, kept accurate over time) live in
 - `docs/reference/phaser-vfx-notes.md` — how Phaser handles VFX (particles/tweens/postFX/flipbooks), mapped to planned effects
 - `docs/reference/level-design-guide.md` — level-authoring conventions (sizing, objective spacing, hazard placement, `MovingHazardManager`, verification checklist) — read before authoring a new level
 - `docs/reference/sfx-asset-list.md` — the single audio asset list (SFX + the one music item), cut by Required-vs-Nice-to-have priority; consolidated 2026-08-26 from a since-deleted `docs/trailing_edge_audio_asset_list.md`
+- `docs/reference/sfx-sourcing-candidates.md` — auto-generated (`tools/audio-triage/scan-kenney-audio.mjs`) filename-keyword triage of the project owner's local Kenney audio library against `sfx-asset-list.md`'s categories; a shortlist for a human listening pass, not a perceptual evaluation; rerun the script rather than hand-editing this file
 
 ## Tech stack (confirmed, GDD §11)
 

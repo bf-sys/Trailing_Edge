@@ -97,10 +97,14 @@
 // appended after (the array itself is still append-only from the tail;
 // this is the one-time reordering the level-010 entry above flagged as
 // expected). Also sits in the post-full-unlock experimentation zone; its
-// axis is the highest-yet combined Ion Storm+Meteoroid count (12 total)
-// plus the project's first real Solar Flare placement, structurally
-// distinct from level-010's maze+seal combination and every other level's
-// axis. Registered after passing Evaluate on round 1 (flagged one
+// axis is the highest-yet combined Ion Storm+Meteoroid count (12 total),
+// structurally distinct from level-010's maze+seal combination and every
+// other level's axis. (The candidate originally also placed the project's
+// first real Solar Flare instances; pulled same day at the project owner's
+// request -- no sourced art yet and its role isn't settled -- see
+// level-009.ts's own comment. level-design-guide.md §12's "Solar Flare has
+// no placement precedent" item is therefore still open.) Registered after
+// passing Evaluate on round 1 (flagged one
 // [placement] issue: 5 of 7 Ion Storm and 2 of 5 Meteoroid placements
 // physically overlapped a wall/objective/resupply point during their
 // fixed-heading first leg, since the Generate stage's clearance check only

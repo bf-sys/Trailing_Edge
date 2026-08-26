@@ -92,29 +92,29 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // tractorBeam, unlocked-by-default) by the time they'd reach this level, so
 // none of §4/§7's ability-gating constraints apply.
 //
-// CREATIVE AXIS: THE MOVING-HAZARD GAUNTLET, WITH REAL VARIETY, NOT JUST
-// COUNT. level-005 already proved "push moving-hazard density" as an axis
-// (5 Ion Storm + 4 Meteoroid = 9 total, "more instances than any level built
-// so far" per §8). Repeating that same shape with a slightly bigger number
-// would read as a re-run of level-005, not a genuinely different experiment
-// -- so this candidate pushes the SAME general direction (moving hazards as
-// the level's main character) but changes what "more" means: 7 Ion Storm +
-// 5 Meteoroid (12 total, the highest count of either hazard and the highest
-// combined total in the project so far) PLUS the project's first-ever real
-// placement of Solar Flare (2 instances) -- a hazard with no placement
-// precedent in any level until now (level-design-guide.md §12, GDD §9's "no
-// placement precedent yet" note). Solar Flare's pulsed timing (2.5s
-// interval, hazardConfig.ts) adds a third, qualitatively different threat
-// rhythm alongside Ion Storm's looping trochoid sweep and Meteoroid's
-// straight-charging impact hits -- a player crossing this level's central
-// corridor has to read three distinct movement/timing signatures at once,
-// not just dodge more copies of the same two. Debris Field and Nebula Field
-// are both kept deliberately modest/conventional (three short, ordinary,
-// both-ends-open walls; four intent-placed Nebula tolls) -- neither a maze
-// (level-006's axis) nor multiple sealed pockets (level-007's axis) nor
-// Nebula density (level-008's axis) -- so this candidate reads as genuinely
-// distinct from all four of its predecessors rather than "harder in every
-// dimension at once" (§8's "variety, not convergence" principle).
+// CREATIVE AXIS: THE MOVING-HAZARD GAUNTLET, PUSHED FURTHER THAN LEVEL-005.
+// level-005 already proved "push moving-hazard density" as an axis (5 Ion
+// Storm + 4 Meteoroid = 9 total, "more instances than any level built so
+// far" per §8) -- this candidate pushes the same general direction further:
+// 7 Ion Storm + 5 Meteoroid (12 total, the highest count of either hazard
+// and the highest combined total in the project so far). Debris Field and
+// Nebula Field are both kept deliberately modest/conventional (three short,
+// ordinary, both-ends-open walls; four intent-placed Nebula tolls) --
+// neither a maze (level-006's axis) nor multiple sealed pockets (level-007's
+// axis) nor Nebula density (level-008's axis) -- so this candidate reads as
+// genuinely distinct from all four of its predecessors rather than "harder
+// in every dimension at once" (§8's "variety, not convergence" principle).
+//
+// SOLAR FLARE, REMOVED (2026-08-25, user request, same day as the level's
+// initial GER pass): the Generate-stage candidate originally also placed 2
+// Solar Flare instances -- the project's first real placement of that
+// hazard type, addressing level-design-guide.md §12's "no placement
+// precedent yet" note. Pulled at the project owner's request: no sourced
+// art exists for it yet and its intended role/tuning isn't settled ("not
+// sure what to do with it... re-examine it later") -- removing it here
+// rather than leaving an unwanted placeholder in committed content.
+// level-design-guide.md §12's "Solar Flare has no placement precedent" item
+// is therefore still open, not resolved by this file.
 //
 // A NOTE ON ION STORM'S TROCHOID PATH (2026-08-25 hazardConfig.ts change,
 // informational for this file's own placements): Ion Storm no longer drifts
@@ -202,12 +202,11 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 //
 // MOVING HAZARDS -- THE AXIS (§7/§8): 7 Ion Storm + 5 Meteoroid (12 total,
 // the highest combined count in the project so far -- level-005's 9 was the
-// prior high) plus 2 Solar Flare (the project's first real placement of
-// this hazard type). Scattered across open pockets on both sides of the
-// three modest dividers so no region of the map is free of a moving threat
-// for long -- their authored x/y only governs each hazard's first leg
-// before MovingHazardManager's wrap-on-exit + objective-biased respawn
-// takes over (§7).
+// prior high). Scattered across open pockets on both sides of the three
+// modest dividers so no region of the map is free of a moving threat for
+// long -- their authored x/y only governs each hazard's first leg before
+// MovingHazardManager's wrap-on-exit + objective-biased respawn takes over
+// (§7).
 //
 // REFINE-STAGE COORDINATE PASS (2026-08-25, level-eval-log-2026-08-25.md's
 // level-009 entry, round 1): the Generate-stage version of this section only
@@ -266,15 +265,6 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 //   the open southern strip below Wall C's diagonal is the only lane that
 //   does for both starting x's; their y's are set 150px apart (3900 vs
 //   4050) so they don't read as a single parallel "conga line."
-// - Solar Flare x2 (first-ever placement, addressing level-design-guide.md
-//   §12's "Solar Flare has no placement precedent" open item): (3900,2900)
-//   and (5400,1900), both sitting along the central Probe<->Beacon corridor
-//   this level's moving hazards already patrol -- a player timing a pass
-//   through the Ion Storm/Meteoroid traffic here also has to read Solar
-//   Flare's independent 2.5s pulse cycle (hazardConfig.ts), a third,
-//   qualitatively different threat rhythm layered on the same ground rather
-//   than off in its own corner.
-//
 // RESUPPLY: one AsteroidField at (3600,1950), central/accessible, kept
 // 250px+ clear of every wall (nearest is Wall B at ~390px net, see above) --
 // deliberately placed so a player can top off structure before committing to
@@ -311,12 +301,11 @@ export const LEVEL_009: LevelConfig = {
     { type: 'nebulaField', x: 1375, y: 1000, textureKey: NEBULA_TEXTURES[2] }, // bridges the close Probe<->Exit hop
     { type: 'nebulaField', x: 6300, y: 3100, textureKey: NEBULA_TEXTURES[0] }, // approach toll right before the Beacon, near Wall C's open end
 
-    // Ion Storm x7 / Meteoroid x5 / Solar Flare x2 -- THIS LEVEL'S AXIS (see
-    // file comment above for the full rationale, per-placement clearance
-    // notes, and the cautious orbit-aware measure used for Ion Storm). Ion
-    // Storm/Meteoroid are managed by MovingHazardManager (initial position
-    // only, wrap/respawn handled automatically); Solar Flare is static/
-    // pulsed and needs no such handling.
+    // Ion Storm x7 / Meteoroid x5 -- THIS LEVEL'S AXIS (see file comment
+    // above for the full rationale, per-placement clearance notes, and the
+    // cautious orbit-aware measure used for Ion Storm). Both are managed by
+    // MovingHazardManager (initial position only, wrap/respawn handled
+    // automatically).
     { type: 'ionStorm', x: 1200, y: 2600 }, // west-central open pocket
     // Refine-stage fix (level-eval-log-2026-08-25.md): was (3400,950), swept
     // through Wall A at t~1.9s (-162px overlap) -- moved south of Wall B,
@@ -351,9 +340,6 @@ export const LEVEL_009: LevelConfig = {
     // don't read as a single parallel line), 494px clear of Beacon.
     { type: 'meteoroid', x: 2900, y: 4050 },
     { type: 'meteoroid', x: 6800, y: 1500 }, // far north-east, near Beacon's northern approach
-
-    { type: 'solarFlare', x: 3900, y: 2900 }, // first-ever Solar Flare placement -- central gauntlet corridor
-    { type: 'solarFlare', x: 5400, y: 1900 }, // second Solar Flare -- same corridor, closer to the Beacon approach
 
     // Debris Field -- three short, conventional, both-ends-open walls
     // providing baseline route texture only (see file comment above for

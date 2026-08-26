@@ -17,9 +17,12 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
 
-    this.add
-      .text(width / 2, height / 2 - 40, 'Trailing Edge', { fontSize: '32px', color: '#ffffff' })
-      .setOrigin(0.5);
+    // Logo art replaces the text title (2026-08-26) -- chroma-keyed from
+    // art-staging/trailing_edge_logo_chromakey_1787772147364.jpg via
+    // tools/asset-prep/chroma-key.js into assets/ui/logo.png. Display size is
+    // authored here, not derived from the source's native 818x352 (CLAUDE.md's
+    // asset/gameplay-size-decoupling rule).
+    this.add.image(width / 2, height / 2 - 100, 'logo').setOrigin(0.5).setDisplaySize(440, 189);
 
     const startText = this.add
       .text(width / 2, height / 2 + 20, 'Start', { fontSize: '20px', color: '#8fd3ff' })

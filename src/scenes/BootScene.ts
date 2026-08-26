@@ -34,6 +34,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('window_titlebar', 'ui/window_titlebar.png');
     this.load.image('window_titlebar_cap', 'ui/window_titlebar_cap.png');
     this.load.image('window_fill', 'ui/window_fill.png');
+    this.load.image('logo', 'ui/logo.png');
   }
 
   create(): void {

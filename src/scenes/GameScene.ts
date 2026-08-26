@@ -16,9 +16,10 @@ import { EntryWormhole } from '../objects/EntryWormhole';
 import { ExitWormhole } from '../objects/ExitWormhole';
 import { HudOverlay, type PuzzleSiteMarker } from '../objects/HudOverlay';
 import { ShipStatusArcs } from '../objects/ShipStatusArcs';
+import { LevelIntroBanner } from '../objects/LevelIntroBanner';
 import { getProgressionManager } from '../systems/ProgressionManager';
 import { saveProgress } from '../objects/SaveManager';
-import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
+import { LEVEL_ORDER, TEST_LEVEL_ID, getLevelNumber } from '../config/levelOrder';
 import { abilityUnlockOrder } from '../config/abilityConfig';
 import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackground';
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
@@ -73,6 +74,7 @@ export class GameScene extends Phaser.Scene {
   private hazardScanOverlay!: HazardScanOverlay;
   private teleportRangeRing!: TeleportRangeRing;
   private shipThrusterTrail!: ShipThrusterTrail;
+  private levelIntroBanner!: LevelIntroBanner;
 
   constructor() {
     super(GAME_SCENE_KEY);
@@ -234,6 +236,7 @@ export class GameScene extends Phaser.Scene {
     this.teleportRangeRing = new TeleportRangeRing(this);
     new DestinationMarker(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
+    this.levelIntroBanner = new LevelIntroBanner(this);
 
     this.wireHardFailRestart();
     this.setUpObjectiveDebugReadout(tracker);
@@ -242,6 +245,18 @@ export class GameScene extends Phaser.Scene {
       this.scene.launch('PauseScene');
       this.scene.pause();
     });
+
+    // 2026-08-26 prototype: "Level N" banner (LevelIntroBanner), top-third,
+    // screen-pinned. Chosen over a blocking interstitial scene specifically
+    // to dodge sequencing against the ability-unlock popup below -- when one
+    // is pending, the popup owns the screen first and the banner's hold
+    // timer starts only once the player explicitly closes it (its onClose
+    // below), same principle as the LevelIntroBanner file comment. A hard-
+    // fail scene.restart() re-runs this same create() with no
+    // pendingAbilityUnlock, so it re-shows on every restart, not just a
+    // fresh level arrival -- deliberate, since a restarted level is still
+    // "level N" and there's no popup to wait on.
+    const introLabel = this.levelId === TEST_LEVEL_ID ? 'Test Level' : `Level ${getLevelNumber(this.levelId)}`;
 
     // 2026-08-15: show the previous level's ability-unlock popup here, at
     // the start of the level where it's actually usable, instead of at the
@@ -256,8 +271,13 @@ export class GameScene extends Phaser.Scene {
       this.scene.pause();
       this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
         abilityType: abilityType as Exclude<AbilityType, 'tractorBeam'>,
-        onClose: () => this.scene.resume(GAME_SCENE_KEY),
+        onClose: () => {
+          this.scene.resume(GAME_SCENE_KEY);
+          this.levelIntroBanner.show(introLabel);
+        },
       });
+    } else {
+      this.levelIntroBanner.show(introLabel);
     }
   }
 

@@ -134,3 +134,13 @@ export const LEVEL_ORDER: string[] = [
 // advancing. Keep this level's content exhaustive (every hazard, every
 // puzzle element) for exercising the full mechanical surface at once.
 export const TEST_LEVEL_ID = 'level-000';
+
+// 1-indexed player-facing level number (LevelIntroBanner, 2026-08-26) --
+// LEVEL_ORDER's array position, not anything parsed out of the id string,
+// so a future non-sequential id naming scheme can't desync the two. Returns
+// null for TEST_LEVEL_ID (and anything else outside LEVEL_ORDER) since it
+// has no place in the real progression to number it against.
+export function getLevelNumber(levelId: string): number | null {
+  const index = LEVEL_ORDER.indexOf(levelId);
+  return index === -1 ? null : index + 1;
+}

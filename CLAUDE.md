@@ -631,8 +631,16 @@ file's age. `CheckpointManager` remains deferred by design.
   flash for as long as contact continues, rather than restarting the grow
   animation ~60 times/second. Covers only the instant-hit half of
   docs/reference/phaser-vfx-notes.md's "damage splat/feedback" row; the
-  persistent low-structure state (the sourced-but-unused
-  `ship_damage_overlay` flipbook) is a separate, still-unbuilt follow-up.
+  persistent low-structure state is a separate, still-unbuilt follow-up —
+  **not** a matter of wiring up the existing `ship_damage_overlay_
+  PLACEHOLDER.png` (corrected 2026-08-26, owner catch): that frame strip
+  was composited for the *original* Kenney placeholder ship
+  (`ship_base_PLACEHOLDER.png`, ~99×75), orphaned when the ship art was
+  replaced with AI-generated `ship_base.png` (442×542, a completely
+  different shape) on 2026-08-01 — that pass explicitly left the overlay
+  untouched (`phase1-manifest-and-tasks.md`). It would need its own
+  re-sourcing/regeneration pass against the current ship art, not just a
+  `scene.anims` config, before it's usable for anything.
 - **`EnergyNodeElement`/`EnergyNodeManager`** (added 2026-08-24) —
   `EnergyNodeManager` owns a fixed pool of pickups per level, sized via
   `computeEnergyNodePoolSize(levelWidth, levelHeight)` (scales with level

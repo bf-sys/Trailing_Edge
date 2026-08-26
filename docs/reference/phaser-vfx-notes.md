@@ -104,3 +104,13 @@ Recommended starting point whenever this work begins: the thruster particle
 trail, since it's continuous and ties directly to state that already
 exists (`ExplorationController`'s velocity/acceleration), making it the
 easiest to validate feel against.
+
+**Status (2026-08-26):** the thruster trail (`ShipThrusterTrail`) and the
+scanner pulse (`ScanActivationVfx`) are both now built, following exactly
+the mapping above — thruster trail as a particle emitter, scanner pulse as
+a tween-driven expanding ring (a Graphics ring redrawn every tween frame
+rather than a scaled texture, since it travels out to `scanConfig.scanRadius`
+and a small pre-baked texture stretched that far would blur). Damage
+feedback (tint/postFX flash + the `ship_damage_overlay` flipbook) is still
+unbuilt. `DestinationMarker`'s click-to-move ping is a third, earlier
+instance of the same expanding-ring tween technique, for reference.

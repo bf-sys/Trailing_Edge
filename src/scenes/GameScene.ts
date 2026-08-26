@@ -25,6 +25,7 @@ import { STARFIELD_FAR_KEY, STARFIELD_NEAR_KEY } from '../objects/StarfieldBackg
 import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
 import { ShipThrusterTrail } from '../objects/ShipThrusterTrail';
+import { ScanActivationVfx } from '../objects/ScanActivationVfx';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -235,6 +236,7 @@ export class GameScene extends Phaser.Scene {
     this.hazardScanOverlay = new HazardScanOverlay(this, this.hazards);
     this.teleportRangeRing = new TeleportRangeRing(this);
     new DestinationMarker(this);
+    new ScanActivationVfx(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
     this.levelIntroBanner = new LevelIntroBanner(this);
 

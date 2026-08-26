@@ -41,7 +41,7 @@ import { getPlayerShip } from '../systems/ExplorationController';
 export class MovingHazardManager {
   // Stall-detection safety net (2026-08-26) -- keyed per-hazard-instance,
   // reset whenever a hazard visibly moves or gets repositioned. See
-  // isStalled()'s comment and movingHazardConfig.ts's stallDisplacementThresholdPx/
+  // isStalled()'s comment and movingHazardConfig.ts's stallSpeedThresholdPxPerSecond/
   // stallTimeoutSeconds for what this covers and why.
   private readonly lastPosition = new Map<HazardZoneElement, { x: number; y: number }>();
   private readonly stallElapsedMs = new Map<HazardZoneElement, number>();
@@ -71,7 +71,7 @@ export class MovingHazardManager {
   }
 
   // A 'linear'/'trochoid' hazard is never supposed to sit still -- if one
-  // has moved less than stallDisplacementThresholdPx for
+  // has moved slower than stallSpeedThresholdPxPerSecond for
   // stallTimeoutSeconds straight, treat it the same as drifting out of
   // bounds: this is the safety-net half of the 2026-08-26 fix for a
   // confirmed engine-level freeze (HazardZoneElement.update()'s own comment
@@ -82,15 +82,26 @@ export class MovingHazardManager {
   // ever persisting long enough to trip this check -- this exists as
   // defense-in-depth against any other not-yet-discovered way a hazard's
   // motion could get wedged, not as the primary fix.
+  //
+  // Speed (moved/dt), not raw per-frame displacement (2026-08-26 follow-up
+  // fix -- see movingHazardConfig.ts's stallSpeedThresholdPxPerSecond
+  // comment): a fixed px-per-frame threshold implicitly redefines the
+  // velocity it's gating by refresh rate, which false-positived on Ion
+  // Storm's 'trochoid' pattern -- its real, by-design minimum speed reads
+  // as "stalled" on any display faster than ~90Hz once the implied
+  // threshold crosses into its normal oscillation range. Normalizing by dt
+  // keeps this check's meaning ("is this hazard actually frozen") the same
+  // regardless of frame rate.
   private isStalled(hazard: HazardZoneElement, deltaMs: number): boolean {
     const pos = hazard.getPosition();
     const last = this.lastPosition.get(hazard);
     this.lastPosition.set(hazard, pos);
 
-    if (!last) return false; // first tick seeing this hazard -- nothing to compare against yet
+    if (!last || deltaMs <= 0) return false; // first tick seeing this hazard, or a zero-length frame -- nothing to compare against yet
 
     const moved = Math.hypot(pos.x - last.x, pos.y - last.y);
-    if (moved >= movingHazardConfig.stallDisplacementThresholdPx) {
+    const speedPxPerSecond = moved / (deltaMs / 1000);
+    if (speedPxPerSecond >= movingHazardConfig.stallSpeedThresholdPxPerSecond) {
       this.stallElapsedMs.set(hazard, 0);
       return false;
     }

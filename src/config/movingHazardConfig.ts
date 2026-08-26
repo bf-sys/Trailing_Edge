@@ -32,17 +32,32 @@ export interface MovingHazardConfig {
 
   // Stall-detection safety net (2026-08-26, alongside HazardZoneElement's
   // own per-frame velocity redrive fix -- see that file's update() comment
-  // for the confirmed bug this covers). A 'linear'/'trochoid' hazard is
-  // never supposed to sit still; if one moves less than
-  // stallDisplacementThresholdPx in a single frame for
-  // stallTimeoutSeconds straight, MovingHazardManager treats it the same as
-  // drifting out of bounds and force-repositions it. Expected to almost
-  // never fire post-fix -- this is defense-in-depth against any other
-  // not-yet-discovered way a hazard's motion could get wedged, not the
-  // primary fix. stallTimeoutSeconds is short on purpose: unlike the ship,
-  // these hazards have no legitimate reason to ever be stationary, so
-  // there's no normal-play case this could false-positive against.
-  stallDisplacementThresholdPx: number;
+  // for the confirmed bug this covers). A 'linear' hazard is never supposed
+  // to sit still; if one moves slower than stallSpeedThresholdPxPerSecond
+  // for stallTimeoutSeconds straight, MovingHazardManager treats it the
+  // same as drifting out of bounds and force-repositions it. Expected to
+  // almost never fire post-fix -- this is defense-in-depth against any
+  // other not-yet-discovered way a hazard's motion could get wedged, not
+  // the primary fix.
+  //
+  // Speed-based, not a raw px-per-frame count (2026-08-26 follow-up fix,
+  // found via a user report of Ion Storm visibly teleporting mid-level):
+  // the original stallDisplacementThresholdPx (2px) was compared directly
+  // against a single frame's displacement, which silently redefines the
+  // implied velocity threshold by refresh rate (threshold_px / dt) -- fine
+  // at 60Hz (120 px/s) but ~240 px/s at 120Hz, comfortably inside 'trochoid'
+  // Ion Storm's *real, intentional* minimum speed (orbitRadius * angular
+  // speed - carrier speed ~= 176 px/s -- see hazardConfig.ts's ionStorm
+  // comment on why tangential loop speed is tuned to exceed carrier speed).
+  // That's not a stall, it's the loop-back the trochoid pattern is designed
+  // to produce, but the old per-frame check couldn't tell the difference on
+  // a >~88Hz display and force-repositioned Ion Storm every ~1.6s of its 5s
+  // loop. A 'linear' hazard's actual freeze case (Arcade zeroing velocity
+  // to exactly 0) is nowhere near either hazard's real minimum speed, so a
+  // low, frame-rate-independent px/s floor still catches a genuine freeze
+  // (and 'trochoid' too, in case of a future non-looping tuning) without
+  // tripping on a normal, ongoing slow phase.
+  stallSpeedThresholdPxPerSecond: number;
   stallTimeoutSeconds: number;
 }
 
@@ -50,7 +65,7 @@ export const movingHazardConfig: MovingHazardConfig = {
   objectiveJitterRadius: 350,
   routeBiasMin: 0.5,
   routeBiasMax: 1,
-  stallDisplacementThresholdPx: 2,
+  stallSpeedThresholdPxPerSecond: 20,
   stallTimeoutSeconds: 0.75,
 };
 

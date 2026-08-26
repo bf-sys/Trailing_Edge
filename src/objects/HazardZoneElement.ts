@@ -429,7 +429,7 @@ export class HazardZoneElement {
       // still uses.
       const ramp = 1 + (this.config.exposureRampPerSecond ?? 0) * this.continuousExposureSeconds;
       if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy * ramp * dt, 'hazard-zone');
-      if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure * ramp * dt, 'hazard-zone');
+      if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure * ramp * dt, 'hazard-zone', this.getPosition());
       return;
     }
 
@@ -440,7 +440,7 @@ export class HazardZoneElement {
     this.pulseElapsedSeconds -= interval;
 
     if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy, 'hazard-zone');
-    if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone');
+    if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone', this.getPosition());
   }
 
   // 'impact' activation: resourceCost is a flat one-time hit, not a rate --
@@ -459,7 +459,7 @@ export class HazardZoneElement {
 
     const { resourceCost } = this.config;
     if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy, 'hazard-zone');
-    if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone');
+    if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone', this.getPosition());
 
     if (this.config.knockbackSpeed) this.applyKnockback(ship.image, this.config.knockbackSpeed);
   }

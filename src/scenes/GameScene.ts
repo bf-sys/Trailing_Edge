@@ -27,6 +27,7 @@ import { DestinationMarker } from '../objects/DestinationMarker';
 import { ShipThrusterTrail } from '../objects/ShipThrusterTrail';
 import { ScanActivationVfx } from '../objects/ScanActivationVfx';
 import { TeleportBlinkVfx } from '../objects/TeleportBlinkVfx';
+import { ShipDamageFlash } from '../objects/ShipDamageFlash';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -76,6 +77,7 @@ export class GameScene extends Phaser.Scene {
   private hazardScanOverlay!: HazardScanOverlay;
   private teleportRangeRing!: TeleportRangeRing;
   private shipThrusterTrail!: ShipThrusterTrail;
+  private shipDamageFlash!: ShipDamageFlash;
   private levelIntroBanner!: LevelIntroBanner;
 
   constructor() {
@@ -239,6 +241,7 @@ export class GameScene extends Phaser.Scene {
     new DestinationMarker(this);
     new ScanActivationVfx(this);
     new TeleportBlinkVfx(this);
+    this.shipDamageFlash = new ShipDamageFlash(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
     this.levelIntroBanner = new LevelIntroBanner(this);
 
@@ -297,6 +300,7 @@ export class GameScene extends Phaser.Scene {
     this.hazardScanOverlay.update(time);
     this.teleportRangeRing.update();
     this.shipThrusterTrail.update();
+    this.shipDamageFlash.update();
   }
 
   // Real levelOrder resolution + SaveManager (GDD §11.8/§11.9, Phase 2a

@@ -7,6 +7,7 @@ import { survivalConfig } from '../config/survivalConfig';
 export const SHIP_SURVIVAL_EVENTS = {
   ResourceChanged: 'onResourceChanged',
   StructureDepleted: 'onStructureDepleted',
+  StructureHit: 'onStructureHit',
 } as const;
 
 export interface ResourceSnapshot {
@@ -14,6 +15,19 @@ export interface ResourceSnapshot {
   maxEnergy: number;
   currentStructure: number;
   maxStructure: number;
+}
+
+// Added 2026-08-26 for ShipDamageFlash -- a purpose-built event for "a real
+// hit landed," distinct from ResourceChanged (which fires on every mutation
+// including regen ticks and repairs, carries no delta/source, and isn't a
+// meaningful trigger for hit-feedback VFX on its own). atWorldPos is the
+// hazard's own position at the moment of the hit (the only caller,
+// HazardZoneElement, always has this) -- an approximate contact point, not
+// a precise pixel; optional so a future non-hazard structure-cost source
+// wouldn't be forced to fabricate one.
+export interface StructureHitPayload {
+  amount: number; // actual structure lost, after the 0-floor clamp -- may be less than the requested amount
+  atWorldPos?: { x: number; y: number };
 }
 
 // Structure is the fail resource; energy just gates ability use (GDD §5,
@@ -53,13 +67,18 @@ export class ShipSurvivalComponent extends Phaser.Events.EventEmitter {
 
   // Unlike consumeEnergy, this always applies (clamped at 0) — structure
   // damage can never be "denied," since hitting exactly 0 is the intended
-  // fail trigger, not a gate to route around.
-  consumeStructure(amount: number, source: string): boolean {
+  // fail trigger, not a gate to route around. atWorldPos (2026-08-26,
+  // ShipDamageFlash) is display-only metadata passed straight through to
+  // StructureHit -- it never affects the mechanical result.
+  consumeStructure(amount: number, source: string, atWorldPos?: { x: number; y: number }): boolean {
     if (amount <= 0) return true;
     const wasAboveZero = this.currentStructure > 0;
+    const before = this.currentStructure;
     this.currentStructure = Math.max(0, this.currentStructure - amount);
+    const actualDelta = before - this.currentStructure;
     this.logDebug('structure', -amount, source);
     this.emitResourceChanged();
+    if (actualDelta > 0) this.emit(SHIP_SURVIVAL_EVENTS.StructureHit, { amount: actualDelta, atWorldPos });
     if (wasAboveZero && this.currentStructure === 0) {
       this.emit(SHIP_SURVIVAL_EVENTS.StructureDepleted);
     }

@@ -64,6 +64,31 @@ Phaser's animation system on an `AnimatedSprite`.
   no procedural variation, and needs an actual frame-strip asset (which
   this project already has for ship damage, but not for other effects).
 
+### Geometry masks (`Phaser.Display.Masks.GeometryMask`)
+
+A Graphics object's drawn shape used as a stencil on another GameObject —
+whatever area the Graphics has drawn into becomes the only visible part of
+the masked object; everything outside is hidden. Redraw the Graphics each
+frame (same technique as any procedural Graphics VFX) to animate the
+revealed shape.
+
+- **Good fit:** a reveal that has to spread from a specific point rather
+  than uniformly (a growing circle centered on an impact point, a wipe/
+  dissolve), which plain alpha/scale tweens on the target itself can't do —
+  those change the *whole* object's opacity/size uniformly, not which
+  *region* is visible.
+- **Already used here:** `ShipDamageFlash` (2026-08-26) — masks a red-filled
+  duplicate of the ship with an expanding circle centered on the
+  approximate impact point, so the flash visibly spreads across the ship
+  from roughly the side that got hit rather than the whole ship changing
+  color at once.
+- **Tradeoff:** one more GameObject (the duplicate being masked) plus the
+  mask's own Graphics object per effect instance, and the mask's Graphics
+  draws in world space same as any other Graphics call — no built-in
+  "local to the masked object" convenience, so its center must be
+  recomputed against the masked object's live position every frame if that
+  object moves.
+
 ## Mapping the three effects mentioned
 
 | Effect | Likely technique | Why |
@@ -106,16 +131,24 @@ exists (`ExplorationController`'s velocity/acceleration), making it the
 easiest to validate feel against.
 
 **Status (2026-08-26):** the thruster trail (`ShipThrusterTrail`), the
-scanner pulse (`ScanActivationVfx`), and teleport's blink VFX
-(`TeleportBlinkVfx`) are all now built, following exactly the mapping
-above — thruster trail as a particle emitter, the other two as tween-driven
-expanding/collapsing rings (a Graphics ring redrawn every tween frame
-rather than a scaled texture, since scan's travels out to
-`scanConfig.scanRadius` and a small pre-baked texture stretched that far
-would blur). `TeleportBlinkVfx` additionally scale-tweens two ship-shaped
-GameObjects directly (a duplicate "ghost" at the origin, the real ship at
-the destination) rather than just drawing a ring — the first VFX here to
-animate a sprite's scale rather than only Graphics/particles. Damage
-feedback (tint/postFX flash + the `ship_damage_overlay` flipbook) is still
-unbuilt. `DestinationMarker`'s click-to-move ping is an earlier instance of
-the same expanding-ring tween technique, for reference.
+scanner pulse (`ScanActivationVfx`), teleport's blink VFX
+(`TeleportBlinkVfx`), and the instant-hit half of damage feedback
+(`ShipDamageFlash`) are all now built. Thruster trail is a particle
+emitter; scan/teleport are tween-driven expanding/collapsing rings (a
+Graphics ring redrawn every tween frame rather than a scaled texture,
+since scan's travels out to `scanConfig.scanRadius` and a small pre-baked
+texture stretched that far would blur). `TeleportBlinkVfx` additionally
+scale-tweens two ship-shaped GameObjects directly (a duplicate "ghost" at
+the origin, the real ship at the destination). `ShipDamageFlash` is a
+fourth technique this project hadn't used before: a `GeometryMask`-based
+radial reveal (owner request, after an initial flat-tint version) —
+a red-filled duplicate of the ship, masked by an expanding circle centered
+on an approximate impact point (the hazard's position at the moment of the
+hit, passed through a new `ShipSurvivalComponent.StructureHit` event
+purpose-built for this rather than diffing the generic `ResourceChanged`),
+so the reveal visibly spreads across the ship from roughly the side that
+got hit, and the real ship's art stays visible everywhere it hasn't
+reached yet. Still unbuilt: the persistent low-structure state (the
+`ship_damage_overlay` flipbook, sourced but unused). `DestinationMarker`'s
+click-to-move ping is an earlier instance of the plain expanding-ring tween
+technique, for reference.

@@ -596,6 +596,43 @@ file's age. `CheckpointManager` remains deferred by design.
   destination), same Graphics-redrawn-every-tween-frame technique as
   `ScanActivationVfx`, just much smaller/faster. Complements
   `TeleportRangeRing`, which only covers the aim-time state before confirm.
+- **`ShipDamageFlash`** (added 2026-08-26) — world-space, display-only,
+  event-driven off a new `ShipSurvivalComponent.SHIP_SURVIVAL_EVENTS.
+  StructureHit` event (payload: `{ amount, atWorldPos? }`), not the generic
+  `ResourceChanged` — that event fires on every mutation (regen ticks,
+  repairs) with no delta/source/position and isn't a meaningful trigger on
+  its own; `StructureHit` fires only on an actual structure decrease and is
+  emitted directly from `ShipSurvivalComponent.consumeStructure()`, which
+  now takes an optional third `atWorldPos` param that
+  `HazardZoneElement`'s two `consumeStructure()` call sites (continuous/
+  pulsed in `applyResourceCost()`, impact in `applyImpactCost()`) pass as
+  their own `getPosition()` — the hazard's position at the moment of the
+  hit, an approximate contact point (explicit owner direction: "rough
+  approximation... no need for a precise pixel"), not a precise pixel.
+  **Renders as a radial reveal, not a flat tint** (owner request, changed
+  from an initial flat `setTintFill()` version the same day): a red-filled
+  duplicate of the ship's own sprite, masked by an expanding
+  `Phaser.Display.Masks.GeometryMask` circle centered on a point offset
+  from the ship's center in the direction of the hazard (angle from ship to
+  `atWorldPos`, or a random angle if no position is available) — the real
+  ship's art stays fully visible everywhere the reveal hasn't spread to
+  yet, and even inside the revealed area the duplicate's own shading still
+  reads through since it's a full-detail duplicate, not a solid fill (only
+  its *color* is overridden via `setTintFill()`, not its shape/shading).
+  Needs its own `update()` (called from `GameScene.update()`, same
+  convention as `HazardScanOverlay`/`TeleportRangeRing`/
+  `ShipThrusterTrail`) to keep the overlay/mask tracking the ship's live
+  position through the hold phase, when no tween is actively driving
+  anything. One overlay/mask pair is reused across a run of hits rather
+  than spawning one per hit: a one-time impact (Meteoroid) grows, holds
+  (`shipDamageFlashConfig.holdMs`), and fades; sustained contact (Ion
+  Storm/Nebula Field, which call `consumeStructure` every frame while
+  overlapping) keeps re-arming the hold timer and reads as a steady held
+  flash for as long as contact continues, rather than restarting the grow
+  animation ~60 times/second. Covers only the instant-hit half of
+  docs/reference/phaser-vfx-notes.md's "damage splat/feedback" row; the
+  persistent low-structure state (the sourced-but-unused
+  `ship_damage_overlay` flipbook) is a separate, still-unbuilt follow-up.
 - **`EnergyNodeElement`/`EnergyNodeManager`** (added 2026-08-24) —
   `EnergyNodeManager` owns a fixed pool of pickups per level, sized via
   `computeEnergyNodePoolSize(levelWidth, levelHeight)` (scales with level

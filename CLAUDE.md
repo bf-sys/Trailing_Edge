@@ -240,7 +240,6 @@ in `tools/adversarial-qa/reports/`.
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open). Other reference docs live in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
-- `docs/trailing_edge_audio_asset_list.md` — audio asset taxonomy/requirements list, same Core/Content split as the art list but derived from what's actually built rather than a GDD audio spec
 - `docs/phase1-manifest-and-tasks.md` — Phase 1 asset directory convention + per-file extraction tasks
 - `docs/ATTRIBUTION.md` — license/credit ledger for sourced assets
 - `docs/asset-procurement-agent-flow.md` — mermaid diagram of the three-agent sourcing pipeline
@@ -259,6 +258,7 @@ Living reference guides (for the human, kept accurate over time) live in
 - `docs/reference/art-production-guidelines.md` — format/resolution/style/naming parameters for producing new art
 - `docs/reference/phaser-vfx-notes.md` — how Phaser handles VFX (particles/tweens/postFX/flipbooks), mapped to planned effects
 - `docs/reference/level-design-guide.md` — level-authoring conventions (sizing, objective spacing, hazard placement, `MovingHazardManager`, verification checklist) — read before authoring a new level
+- `docs/reference/sfx-asset-list.md` — the single audio asset list (SFX + the one music item), cut by Required-vs-Nice-to-have priority; consolidated 2026-08-26 from a since-deleted `docs/trailing_edge_audio_asset_list.md`
 
 ## Tech stack (confirmed, GDD §11)
 

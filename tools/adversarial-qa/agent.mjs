@@ -1,4 +1,4 @@
-// Adversarial QA agent (class assignment) -- drives the running Trailing
+// Adversarial QA agent -- drives the running Trailing
 // Edge game via Playwright and actively tries to break it, rather than
 // playing it normally. Cycles through movement/interaction/boundary-probing
 // behaviors, feeds every polled game-state snapshot through detectors.mjs's

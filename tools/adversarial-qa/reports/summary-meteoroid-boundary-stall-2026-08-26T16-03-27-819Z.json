@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-26T16:03:27.819Z",
+    "summarizedFrom": "repro-meteoroid-boundary-stall-2026-08-26T15-44-40-829Z.json",
+    "level": "level-000 (Test Level)",
+    "sweepYOffsetsTried": [
+      -45,
+      -35,
+      -25,
+      -15,
+      -5,
+      0,
+      10,
+      20
+    ],
+    "sweepVerdicts": {
+      "0": "contact-but-meteoroid-kept-moving",
+      "10": "contact-but-meteoroid-kept-moving",
+      "20": "contact-but-meteoroid-kept-moving",
+      "-45": "METEOROID STALLED",
+      "-35": "METEOROID STALLED",
+      "-25": "contact-but-meteoroid-kept-moving",
+      "-15": "contact-but-meteoroid-kept-moving",
+      "-5": "contact-but-meteoroid-kept-moving"
+    },
+    "followUpVerification": {
+      "description": "Ran the y=865 repro again and, after the freeze, observed the scene for 8+ more seconds and tried several move-away clicks.",
+      "sceneWideHang": false,
+      "evidence": "Ship energy regenerated normally (16.6 -> 32.6 over ~8s) and Ion Storm continued its trochoid drift (~2164px moved) during the freeze window -- only the Meteoroid (and transiently the ship) stopped.",
+      "shipEventuallyEscaped": true,
+      "shipEscapeEvidence": "First two move-away clicks after the freeze produced no ship movement at all; a third, later click succeeded (ship resumed normal velocity).",
+      "meteoroidRecoveredAfterShipLeft": false
+    }
+  },
+  "findings": [
+    {
+      "timestamp": "2026-08-26T16:03:27.818Z",
+      "location": {
+        "x": 2302.6,
+        "y": 900,
+        "levelId": "level-000"
+      },
+      "errorType": "Meteoroid Permanently Immobilized After Ship/Boundary Collision",
+      "severity": "high",
+      "gameContext": {
+        "reproParams": {
+          "rightEdgeTargetX": 2385,
+          "targetY": 855,
+          "yOffsetFromMeteoroidMidline": -45
+        },
+        "contactSamplesRecorded": 1,
+        "lastMovingSample": {
+          "tMs": 7963,
+          "ship": {
+            "x": 2366.7,
+            "y": 847.2,
+            "vx": 245,
+            "vy": 0
+          },
+          "meteoroid": {
+            "x": 2288,
+            "y": 900,
+            "vx": 280,
+            "vy": 0
+          },
+          "distance": 94.8
+        },
+        "freezeOnsetSample": {
+          "tMs": 8063,
+          "ship": {
+            "x": 2377,
+            "y": 841.9,
+            "vx": 0,
+            "vy": 0
+          },
+          "meteoroid": {
+            "x": 2302.6,
+            "y": 900,
+            "vx": 0,
+            "vy": 0
+          },
+          "distance": 94.5
+        },
+        "shipHalfWidthPx": 23,
+        "shipDistanceFromRightBoundaryAtFreeze": 23,
+        "meteoroidWrapThresholdX": 2456,
+        "meteoroidDistanceShortOfWrapThreshold": 153.4,
+        "observedFreezeDurationInThisTrialSeconds": 7.3
+      },
+      "detail": "Meteoroid froze at (2302.6, 900) and stayed there for the rest of this 7.3s trial (velocity snapped from (280,0) to exactly (0,0) in one tick). Trigger: the ship's collision edge reached the world's right boundary (ship at x=2377, 23px from the 2400px edge -- its own 23px half-width) in the same physics step it was still grazing the Meteoroid (94.5px apart). Meteoroid stopped 153.4px short of MovingHazardManager's wrap threshold (levelWidth+radius=2456), so it can never self-recover via the normal wrap-and-respawn path."
+    },
+    {
+      "timestamp": "2026-08-26T16:03:27.819Z",
+      "location": {
+        "x": 2299.9,
+        "y": 900,
+        "levelId": "level-000"
+      },
+      "errorType": "Meteoroid Permanently Immobilized After Ship/Boundary Collision",
+      "severity": "high",
+      "gameContext": {
+        "reproParams": {
+          "rightEdgeTargetX": 2385,
+          "targetY": 865,
+          "yOffsetFromMeteoroidMidline": -35
+        },
+        "contactSamplesRecorded": 86,
+        "lastMovingSample": {
+          "tMs": 7893,
+          "ship": {
+            "x": 2352.1,
+            "y": 858.2,
+            "vx": 230,
+            "vy": 0
+          },
+          "meteoroid": {
+            "x": 2274,
+            "y": 900,
+            "vx": 280,
+            "vy": 0
+          },
+          "distance": 88.6
+        },
+        "freezeOnsetSample": {
+          "tMs": 7993,
+          "ship": {
+            "x": 2378.9,
+            "y": 857.1,
+            "vx": 0,
+            "vy": 0
+          },
+          "meteoroid": {
+            "x": 2299.9,
+            "y": 900,
+            "vx": 0,
+            "vy": 0
+          },
+          "distance": 89.9
+        },
+        "shipHalfWidthPx": 23,
+        "shipDistanceFromRightBoundaryAtFreeze": 21.1,
+        "meteoroidWrapThresholdX": 2456,
+        "meteoroidDistanceShortOfWrapThreshold": 156.1,
+        "observedFreezeDurationInThisTrialSeconds": 7.2
+      },
+      "detail": "Meteoroid froze at (2299.9, 900) and stayed there for the rest of this 7.2s trial (velocity snapped from (280,0) to exactly (0,0) in one tick). Trigger: the ship's collision edge reached the world's right boundary (ship at x=2378.9, 21.1px from the 2400px edge -- its own 23px half-width) in the same physics step it was still grazing the Meteoroid (89.9px apart). Meteoroid stopped 156.1px short of MovingHazardManager's wrap threshold (levelWidth+radius=2456), so it can never self-recover via the normal wrap-and-respawn path."
+    }
+  ]
+}

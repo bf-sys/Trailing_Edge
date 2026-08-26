@@ -1,0 +1,2 @@
+Timestamp,LevelId,Location_X,Location_Y,ErrorType,Severity,GameContext,Detail
+"2026-08-26T15:29:44.508Z","level-006","3317","621.3","Ship Pinned / Stuck Against Solid Geometry","medium","{""windowSeconds"":1.7,""netDisplacement"":7.1,""contacts"":[""DEBRIS FIELD""],""sceneTimeMs"":73798}","Ship has moved only 7.1px over the last 1.7s while in contact with DEBRIS FIELD -- looks trapped, not just idle between commands."

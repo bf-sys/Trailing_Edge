@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-26T15:31:33.121Z",
+    "level": "level-006",
+    "durationSeconds": 180,
+    "tickMs": 300,
+    "tickCount": 472,
+    "hazardTuning": {
+      "debrisField": {
+        "textureKey": "debris_large",
+        "displayName": "DEBRIS FIELD",
+        "shape": {
+          "kind": "circle",
+          "radius": 60
+        },
+        "movementPattern": "static",
+        "speed": 0,
+        "activation": "continuous",
+        "resourceCost": {
+          "energy": 0,
+          "structure": 0
+        },
+        "blocksMovement": true
+      },
+      "solarFlare": {
+        "textureKey": "hazard_solar_flare",
+        "displayName": "SOLAR FLARE",
+        "shape": {
+          "kind": "circle",
+          "radius": 70
+        },
+        "movementPattern": "static",
+        "speed": 0,
+        "activation": "pulsed",
+        "pulseIntervalSeconds": 2.5,
+        "resourceCost": {
+          "energy": 28,
+          "structure": 35
+        },
+        "placeholderTexture": {
+          "color": 16737860,
+          "alpha": 0.55
+        }
+      },
+      "ionStorm": {
+        "textureKey": "hazard_ion_storm",
+        "displayName": "ION STORM",
+        "shape": {
+          "kind": "circle",
+          "radius": 110
+        },
+        "movementPattern": "trochoid",
+        "speed": 100,
+        "headingRadians": 3.141592653589793,
+        "orbitRadius": 220,
+        "orbitAngularSpeedRadiansPerSecond": 1.2566370614359172,
+        "spinRadiansPerSecond": 0.2617993877991494,
+        "activation": "continuous",
+        "resourceCost": {
+          "energy": 25,
+          "structure": 20
+        },
+        "depth": 7
+      },
+      "nebulaField": {
+        "textureKey": "hazard_nebula_field",
+        "displayName": "NEBULA FIELD",
+        "shape": {
+          "kind": "circle",
+          "radius": 100
+        },
+        "movementPattern": "static",
+        "speed": 0,
+        "activation": "continuous",
+        "resourceCost": {
+          "energy": 20,
+          "structure": 25
+        },
+        "exposureRampPerSecond": 0.15
+      },
+      "meteoroid": {
+        "textureKey": "hazard_meteoroid",
+        "displayName": "METEOROID",
+        "shape": {
+          "kind": "circle",
+          "radius": 56
+        },
+        "movementPattern": "linear",
+        "speed": 280,
+        "headingRadians": 0,
+        "spriteFacingOffsetRadians": -2.665117767795341,
+        "activation": "impact",
+        "hitCooldownSeconds": 1,
+        "resourceCost": {
+          "energy": 0,
+          "structure": 25
+        },
+        "blocksMovement": true,
+        "cancelTargetOnContact": true,
+        "knockbackSpeed": 260,
+        "depth": 8
+      }
+    },
+    "consoleErrors": [],
+    "behaviorErrorCount": 0,
+    "behaviorWeights": {
+      "randomMovement": 18,
+      "edgeMovement": 10,
+      "abilityMash": 8,
+      "pauseProbe": 5,
+      "outOfBoundsInjection": 8,
+      "meteoroidPinchSeek": 20,
+      "meteoroidBoundaryPinchSeek": 16,
+      "teleportIntoDebrisField": 15
+    },
+    "behaviorCounts": {
+      "randomMovement": 87,
+      "edgeMovement": 50,
+      "abilityMash": 36,
+      "pauseProbe": 25,
+      "outOfBoundsInjection": 39,
+      "meteoroidPinchSeek": 94,
+      "meteoroidBoundaryPinchSeek": 87,
+      "teleportIntoDebrisField": 54
+    },
+    "behaviorNoTargetCounts": {
+      "randomMovement": 0,
+      "edgeMovement": 0,
+      "abilityMash": 0,
+      "pauseProbe": 0,
+      "outOfBoundsInjection": 0,
+      "meteoroidPinchSeek": 0,
+      "meteoroidBoundaryPinchSeek": 0,
+      "teleportIntoDebrisField": 25
+    },
+    "barelyMovedTickCount": 11,
+    "confirmedTeleportIntoHazardCount": 2
+  },
+  "findings": [
+    {
+      "timestamp": "2026-08-26T15:29:44.508Z",
+      "location": {
+        "x": 3317,
+        "y": 621.3,
+        "levelId": "level-006"
+      },
+      "errorType": "Ship Pinned / Stuck Against Solid Geometry",
+      "severity": "medium",
+      "gameContext": {
+        "windowSeconds": 1.7,
+        "netDisplacement": 7.1,
+        "contacts": [
+          "DEBRIS FIELD"
+        ],
+        "sceneTimeMs": 73798
+      },
+      "detail": "Ship has moved only 7.1px over the last 1.7s while in contact with DEBRIS FIELD -- looks trapped, not just idle between commands."
+    }
+  ]
+}

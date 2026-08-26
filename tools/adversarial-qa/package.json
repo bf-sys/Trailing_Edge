@@ -1,0 +1,13 @@
+{
+  "name": "adversarial-qa",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Adversarial testing agent for Trailing Edge (class assignment) -- drives the running game via Playwright, cycles through movement/interaction/boundary-probing behaviors, and reports structured findings (boundary breaks, stuck states, unintended collisions, exploits).",
+  "scripts": {
+    "test": "node agent.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}

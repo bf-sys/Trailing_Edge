@@ -26,6 +26,7 @@ import { placeBackgroundSetPieces } from '../objects/BackgroundSetPieces';
 import { DestinationMarker } from '../objects/DestinationMarker';
 import { ShipThrusterTrail } from '../objects/ShipThrusterTrail';
 import { ScanActivationVfx } from '../objects/ScanActivationVfx';
+import { TeleportBlinkVfx } from '../objects/TeleportBlinkVfx';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -237,6 +238,7 @@ export class GameScene extends Phaser.Scene {
     this.teleportRangeRing = new TeleportRangeRing(this);
     new DestinationMarker(this);
     new ScanActivationVfx(this);
+    new TeleportBlinkVfx(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
     this.levelIntroBanner = new LevelIntroBanner(this);
 

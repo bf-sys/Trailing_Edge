@@ -16,7 +16,13 @@ interface BoostState {
 
 export const EXPLORATION_EVENTS = {
   DestinationSet: 'onDestinationSet',
+  TeleportConfirmed: 'onTeleportConfirmed',
 } as const;
+
+export interface TeleportConfirmedPayload {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
 
 function moveToward(current: number, desired: number, maxDelta: number): number {
   const delta = desired - current;
@@ -241,7 +247,12 @@ export class ExplorationController implements GameSystem {
     const destination = this.clampToTeleportRange(pointer.worldX, pointer.worldY);
     if (!ship.ability.tryActivate('teleport', nowMs)) return;
 
+    const origin = { x: ship.image.x, y: ship.image.y };
     ship.image.setPosition(destination.x, destination.y);
+    // Blink is still mechanically instant (position updates this frame,
+    // same as before) -- this event only drives the display-only
+    // TeleportBlinkVfx, it doesn't defer or animate the actual move.
+    ship.image.emit(EXPLORATION_EVENTS.TeleportConfirmed, { from: origin, to: destination });
     this.teleportArmed = false;
   }
 

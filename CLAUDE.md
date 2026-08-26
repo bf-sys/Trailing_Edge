@@ -84,14 +84,20 @@ unbuilt**.
   three on entry. Full rationale: `docs/ability-rework-brainstorm-2026-08-14.md`.
   `docs/trailing_edge_art_asset_list.md` §1.5's flag (dedicated activation
   VFX — a beam/pulse/thruster-trail sprite effect, separate from the
-  mechanical effects above) is now **partially resolved**: `scan` got a
-  one-shot activation pulse (`ScanActivationVfx`, 2026-08-26 — an
-  expanding ring from the ship out to `scanConfig.scanRadius`, event-driven
-  off `AbilityComponent`'s `Activated` event) and `rocketBoost`'s burst
-  already extends `ShipThrusterTrail`'s emitter (2026-08-24, found already
-  built while adding the scan VFX, not new this pass). `teleport`'s
-  blink-moment VFX is the one ability still without dedicated activation
-  VFX; `tractorBeam` stays de-scoped.
+  mechanical effects above) is now **resolved for all three real
+  abilities**: `scan` got a one-shot activation pulse (`ScanActivationVfx`,
+  2026-08-26 — an expanding ring from the ship out to
+  `scanConfig.scanRadius`, event-driven off `AbilityComponent`'s
+  `Activated` event); `rocketBoost`'s burst already extends
+  `ShipThrusterTrail`'s emitter (2026-08-24, found already built while
+  adding the scan VFX, not new that pass); `teleport` got
+  `TeleportBlinkVfx` (2026-08-26 — a shrinking/fading ghost duplicate left
+  at the origin plus the real ship popping in at the destination, each
+  paired with a small violet ring flash, event-driven off a new
+  `ExplorationController.EXPLORATION_EVENTS.TeleportConfirmed` event
+  carrying both endpoints; the actual position change stays mechanically
+  instant). `tractorBeam` stays de-scoped, the only one of the four
+  without dedicated activation VFX, intentionally so.
 
 **Test level split from real progression (2026-08-12).** `level-000` — the
 original test level, carrying one instance of every hazard and every
@@ -575,6 +581,21 @@ file's age. `CheckpointManager` remains deferred by design.
   `abilityConfig.teleport.maxRange` centered on the ship plus a reticle at
   the live clamped aim point, visible only while
   `ExplorationController.isTeleportArmed()`.
+- **`TeleportBlinkVfx`** (added 2026-08-26) — world-space, display-only,
+  event-driven off a new `ExplorationController.EXPLORATION_EVENTS.
+  TeleportConfirmed` event (payload: `{ from, to }`, both world points) —
+  not `AbilityComponent`'s `Activated` event, since that only carries the
+  ability type, not the teleport's two endpoints. `confirmTeleport()` emits
+  it right after its existing `setPosition()` call; the real position
+  change stays synchronous/instant, this only decorates it. Plays two
+  paired effects: a duplicate "ghost" sprite left at the origin (shrinks to
+  nothing and fades, tinted `teleportBlinkVfxConfig.color`), and the real
+  ship itself scaled down to `arrivalStartScaleFactor` the instant it
+  arrives, then tweened back up to its normal per-axis scale — plus a small
+  ring flash at each end (collapsing at the origin, expanding at the
+  destination), same Graphics-redrawn-every-tween-frame technique as
+  `ScanActivationVfx`, just much smaller/faster. Complements
+  `TeleportRangeRing`, which only covers the aim-time state before confirm.
 - **`EnergyNodeElement`/`EnergyNodeManager`** (added 2026-08-24) —
   `EnergyNodeManager` owns a fixed pool of pickups per level, sized via
   `computeEnergyNodePoolSize(levelWidth, levelHeight)` (scales with level

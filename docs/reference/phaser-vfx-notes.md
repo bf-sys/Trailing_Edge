@@ -105,12 +105,17 @@ trail, since it's continuous and ties directly to state that already
 exists (`ExplorationController`'s velocity/acceleration), making it the
 easiest to validate feel against.
 
-**Status (2026-08-26):** the thruster trail (`ShipThrusterTrail`) and the
-scanner pulse (`ScanActivationVfx`) are both now built, following exactly
-the mapping above — thruster trail as a particle emitter, scanner pulse as
-a tween-driven expanding ring (a Graphics ring redrawn every tween frame
-rather than a scaled texture, since it travels out to `scanConfig.scanRadius`
-and a small pre-baked texture stretched that far would blur). Damage
+**Status (2026-08-26):** the thruster trail (`ShipThrusterTrail`), the
+scanner pulse (`ScanActivationVfx`), and teleport's blink VFX
+(`TeleportBlinkVfx`) are all now built, following exactly the mapping
+above — thruster trail as a particle emitter, the other two as tween-driven
+expanding/collapsing rings (a Graphics ring redrawn every tween frame
+rather than a scaled texture, since scan's travels out to
+`scanConfig.scanRadius` and a small pre-baked texture stretched that far
+would blur). `TeleportBlinkVfx` additionally scale-tweens two ship-shaped
+GameObjects directly (a duplicate "ghost" at the origin, the real ship at
+the destination) rather than just drawing a ring — the first VFX here to
+animate a sprite's scale rather than only Graphics/particles. Damage
 feedback (tint/postFX flash + the `ship_damage_overlay` flipbook) is still
-unbuilt. `DestinationMarker`'s click-to-move ping is a third, earlier
-instance of the same expanding-ring tween technique, for reference.
+unbuilt. `DestinationMarker`'s click-to-move ping is an earlier instance of
+the same expanding-ring tween technique, for reference.

@@ -284,7 +284,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     SystemRegistry.all().forEach((system) => system.update?.(time, delta));
     this.hazards.forEach((hazard) => hazard.update(time, delta));
-    this.movingHazardManager.update();
+    this.movingHazardManager.update(delta);
     this.energyNodeManager.update(time, delta);
     this.resupplyPoints.forEach((resupply) => resupply.update(time, delta));
     this.puzzleElements.forEach((element) => element.update(time, delta));

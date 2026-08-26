@@ -205,6 +205,38 @@ only the initial point — the level-009/010 refiner agents' method
 (grid-search a clear position, re-simulate the whole leg) is the reference
 implementation.
 
+**Fixed: a 'linear' hazard (Meteoroid) could freeze permanently mid-level
+(2026-08-26).** Found via the adversarial QA tool (`tools/adversarial-qa/`,
+a class assignment, not a project-mandated deliverable — see that
+directory's README) while specifically hunting for Meteoroid/Debris-Field/
+boundary pinch scenarios at the project owner's direction, then confirmed
+with a dedicated repro sweep against Test Level
+(`tools/adversarial-qa/repro-meteoroid-boundary-stall.mjs`). Mechanism: a
+glancing (not dead-center) collision between the ship and a `blocksMovement`
+`'linear'` hazard, landing in the same physics step as the ship's own
+`setCollideWorldBounds(true)` clamp against the level edge, could zero
+**both** bodies' Arcade velocity simultaneously. The ship could eventually
+break free with further move commands, but the hazard could not — nothing
+in `HazardZoneElement` had ever redriven a `'linear'` hazard's velocity
+after construction/`reposition()`, so a zeroed hazard stayed zeroed forever,
+short of `MovingHazardManager`'s out-of-bounds wrap threshold, meaning it
+could never self-recover either. Root cause is believed to be in Phaser's
+own Arcade Physics collision resolution, not this project's collision code
+(which never touches a hazard's velocity outside construction/`reposition()`).
+Fixed with two layers, both in the Architecture contract bullets below:
+`HazardZoneElement.update()` now redrives a `'linear'` hazard's velocity
+every frame (self-healing — the existing `'trochoid'` pattern already
+established the same "don't trust Arcade to hold onto a hazard's motion"
+precedent, just via hand-driven position instead), and `MovingHazardManager`
+gained a stall-detection safety net (`movingHazardConfig.ts`'s
+`stallDisplacementThresholdPx`/`stallTimeoutSeconds`) that force-repositions
+any `'linear'`/`'trochoid'` hazard that hasn't visibly moved in
+~0.75s — expected to almost never fire post-fix, defense-in-depth against
+any other not-yet-discovered way a hazard's motion could get wedged.
+Re-verified against the original repro sweep (all 8 y-offsets, including
+the 2 that previously froze) with zero freezes after the fix; full traces
+in `tools/adversarial-qa/reports/`.
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open). Other reference docs live in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
@@ -378,6 +410,18 @@ file's age. `CheckpointManager` remains deferred by design.
     tangential loop speed exceed carrier speed, which is what produces
     genuine loop-backs rather than a gentle wobble. Meteoroid stays
     `'linear'` on purpose.
+  - **`'linear'` velocity redrive** (added 2026-08-26, fixing the freeze
+    bug described in Current project state) — `update()` now recomputes and
+    re-sets a `'linear'` hazard's Arcade velocity from its *current* heading
+    (`linearHeadingRadians`, an instance field distinct from
+    `config.headingRadians` — the latter is only the fixed authored value
+    for the first leg; the former tracks whatever `reposition()` last set it
+    to) every single frame, rather than setting it once at construction/
+    `reposition()` and trusting Arcade to keep integrating it unattended.
+    Purely defensive/self-healing — under normal operation this redrives the
+    exact value that was already there, no behavior change; it only matters
+    if something external (confirmed: a same-physics-step collision with a
+    world-bounds-clamped ship) zeroes it out from under the hazard.
   - **Debris Field re-scoped 2026-08-07 (GDD §9)** — was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship
@@ -407,6 +451,16 @@ file's age. `CheckpointManager` remains deferred by design.
     First proven out on `level-003`/`level-004` (more abilities to handle a
     moving threat by that point) — later overridden for `level-001`/
     `level-002` at explicit user request (see `level-design-guide.md` §4).
+    **Stall-detection safety net** (added 2026-08-26, alongside the
+    `'linear'` velocity redrive above — same freeze-bug fix): `update()`
+    now takes `deltaMs` and, independent of the out-of-bounds check, tracks
+    each hazard's frame-to-frame displacement — if a `'linear'`/`'trochoid'`
+    hazard moves less than `movingHazardConfig.stallDisplacementThresholdPx`
+    for `stallTimeoutSeconds` straight (these patterns have no legitimate
+    reason to ever sit still), it's force-`reposition()`'d the same as
+    drifting out of bounds. Defense-in-depth, not the primary fix — expected
+    to almost never actually fire now that the velocity redrive above
+    prevents the confirmed freeze mechanism from persisting past one frame.
 - **`AbilityComponent`** — per-ability dual gate (`energyCost`,
   `cooldownSeconds`), either settable to 0, plus a third `durationSeconds`
   gate, used so far only by `scan`; `isActive(type, nowMs)` reports whether

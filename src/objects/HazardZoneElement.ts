@@ -153,6 +153,13 @@ export class HazardZoneElement {
   private trochoidHeadingRadians = 0;
   private trochoidAngle = 0;
 
+  // 'linear' movement state (2026-08-26 fix) -- the hazard's *current*
+  // heading, which reposition() changes on every wrap (MovingHazardManager),
+  // as distinct from config.headingRadians (the fixed authored value for the
+  // hazard's first leg only). update() redrives velocity from this every
+  // frame -- see that method's comment for why.
+  private linearHeadingRadians = 0;
+
   constructor(scene: Phaser.Scene, config: HazardZoneConfig) {
     this.scene = scene;
     this.config = config;
@@ -224,6 +231,7 @@ export class HazardZoneElement {
     }
 
     this.zone.setPosition(x, y);
+    this.linearHeadingRadians = headingRadians;
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(Math.cos(headingRadians) * this.config.speed, Math.sin(headingRadians) * this.config.speed);
     if (this.config.spriteFacingOffsetRadians !== undefined) {
@@ -262,6 +270,28 @@ export class HazardZoneElement {
         this.trochoidCarrierX + Math.cos(this.trochoidAngle) * radius,
         this.trochoidCarrierY + Math.sin(this.trochoidAngle) * radius,
       );
+    }
+
+    // 2026-08-26 fix: re-assert a 'linear' hazard's velocity every frame
+    // instead of trusting Arcade to keep integrating the value set once at
+    // construction/reposition() -- confirmed bug (tools/adversarial-qa's
+    // repro-meteoroid-boundary-stall.mjs): a glancing collision between the
+    // ship and this hazard landing in the same physics step as the ship's
+    // own world-bounds clamp can zero BOTH bodies' velocity, and with
+    // nothing redriving it, a zeroed 'linear' hazard stayed frozen forever
+    // (short of MovingHazardManager's out-of-bounds wrap threshold, so it
+    // could never self-recover through the normal path either). Redriving
+    // here is self-healing -- if Arcade zeroes it again for any reason, the
+    // very next frame restores the correct velocity instead of leaving it
+    // stuck. Same "don't trust Arcade to hold onto a hazard's motion"
+    // precedent 'trochoid' above already established for Ion Storm (that
+    // one hand-drives position and zeroes Arcade velocity outright; this one
+    // keeps real Arcade-driven movement, since Meteoroid's blocksMovement
+    // collision response depends on it, just stops trusting it to persist
+    // unattended).
+    if (this.config.movementPattern === 'linear') {
+      const body = this.zone.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(Math.cos(this.linearHeadingRadians) * this.config.speed, Math.sin(this.linearHeadingRadians) * this.config.speed);
     }
 
     if (this.config.spinRadiansPerSecond) this.zone.rotation += this.config.spinRadiansPerSecond * dt;
@@ -362,6 +392,7 @@ export class HazardZoneElement {
 
     if (movementPattern === 'linear') {
       const heading = this.config.headingRadians ?? 0;
+      this.linearHeadingRadians = heading;
       body.setVelocity(Math.cos(heading) * speed, Math.sin(heading) * speed);
       if (this.config.spriteFacingOffsetRadians !== undefined) {
         this.zone.setRotation(heading + this.config.spriteFacingOffsetRadians);

@@ -29,12 +29,29 @@ export interface MovingHazardConfig {
   // target (equivalent to both = 1) if no ship exists yet.
   routeBiasMin: number;
   routeBiasMax: number;
+
+  // Stall-detection safety net (2026-08-26, alongside HazardZoneElement's
+  // own per-frame velocity redrive fix -- see that file's update() comment
+  // for the confirmed bug this covers). A 'linear'/'trochoid' hazard is
+  // never supposed to sit still; if one moves less than
+  // stallDisplacementThresholdPx in a single frame for
+  // stallTimeoutSeconds straight, MovingHazardManager treats it the same as
+  // drifting out of bounds and force-repositions it. Expected to almost
+  // never fire post-fix -- this is defense-in-depth against any other
+  // not-yet-discovered way a hazard's motion could get wedged, not the
+  // primary fix. stallTimeoutSeconds is short on purpose: unlike the ship,
+  // these hazards have no legitimate reason to ever be stationary, so
+  // there's no normal-play case this could false-positive against.
+  stallDisplacementThresholdPx: number;
+  stallTimeoutSeconds: number;
 }
 
 export const movingHazardConfig: MovingHazardConfig = {
   objectiveJitterRadius: 350,
   routeBiasMin: 0.5,
   routeBiasMax: 1,
+  stallDisplacementThresholdPx: 2,
+  stallTimeoutSeconds: 0.75,
 };
 
 registerTuning('movingHazard', movingHazardConfig);

@@ -39,6 +39,13 @@ import { getPlayerShip } from '../systems/ExplorationController';
 // points land throughout the corridor the player is actually traveling
 // instead of clustering tightly at the destination.
 export class MovingHazardManager {
+  // Stall-detection safety net (2026-08-26) -- keyed per-hazard-instance,
+  // reset whenever a hazard visibly moves or gets repositioned. See
+  // isStalled()'s comment and movingHazardConfig.ts's stallDisplacementThresholdPx/
+  // stallTimeoutSeconds for what this covers and why.
+  private readonly lastPosition = new Map<HazardZoneElement, { x: number; y: number }>();
+  private readonly stallElapsedMs = new Map<HazardZoneElement, number>();
+
   constructor(
     private readonly hazards: HazardZoneElement[],
     private readonly tracker: LevelObjectiveTracker,
@@ -46,10 +53,56 @@ export class MovingHazardManager {
     private readonly levelHeight: number,
   ) {}
 
-  update(): void {
+  // deltaMs (GameScene.update()'s own delta) drives the stall timer below --
+  // needed since this method's own call frequency is the only clock
+  // available to it (no Scene/Clock reference is threaded through here).
+  update(deltaMs: number): void {
     this.hazards.forEach((hazard) => {
-      if (this.isOutOfBounds(hazard)) this.respawn(hazard);
+      if (this.isOutOfBounds(hazard)) {
+        this.respawn(hazard);
+        this.resetStallTracking(hazard);
+        return;
+      }
+      if (this.isStalled(hazard, deltaMs)) {
+        this.respawn(hazard);
+        this.resetStallTracking(hazard);
+      }
     });
+  }
+
+  // A 'linear'/'trochoid' hazard is never supposed to sit still -- if one
+  // has moved less than stallDisplacementThresholdPx for
+  // stallTimeoutSeconds straight, treat it the same as drifting out of
+  // bounds: this is the safety-net half of the 2026-08-26 fix for a
+  // confirmed engine-level freeze (HazardZoneElement.update()'s own comment
+  // has the full mechanism -- a glancing ship/hazard collision landing in
+  // the same physics step as the ship's own world-bounds clamp could zero
+  // both bodies' velocity). HazardZoneElement.update() now redrives
+  // 'linear' velocity every frame, which should already prevent this from
+  // ever persisting long enough to trip this check -- this exists as
+  // defense-in-depth against any other not-yet-discovered way a hazard's
+  // motion could get wedged, not as the primary fix.
+  private isStalled(hazard: HazardZoneElement, deltaMs: number): boolean {
+    const pos = hazard.getPosition();
+    const last = this.lastPosition.get(hazard);
+    this.lastPosition.set(hazard, pos);
+
+    if (!last) return false; // first tick seeing this hazard -- nothing to compare against yet
+
+    const moved = Math.hypot(pos.x - last.x, pos.y - last.y);
+    if (moved >= movingHazardConfig.stallDisplacementThresholdPx) {
+      this.stallElapsedMs.set(hazard, 0);
+      return false;
+    }
+
+    const elapsedMs = (this.stallElapsedMs.get(hazard) ?? 0) + deltaMs;
+    this.stallElapsedMs.set(hazard, elapsedMs);
+    return elapsedMs >= movingHazardConfig.stallTimeoutSeconds * 1000;
+  }
+
+  private resetStallTracking(hazard: HazardZoneElement): void {
+    this.lastPosition.set(hazard, hazard.getPosition());
+    this.stallElapsedMs.set(hazard, 0);
   }
 
   private isOutOfBounds(hazard: HazardZoneElement): boolean {

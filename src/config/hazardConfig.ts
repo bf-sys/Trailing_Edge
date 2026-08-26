@@ -134,16 +134,20 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // band across the map instead of a single-pixel-wide line, and reads as
   // visibly distinct from Meteoroid's straight charge. Tangential loop speed
   // (radius * angularSpeed ~= 276px/s) intentionally exceeds the carrier's
-  // forward speed (200px/s) -- that's what makes it trace visible loop-the-
-  // loops (a true trochoid, not just a wavy line) rather than a gentle
-  // sideways wobble. Meteoroid stays 'linear' on purpose -- see
+  // forward speed -- that's what makes it trace visible loop-the-loops (a
+  // true trochoid, not just a wavy line) rather than a gentle sideways
+  // wobble. Meteoroid stays 'linear' on purpose -- see
   // HazardMovementPattern's 'trochoid' comment in HazardZoneElement.ts.
+  // Carrier speed dropped 200 -> 100 (2026-08-25, user playtest feedback
+  // after a few in-browser iterations of the trochoid pattern) -- widens the
+  // gap under the 276px/s tangential loop speed further, reads better with
+  // the corkscrew motion than the old 200 did.
   ionStorm: {
     textureKey: 'hazard_ion_storm',
     displayName: 'ION STORM',
     shape: { kind: 'circle', radius: 110 },
     movementPattern: 'trochoid',
-    speed: 200,
+    speed: 100,
     headingRadians: Math.PI,
     orbitRadius: 220,
     orbitAngularSpeedRadiansPerSecond: (Math.PI * 2) / 5, // one loop every 5s

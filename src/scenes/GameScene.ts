@@ -97,6 +97,16 @@ export class GameScene extends Phaser.Scene {
     this.resupplyPoints = [];
     this.puzzleElements = [];
 
+    // Undo wireHardFailRestart()'s pre-death input/physics disable -- see
+    // that method's comment. scene.restart() reuses this same Scene
+    // instance's InputPlugin/KeyboardPlugin/physics world rather than
+    // recreating them, so these flags must be explicitly reset here on
+    // every create() (level start, level transition, and hard-fail
+    // restart alike) rather than assumed to reset themselves.
+    this.input.enabled = true;
+    if (this.input.keyboard) this.input.keyboard.enabled = true;
+    this.physics.resume();
+
     const config = getLevelConfig(this.levelId);
     this.levelWidth = config.width;
     this.levelHeight = config.height;
@@ -371,9 +381,16 @@ export class GameScene extends Phaser.Scene {
   // the real ship sprite is hidden, and a quick arcade-style explosion
   // (ShipExplosionVfx) plays at its last position before scene.restart()
   // actually fires, arcade-style "die, then respawn" pacing instead of an
-  // instant cut. scene.restart() tears down the whole scene (including
-  // these input/physics changes) regardless, so nothing needs to be
-  // re-enabled manually before it fires.
+  // instant cut.
+  //
+  // Bug fixed 2026-08-27: scene.restart() does NOT tear down the Scene's
+  // InputPlugin/KeyboardPlugin -- Phaser reuses the same Scene instance and
+  // its plugins across a restart, only re-running init()/create(). The
+  // input.enabled/input.keyboard.enabled = false set below was never being
+  // reset back to true anywhere, so the very first hard-fail death disabled
+  // keyboard input (ability hotkeys, ESC-for-pause) for the rest of the
+  // browser session. create() now explicitly re-enables input/physics at
+  // the top -- see the block right after the mutable-field resets above.
   private wireHardFailRestart(): void {
     const ship = getPlayerShip();
     if (!ship) return;

@@ -258,8 +258,7 @@ pauses physics (`this.physics.pause()`), hides the real ship sprite, and
 plays `ShipExplosionVfx` (a one-shot particle burst + light camera shake)
 at the ship's last position before calling `scene.restart()` — previously
 that call fired immediately on the event with no death beat at all.
-`scene.restart()` tears down the whole scene regardless, so nothing needs
-re-enabling before it fires. Particle burst + shake only, no debris
+Particle burst + shake only, no debris
 scatter — considered directly, decided against (owner: "the particles
 look great," no follow-up wanted), not a placeholder awaiting one.
 **Known, accepted minor gap:** `this.physics.pause()` only stops
@@ -267,6 +266,33 @@ Arcade's own step — hazards driven by hand-set position (`'trochoid'`) or
 per-frame `HazardZoneElement.update()` logic keep animating/ticking during
 the frozen beat (harmless: structure is already floored at 0, so no
 further `StructureHit` fires), not worth solving for a first pass.
+
+**Fixed: keyboard input (ability hotkeys, ESC-for-pause) permanently
+disabled after the first hard-fail death of a browser session
+(2026-08-27, user report after playing levels 1-7 and dying on
+level 8).** Root cause: the entry above's `scene.restart() tears down the
+whole scene regardless, so nothing needs re-enabling before it fires`
+assumption was wrong — `scene.restart()` reuses the same `GameScene`
+instance and its `InputPlugin`/`KeyboardPlugin`/physics world rather than
+recreating them, only re-running `init()`/`create()`. Nothing ever set
+`input.enabled`/`input.keyboard.enabled` back to `true` or resumed
+physics, so the very first hard-fail death (whenever it happened in a
+session) disabled keyboard input for good — mouse click-to-move was
+unaffected since it isn't gated by `input.keyboard.enabled`, which is why
+only abilities and the pause menu appeared broken. Fixed by explicitly
+resetting `this.input.enabled = true`, `this.input.keyboard.enabled =
+true`, and calling `this.physics.resume()` at the top of `create()`,
+alongside the existing mutable-field resets — covers every `create()`
+entry point (fresh level start, level-complete transition, and hard-fail
+restart alike), not just the death path. Verified by forcing a hard-fail
+death in a live dev build and confirming both flags and the physics-pause
+state read back correctly reset post-restart. **User-confirmed same day:**
+a full real playthrough post-fix, levels 1 through 10 (including at least
+one more hard-fail death along the way, per the original report), reached
+`WinScene` with no further input-lockup — the first full `LEVEL_ORDER`
+playthrough on record. Not a substitute for Phase 3's own planned pass
+(`Continue` resume and a packaged-build run are still unconfirmed), but a
+real data point toward it.
 
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open). Other reference docs live in `docs/`:
@@ -291,6 +317,7 @@ Living reference guides (for the human, kept accurate over time) live in
 - `docs/reference/level-design-guide.md` — level-authoring conventions (sizing, objective spacing, hazard placement, `MovingHazardManager`, verification checklist) — read before authoring a new level
 - `docs/reference/sfx-asset-list.md` — the single audio asset list (SFX + the one music item), cut by Required-vs-Nice-to-have priority; consolidated 2026-08-26 from a since-deleted `docs/trailing_edge_audio_asset_list.md`
 - `docs/reference/sfx-sourcing-candidates.md` — auto-generated (`tools/audio-triage/scan-kenney-audio.mjs`) filename-keyword triage of the project owner's local Kenney audio library against `sfx-asset-list.md`'s categories; a shortlist for a human listening pass, not a perceptual evaluation; rerun the script rather than hand-editing this file
+- `docs/reference/sfx-selections.md` — hand-maintained record of which exact file (from the candidates doc above) was chosen per category, ready to hand off for actual asset-copying/wiring; NOT touched by the triage script
 
 ## Tech stack (confirmed, GDD §11)
 
@@ -761,16 +788,34 @@ production approach but nothing sourced yet).
 
 ## Open design questions (GDD §9)
 
-**Ion Storm vs. Nebula Field visual differentiation is still open** — color
-alone is a weak signal (colorblind players; easy to under-read a slow drift
-in a quick glance). Fallback options in reserve if color+animation doesn't
-read clearly: particle trail, border/outline treatment, or reverting to two
-distinct phenomena. **Production approach decided 2026-08-08, differentiation
-itself still unresolved:** one shared asset pass serves both hazards — 2-3
-distinct soft-cloud silhouette textures (not a Debris-Field-style
-discrete-fragment cluster), each stretched via `setDisplaySize()`. See
-`docs/reference/art-production-guidelines.md`'s "Nebula Field / Ion Storm
-cloud art" section. Nothing sourced yet.
+**Ion Storm vs. Nebula Field visual differentiation — resolved for the
+current build (2026-08-27, Accessibility/Telegraphing Reviewer pass,
+`docs/history/accessibility-review-2026-08-27.md`).** Final art (sourced
+2026-08-19 through 2026-08-22, independently-directed per hazard rather
+than the shared-pass plan below) plus Ion Storm's 2026-08-25 switch to
+`'trochoid'` motion together read as unambiguously distinct, live in-engine,
+both static and in motion: different hue family (violet/pink glow vs.
+blue-white lightning), different edge hardness (soft-bloomed vs. jagged),
+different internal texture, different movement. This closes the "does it
+read distinctly in motion" gap the 2026-08-19 static-image comparison
+explicitly left open. Revisit only if the art or motion pattern changes
+again. **Still a real, separate finding from the same review pass:**
+`level-008`'s dense `nebulaWall()` gauntlet (108 chained instances) packs
+Nebula Field columns tightly enough that adjacent instances' soft blooms
+visually merge and the already-accepted low-contrast body makes gap
+boundaries hard to read — a density/legibility issue, not a
+differentiation-from-Ion-Storm issue; ties into the existing
+`level-008`-authored-energy-only gap noted in Current Project State,
+unfixed by design so far.
+Original context, still accurate: color alone is a weak signal
+(colorblind players; easy to under-read a slow drift in a quick glance).
+Fallback options stay in reserve if a future art/engine change regresses
+this: particle trail, border/outline treatment, or reverting to two
+distinct phenomena. Shared-pass production approach
+(`docs/reference/art-production-guidelines.md`'s "Nebula Field / Ion Storm
+cloud art" section) remains the documented default for any *future*
+version of this art, even though the shipped art took the independently-
+directed path instead — see `docs/STATUS.md`'s 2026-08-19 entry.
 
 **Structure-vs-energy stakes legibility, reframed 2026-08-25:** the old
 framing ("only Meteoroid carries real fail stakes, is the visual language
@@ -779,11 +824,20 @@ Solar Flare all carry structure cost too (see Current project state and
 Architecture contract). What's still genuinely open: whether the *visual*
 language (`HazardScanOverlay`'s orange/blue color coding) still reads
 clearly now that most hazards carry the orange (structure-cost) treatment.
-The reworked `scan` ability gives players an active, on-demand way to
-identify a hazard's type/cost, but that's a mitigation layered on top, not a
-resolution — both this and the Ion Storm/Nebula Field item above stay open
-for the passive, no-`scan` case. The Accessibility/Telegraphing Reviewer
-role (GDD §12.1) should keep evaluating the visual language on its own terms.
+**Confirmed, not just theoretical, as of the 2026-08-27 Accessibility/
+Telegraphing Reviewer pass** (`docs/history/accessibility-review-2026-08-27.md`):
+with `scan` active, both a Nebula Field and an Ion Storm instance outline
+orange side by side — the color coding no longer singles out a
+"most dangerous" hazard the way it did when only Meteoroid carried
+structure cost. The reworked `scan` ability gives players an active,
+on-demand way to identify a hazard's type/cost, but that's a mitigation
+layered on top, not a resolution — this stays open for both the active-scan
+case (now confirmed ambiguous) and the passive, no-`scan` case (not yet
+separately checked). The Ion Storm/Nebula Field differentiation item above
+is now resolved and no longer part of this open question's scope. The
+Accessibility/Telegraphing Reviewer role (GDD §12.1) should keep evaluating
+the visual language on its own terms — no fix decided or attempted here,
+per that role's explicit non-goal of deciding balance/design fixes.
 
 **Resolved (2026-07-31):** off-screen objective visibility. Resolved as a
 single edge-pinned directional arrow (Sinistar-style), not a minimap —

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getPlayerShip } from '../systems/ExplorationController';
+import { getPlayerShip, getExplorationController } from '../systems/ExplorationController';
 import { survivalConfig } from '../config/survivalConfig';
 import { resupplyVfxConfig } from '../config/resupplyVfxConfig';
 import { setCircleFromWorldRadius } from './arcadeBodyHelpers';
@@ -73,8 +73,14 @@ export class ResupplyPoint {
     setCircleFromWorldRadius(body, this.zone, config.radius);
     body.setImmovable(true);
 
+    // cancelTargetOnContact, same mechanism/rationale as Meteoroid's
+    // (HazardZoneElement) -- without it, a click-to-move target on the far
+    // side of the asteroid keeps re-driving velocity into it every frame,
+    // fighting Arcade's own collision separation and reading as the ship
+    // bouncing/juddering against the rock (2026-08-27 owner report). Clearing
+    // the target lets decelerateToStop() take over instead.
     const ship = getPlayerShip();
-    if (ship) scene.physics.add.collider(this.zone, ship.image);
+    if (ship) scene.physics.add.collider(this.zone, ship.image, () => getExplorationController().cancelTarget());
 
     this.beam = scene.add.graphics().setDepth(resupplyVfxConfig.beamDepth);
     this.sparkEmitter = scene.add

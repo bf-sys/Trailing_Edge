@@ -21,7 +21,11 @@ export const resupplyVfxConfig = {
   // radius, so requiring literal overlap would mean repair could almost
   // never actually trigger (the same shape of problem Meteoroid's
   // knockback/cancelTargetOnContact work addressed for hazard contact).
-  rangeBuffer: 40,
+  // Raised 40 -> 70 (2026-08-27, owner report) -- the margin Arcade's own
+  // separation left the ship sitting in read as too tight/fiddly to repair
+  // in, compounding the cancelTargetOnContact juddering fixed alongside
+  // this in ResupplyPoint.ts.
+  rangeBuffer: 70,
 
   // How far inside the asteroid's own radius a repair session's impact
   // point can land -- kept below 1 so the beam always visibly terminates

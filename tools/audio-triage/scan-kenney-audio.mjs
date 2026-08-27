@@ -1,26 +1,69 @@
 #!/usr/bin/env node
-// Metadata/filename triage for a large local Kenney audio library against
+// Metadata/filename triage for local audio libraries against
 // docs/reference/sfx-asset-list.md's Required/Nice-to-have SFX categories.
 //
 // This is NOT perceptual evaluation -- nothing here listens to a file. It
-// only matches filenames (Kenney's own descriptive stems, e.g.
+// only matches filenames (e.g. Kenney's own descriptive stems --
 // "laserSmall_003.ogg", "impactMetal_heavy_002.ogg") against a keyword list
 // per category, groups numbered variants of the same stem together, and
 // produces a shortlist for a human listening pass. No files are moved,
-// copied, or converted -- read-only against the source library.
+// copied, or converted -- read-only against the source librar{y,ies}.
 //
-// Usage: node tools/audio-triage/scan-kenney-audio.mjs [sourceDir] [outFile]
-// Defaults match this project owner's local library layout; both are
-// overridable since that path won't exist on another machine.
-
+// Usage: node tools/audio-triage/scan-kenney-audio.mjs [sourceDir] [outFile] [--source=extraDir [--license="label"]] ...
+// Defaults match this project owner's local Kenney library layout; both
+// positional args are overridable since that path won't exist on another
+// machine. Repeat `--source=DIR` to scan additional, non-default libraries
+// in the same run -- their matches are merged into the same category tables
+// (so a rerun with a new --source effectively appends new candidates rather
+// than losing what a prior default-only run already found). A `--license=`
+// immediately following a `--source=` records that root's actual terms
+// (read from whatever license file/readme ships with that library) in the
+// generated doc; a root with no `--license=` is called out as unverified --
+// the default Kenney path is pre-verified CC0 and needs neither flag.
 import { readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, extname, basename } from 'node:path';
 
 const DEFAULT_SOURCE = 'C:\\Users\\bryan\\Dropbox\\Game Assets\\Kenney\\Audio';
 const DEFAULT_OUT = join('docs', 'reference', 'sfx-sourcing-candidates.md');
 
-const sourceDir = process.argv[2] ?? DEFAULT_SOURCE;
-const outFile = process.argv[3] ?? DEFAULT_OUT;
+const rawArgs = process.argv.slice(2);
+const positional = [];
+const extraRoots = [];
+let pendingRoot = null;
+for (const arg of rawArgs) {
+  if (arg.startsWith('--source=')) {
+    pendingRoot = { dir: arg.slice('--source='.length), licenseLabel: null, licenseNote: null };
+    extraRoots.push(pendingRoot);
+  } else if (arg.startsWith('--license=')) {
+    if (pendingRoot) pendingRoot.licenseLabel = arg.slice('--license='.length);
+  } else if (arg.startsWith('--note=')) {
+    if (pendingRoot) pendingRoot.licenseNote = arg.slice('--note='.length);
+  } else {
+    positional.push(arg);
+  }
+}
+
+const sourceDir = positional[0] ?? DEFAULT_SOURCE;
+const outFile = positional[1] ?? DEFAULT_OUT;
+
+// Each root is scanned independently; `licenseLabel` (null = unverified)
+// gates the license language written into the generated doc.
+const sourceRoots = [
+  { dir: sourceDir, licenseLabel: sourceDir === DEFAULT_SOURCE ? 'Kenney CC0' : null },
+  ...extraRoots,
+];
+const multiSource = sourceRoots.length > 1;
+
+// Root label used to disambiguate packs when scanning multiple roots (e.g.
+// two libraries that both happen to have a top-level "Audio" folder). Falls
+// back to the last two path segments when bare basenames collide.
+const rootBasenames = sourceRoots.map((r) => basename(r.dir));
+for (const root of sourceRoots) {
+  const dupes = rootBasenames.filter((b) => b === basename(root.dir)).length > 1;
+  root.label = dupes
+    ? root.dir.split(/[\\/]/).filter(Boolean).slice(-2).join('/')
+    : basename(root.dir);
+}
 
 const AUDIO_EXTENSIONS = new Set(['.ogg', '.wav', '.mp3']);
 
@@ -83,28 +126,34 @@ function stemOf(normalized) {
   return normalized.replace(/\d+$/, '');
 }
 
-function walk(dir, pack, out) {
+function walk(dir, pack, root, out) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     const st = statSync(full);
     if (st.isDirectory()) {
-      walk(full, pack, out);
+      walk(full, pack, root, out);
     } else if (AUDIO_EXTENSIONS.has(extname(entry).toLowerCase())) {
-      out.push({ full, pack, filename: entry });
+      out.push({ full, pack, root, filename: entry });
     }
   }
 }
 
 function main() {
   const files = [];
-  for (const packDir of readdirSync(sourceDir)) {
-    if (EXCLUDED_PACKS.has(packDir)) continue;
-    const full = join(sourceDir, packDir);
-    if (!statSync(full).isDirectory()) continue;
-    walk(full, packDir, files);
+  for (const root of sourceRoots) {
+    for (const packDir of readdirSync(root.dir)) {
+      if (EXCLUDED_PACKS.has(packDir)) continue;
+      const full = join(root.dir, packDir);
+      if (!statSync(full).isDirectory()) continue;
+      // Disambiguate pack names only when scanning multiple roots, so a
+      // single-root run's output (and the "Pack" values within it) stays
+      // byte-identical to before this multi-source support was added.
+      const label = multiSource ? `${root.label} / ${packDir}` : packDir;
+      walk(full, label, root, files);
+    }
   }
 
-  console.error(`Scanned ${files.length} audio files across ${new Set(files.map((f) => f.pack)).size} packs (excluded: ${[...EXCLUDED_PACKS].join(', ')}).`);
+  console.error(`Scanned ${files.length} audio files across ${new Set(files.map((f) => f.pack)).size} packs and ${sourceRoots.length} source root(s) (excluded: ${[...EXCLUDED_PACKS].join(', ')}).`);
 
   const matchedFileSet = new Set();
   const results = CATEGORIES.map((cat) => {
@@ -122,7 +171,7 @@ function main() {
       }
       const g = groups.get(key);
       g.count += 1;
-      if (g.examples.length < 2) g.examples.push(relative(sourceDir, f.full));
+      if (g.examples.length < 2) g.examples.push(relative(f.root.dir, f.full));
     }
     const rows = [...groups.values()].sort((a, b) => b.count - a.count || a.stem.localeCompare(b.stem));
     return { ...cat, rows };
@@ -132,38 +181,59 @@ function main() {
   // so it's visible which packs are pulling weight vs. sitting unused.
   const packTotals = new Map();
   const packMatched = new Map();
+  const packLicenseLabel = new Map();
   for (const f of files) {
     packTotals.set(f.pack, (packTotals.get(f.pack) ?? 0) + 1);
     if (matchedFileSet.has(f.full)) packMatched.set(f.pack, (packMatched.get(f.pack) ?? 0) + 1);
+    packLicenseLabel.set(f.pack, f.root.licenseLabel);
   }
 
+  const unverifiedRoots = sourceRoots.filter((r) => !r.licenseLabel);
+
   const lines = [];
-  lines.push('# SFX Sourcing Candidates — Kenney Audio Library Triage');
+  lines.push('# SFX Sourcing Candidates — Local Audio Library Triage');
   lines.push('');
-  lines.push(`Generated by \`tools/audio-triage/scan-kenney-audio.mjs\` against \`${sourceDir}\`.`);
+  lines.push('Generated by `tools/audio-triage/scan-kenney-audio.mjs` against:');
+  for (const root of sourceRoots) {
+    lines.push(`- \`${root.dir}\`${root.licenseLabel ? ` (${root.licenseLabel}, verified)` : ' (license NOT verified)'}`);
+    if (root.licenseNote) lines.push(`  ${root.licenseNote}`);
+  }
   lines.push('');
   lines.push('**This is filename/keyword triage, not perceptual evaluation** — nothing here');
   lines.push('listened to a file. Each row below is a *candidate pool* narrowed from the full');
-  lines.push('library for a human listening pass, grouped by category from');
+  lines.push('librar' + (multiSource ? 'ies' : 'y') + ' for a human listening pass, grouped by category from');
   lines.push('`docs/reference/sfx-asset-list.md` §1/§2. Numbered variants of the same base');
   lines.push('sound (e.g. `click_001.ogg`\u2013`click_005.ogg`) are collapsed into one row with a');
   lines.push('variant count — go listen to the whole numbered set for a given stem, not just');
-  lines.push('the one example path shown, since Kenney variants differ meaningfully from one');
-  lines.push('to the next. All scanned packs are Kenney CC0 (verified via each pack\'s');
-  lines.push('`License.txt` — no attribution required, though `ATTRIBUTION.md` should still get');
-  lines.push('a courtesy credit line once files are actually pulled in, matching existing');
-  lines.push('project practice for Kenney art packs).');
+  lines.push('the one example path shown, since variants (Kenney or otherwise) can differ');
+  lines.push('meaningfully from one to the next. The default Kenney library is CC0 (verified');
+  lines.push('via each pack\'s `License.txt` — no attribution required, though `ATTRIBUTION.md`');
+  lines.push('should still get a courtesy credit line once files are actually pulled in,');
+  lines.push('matching existing project practice for Kenney art packs).');
+  if (unverifiedRoots.length > 0) {
+    lines.push('');
+    lines.push('**License NOT verified for these additional source(s) — check each pack\'s own');
+    lines.push('license/readme before pulling any file into the project:**');
+    for (const root of unverifiedRoots) {
+      lines.push(`- \`${root.dir}\``);
+    }
+  }
   lines.push('');
-  lines.push(`Regenerate after adding/removing packs in the source library: \`node tools/audio-triage/scan-kenney-audio.mjs\`.`);
+  lines.push('Rerun with the same source(s) after adding/removing packs there, or add a new');
+  lines.push('source via `--source=DIR --license="label"` to merge its matches into these');
+  lines.push('same category tables (omit `--license=` if that library\'s terms haven\'t been');
+  lines.push('checked yet):');
+  lines.push('`node tools/audio-triage/scan-kenney-audio.mjs ' + `"${DEFAULT_SOURCE}" "${DEFAULT_OUT}"` + ' --source=DIR2 --license="..." --source=DIR3`.');
   lines.push('');
   lines.push('---');
   lines.push('');
   lines.push('## Pack coverage');
   lines.push('');
-  lines.push('| Pack | Files scanned | Files matching >=1 category |');
-  lines.push('|---|---|---|');
+  lines.push('| Pack | Files scanned | Files matching >=1 category | License |');
+  lines.push('|---|---|---|---|');
   for (const [pack, total] of [...packTotals.entries()].sort((a, b) => b[1] - a[1])) {
-    lines.push(`| ${pack} | ${total} | ${packMatched.get(pack) ?? 0} |`);
+    const license = packLicenseLabel.get(pack) ?? 'unverified';
+    lines.push(`| ${pack} | ${total} | ${packMatched.get(pack) ?? 0} | ${license} |`);
   }
   lines.push('');
   lines.push(`Excluded from scanning entirely (no thematic overlap — fighting-game announcer`);

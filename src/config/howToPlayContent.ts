@@ -20,7 +20,7 @@ export interface HowToPlayPage {
   // Draws a '->' between each adjacent image pair (HowToPlayScene.ts) --
   // only meaningful when images represents an ordered sequence of steps,
   // like Probe -> Relay Beacon -> Wormhole below. Omitted/false for pages
-  // like "Energy & Resupply" where the images are parallel concepts, not
+  // like "Energy & Repair" where the images are parallel concepts, not
   // steps.
   showSequenceArrows?: boolean;
 }
@@ -40,7 +40,7 @@ export const howToPlayPages: HowToPlayPage[] = [
   {
     title: 'The Core Loop',
     body:
-      "Launch from the Entry Wormhole and explore the level -- scan asteroids, dodge hazards, and track down the level's inactive Probe. Once you've recovered it, head for the Relay Beacon. Reaching the beacon opens the Exit Wormhole, a separate location from where you started -- return through it to complete the expedition.",
+      "Launch from the Entry Wormhole and explore the level -- scan asteroids, dodge hazards, and track down the level's inactive Probe. Once you've recovered it, head for the Relay Beacon. Reaching the beacon opens the Exit Wormhole, a separate location from where you started -- return through it to complete the level.",
     images: [
       { textureKey: 'probe', label: 'Probe' },
       { textureKey: 'relay_beacon', label: 'Relay Beacon' },
@@ -49,14 +49,18 @@ export const howToPlayPages: HowToPlayPage[] = [
     showSequenceArrows: true,
   },
   {
-    title: 'Energy & Resupply',
+    title: 'Energy & Repair',
     body:
-      'Energy powers your abilities and trickles back on its own -- collect glowing Energy Nodes scattered around the level for a quick recharge. Structure is your hull integrity: hazards chip away at it, and running out forces a restart. Dock at an Asteroid Field to repair your structure back up.',
+      'Energy powers your abilities and trickles back on its own -- collect glowing Energy Nodes scattered around the level for a quick recharge. Structure is your hull integrity: hazards chip away at it, and running out forces a restart. Dock at an Asteroid to repair your structure back up.',
     images: [
       // Radius*2, not howToPlayConfig.imageMaxSizePx -- see displaySizePx's
       // doc comment above.
       { textureKey: 'energy_node_glow', label: 'Energy Node', displaySizePx: energyNodeConfig.radius * 2 },
-      { textureKey: 'asteroid_large', label: 'Asteroid Field' },
+      // Label reads "Asteroid" here, not "Asteroid Field" (2026-08-27, user
+      // request) -- player-facing rename scoped to this screen only. The
+      // underlying ResupplyPoint/AsteroidField class and its in-code naming
+      // are unchanged; this is just what this reference screen calls it.
+      { textureKey: 'asteroid_large', label: 'Asteroid' },
     ],
   },
 ];

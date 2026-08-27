@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
 import { hasSaveData, loadProgress } from '../objects/SaveManager';
 import { getProgressionManager } from '../systems/ProgressionManager';
+import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
 
 export const TITLE_SCENE_KEY = 'TitleScene';
 
@@ -45,13 +46,27 @@ export class TitleScene extends Phaser.Scene {
       });
     }
 
+    // Reachable from here and from PauseScene (see that Scene) -- both
+    // pause themselves before launching, same "launcher pauses itself"
+    // convention GameScene uses for PauseScene, so HowToPlayScene only
+    // needs sceneData.returnSceneKey to know who to hand control back to.
+    const howToPlayText = this.add
+      .text(width / 2, height / 2 + 92, 'How to Play', { fontSize: '18px', color: '#8fd3ff' })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    howToPlayText.on('pointerdown', () => {
+      this.scene.launch(HOW_TO_PLAY_SCENE_KEY, { returnSceneKey: TITLE_SCENE_KEY });
+      this.scene.pause();
+    });
+
     // Not part of LEVEL_ORDER progression -- no save read/write on either
     // side of this trip (GameScene.handleLevelComplete() special-cases
     // TEST_LEVEL_ID to return here directly). Exists for human playtesting
     // and for running test passes against a level carrying every hazard and
     // every puzzle element at once, per config/levelOrder.ts.
     const testLevelText = this.add
-      .text(width / 2, height / 2 + 100, 'Test Level', { fontSize: '16px', color: '#7a8a99' })
+      .text(width / 2, height / 2 + 128, 'Test Level', { fontSize: '16px', color: '#7a8a99' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
@@ -76,13 +91,13 @@ export class TitleScene extends Phaser.Scene {
     // over a save you care about.
     if (import.meta.env.DEV) {
       this.add
-        .text(width / 2, height / 2 + 136, 'Dev: Jump to Level', { fontSize: '13px', color: '#5a6a77' })
+        .text(width / 2, height / 2 + 164, 'Dev: Jump to Level', { fontSize: '13px', color: '#5a6a77' })
         .setOrigin(0.5);
 
       const startX = width / 2 - ((LEVEL_ORDER.length - 1) * 60) / 2;
       LEVEL_ORDER.forEach((levelId, index) => {
         const levelText = this.add
-          .text(startX + index * 60, height / 2 + 164, levelId.replace('level-', ''), {
+          .text(startX + index * 60, height / 2 + 192, levelId.replace('level-', ''), {
             fontSize: '14px',
             color: '#5a6a77',
           })

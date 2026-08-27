@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
 
 export const PAUSE_SCENE_KEY = 'PauseScene';
 
@@ -40,6 +41,18 @@ export class PauseScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     titleText.on('pointerdown', () => this.returnToTitle());
+
+    // Same launcher-pauses-itself convention this Scene itself was opened
+    // with (GameScene's ESC handler) -- HowToPlayScene resumes PauseScene
+    // (not GameScene) on close via sceneData.returnSceneKey.
+    const howToPlayText = this.add
+      .text(width / 2, height / 2 + 80, 'How to Play', { fontSize: '20px', color: '#8fd3ff' })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    howToPlayText.on('pointerdown', () => {
+      this.scene.launch(HOW_TO_PLAY_SCENE_KEY, { returnSceneKey: PAUSE_SCENE_KEY });
+      this.scene.pause();
+    });
 
     this.input.keyboard?.on('keydown-ESC', () => this.resume());
   }

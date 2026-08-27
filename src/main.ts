@@ -5,6 +5,7 @@ import { GameScene } from './scenes/GameScene';
 import { WinScene } from './scenes/WinScene';
 import { PauseScene } from './scenes/PauseScene';
 import { AbilityUnlockScene } from './scenes/AbilityUnlockScene';
+import { HowToPlayScene } from './scenes/HowToPlayScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -21,7 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, TitleScene, GameScene, WinScene, PauseScene, AbilityUnlockScene],
+  scene: [BootScene, TitleScene, GameScene, WinScene, PauseScene, AbilityUnlockScene, HowToPlayScene],
 };
 
 const game = new Phaser.Game(config);

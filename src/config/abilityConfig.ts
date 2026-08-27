@@ -31,7 +31,7 @@ export interface AbilityCostData {
 export const abilityConfig: Record<AbilityType, AbilityCostData> = {
   scan: { energyCost: 15, cooldownSeconds: 4, hotkey: 'ONE', durationSeconds: 4 },
   tractorBeam: { energyCost: 0, cooldownSeconds: 0, hotkey: 'FOUR' },
-  teleport: { energyCost: 30, cooldownSeconds: 3, hotkey: 'TWO', maxRange: 350 },
+  teleport: { energyCost: 30, cooldownSeconds: 2, hotkey: 'TWO', maxRange: 350 },
   rocketBoost: { energyCost: 20, cooldownSeconds: 0.5, hotkey: 'THREE', boostSpeed: 520, boostDurationSeconds: 0.6 },
 };
 

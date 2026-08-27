@@ -45,6 +45,21 @@ export class AbilityComponent extends Phaser.Events.EventEmitter {
     return nowMs < activeUntil;
   }
 
+  // Read-only version of tryActivate's three gates (unlock/cooldown/energy)
+  // -- no side effects, doesn't spend energy or start a cooldown. Added
+  // 2026-08-27 so teleport's arm step (ExplorationController) can check
+  // "would a confirm actually succeed right now" before showing the aiming
+  // UI, rather than arming unconditionally and letting confirm silently
+  // fail later (owner report: awkward to have the range ring/reticle up
+  // with no way to actually confirm).
+  canActivate(type: AbilityType, nowMs: number): boolean {
+    if (!this.isUnlocked(type)) return false;
+    const cost = abilityConfig[type];
+    const readyAt = this.cooldownReadyAtMs.get(type) ?? 0;
+    if (nowMs < readyAt) return false;
+    return this.survival.snapshot().currentEnergy >= cost.energyCost;
+  }
+
   // Dual gate (GDD §7/§11.4): unlock, then cooldown, then energy -- either
   // cost may be authored as 0, either gate no-ops at 0. All-or-nothing, no
   // partial spend, matching ShipSurvivalComponent.consumeEnergy's contract.

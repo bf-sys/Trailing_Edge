@@ -128,6 +128,13 @@ export class ExplorationController implements GameSystem {
     // hotkey again while armed cancels aiming without spending anything --
     // the smallest reasonable cancel affordance, not specified further in
     // docs/ability-rework-brainstorm-2026-08-14.md.
+    //
+    // Gated on canActivate(), not just isUnlocked() (2026-08-27, owner
+    // report) -- arming on insufficient energy or an unexpired cooldown left
+    // the range ring/reticle up with no way to actually confirm, since
+    // confirmTeleport's own tryActivate would just silently fail. Cheaper to
+    // not show the aiming UI at all than to show it and let confirm do
+    // nothing.
     scene.input.keyboard?.on(`keydown-${abilityConfig.teleport.hotkey}`, () => {
       const ship = this.playerShip;
       if (!ship) return;
@@ -136,7 +143,7 @@ export class ExplorationController implements GameSystem {
         this.teleportArmed = false;
         return;
       }
-      if (!ship.ability.isUnlocked('teleport')) return;
+      if (!ship.ability.canActivate('teleport', scene.time.now)) return;
       this.teleportArmed = true;
     });
 

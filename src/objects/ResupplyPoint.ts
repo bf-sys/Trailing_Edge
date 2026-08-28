@@ -13,6 +13,15 @@ export interface ResupplyPointConfig {
 
 const SPARK_KEY = 'resupply_spark';
 
+// Audio-only event (2026-08-28, AudioManager) -- reports the exact
+// repairing-flag transition already computed in update() below, so the
+// repair-loop sound starts/stops in lockstep with the beam/spark VFX rather
+// than needing its own separate range check.
+export const RESUPPLY_EVENTS = {
+  RepairStarted: 'onRepairStarted',
+  RepairStopped: 'onRepairStopped',
+} as const;
+
 // Called once from BootScene, same pattern as createThrusterParticleTexture
 // (ShipThrusterTrail.ts) -- a small soft glow, generated once into the
 // global texture manager.
@@ -55,7 +64,7 @@ export function createResupplySparkTexture(scene: Phaser.Scene): void {
 // underlying reason: a callback-set flag only updates on Arcade's own
 // ~60Hz physics step, silently undercounting a rate-based effect
 // (structureRepairPerSecond) on a >60Hz display.
-export class ResupplyPoint {
+export class ResupplyPoint extends Phaser.Events.EventEmitter {
   private readonly zone: Phaser.Physics.Arcade.Image;
   private readonly radius: number;
   private readonly beam: Phaser.GameObjects.Graphics;
@@ -64,6 +73,7 @@ export class ResupplyPoint {
   private impactPoint: { x: number; y: number } | null = null;
 
   constructor(scene: Phaser.Scene, config: ResupplyPointConfig) {
+    super();
     this.radius = config.radius;
 
     this.zone = scene.physics.add.image(config.x, config.y, config.textureKey);
@@ -125,10 +135,12 @@ export class ResupplyPoint {
       // flicker.
       this.impactPoint = this.pickImpactPoint();
       this.sparkEmitter.start();
+      this.emit(RESUPPLY_EVENTS.RepairStarted);
     } else if (!active && this.repairing) {
       this.sparkEmitter.stop();
       this.impactPoint = null;
       this.beam.clear();
+      this.emit(RESUPPLY_EVENTS.RepairStopped);
     }
     this.repairing = active;
 

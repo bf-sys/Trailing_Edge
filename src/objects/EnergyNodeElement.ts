@@ -7,6 +7,15 @@ import type { Point } from '../levels/levelTypes';
 
 export const ENERGY_NODE_KEY = 'energy_node_glow';
 
+// Audio-only event (2026-08-28, AudioManager) -- fires once per successful
+// pickup, same call site handleCollect() already gates against
+// double-collection. EnergyNodeManager (which owns the pool) re-broadcasts
+// this on its own emitter so AudioManager has one subscription point instead
+// of one per node.
+export const ENERGY_NODE_EVENTS = {
+  Collected: 'onEnergyNodeCollected',
+} as const;
+
 // Called once from BootScene, same pattern as createThrusterParticleTexture/
 // createResupplySparkTexture -- a small soft glow, generated once into the
 // global texture manager.
@@ -37,7 +46,7 @@ export function createEnergyNodeTexture(scene: Phaser.Scene): void {
 // a cooldown; once isReadyToRespawn() is true, EnergyNodeManager (which owns
 // placement/keep-out logic) calls respawnAt() with a freshly chosen
 // position.
-export class EnergyNodeElement {
+export class EnergyNodeElement extends Phaser.Events.EventEmitter {
   private readonly zone: Phaser.Physics.Arcade.Image;
   private readonly glowEmitter: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly burstEmitter: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -46,6 +55,7 @@ export class EnergyNodeElement {
   private cooldownRemainingMs = 0;
 
   constructor(scene: Phaser.Scene, position: Point) {
+    super();
     this.zone = scene.physics.add.image(position.x, position.y, ENERGY_NODE_KEY);
     this.zone.setDisplaySize(energyNodeConfig.radius * 2, energyNodeConfig.radius * 2);
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
@@ -126,6 +136,7 @@ export class EnergyNodeElement {
     this.cooldownRemainingMs = energyNodeConfig.respawnCooldownSeconds * 1000;
 
     getPlayerShip()?.survival.rechargeEnergy(energyNodeConfig.rechargeAmount);
+    this.emit(ENERGY_NODE_EVENTS.Collected);
 
     this.burstEmitter.explode(energyNodeVfxConfig.burstCount, this.zone.x, this.zone.y);
     this.zone.setVisible(false);

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
+import { playSfx } from '../objects/AudioManager';
 
 export const PAUSE_SCENE_KEY = 'PauseScene';
 
@@ -20,6 +21,7 @@ export class PauseScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
 
+    playSfx(this, 'uiPauseToggle');
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6);
     this.add
       .text(width / 2, height / 2 - 60, 'Paused', { fontSize: '28px', color: '#ffffff' })
@@ -40,7 +42,10 @@ export class PauseScene extends Phaser.Scene {
       .text(width / 2, height / 2 + 40, 'Return to Title', { fontSize: '20px', color: '#8fd3ff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    titleText.on('pointerdown', () => this.returnToTitle());
+    titleText.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
+      this.returnToTitle();
+    });
 
     // Same launcher-pauses-itself convention this Scene itself was opened
     // with (GameScene's ESC handler) -- HowToPlayScene resumes PauseScene
@@ -50,6 +55,7 @@ export class PauseScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     howToPlayText.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
       this.scene.launch(HOW_TO_PLAY_SCENE_KEY, { returnSceneKey: PAUSE_SCENE_KEY });
       this.scene.pause();
     });
@@ -58,6 +64,7 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private resume(): void {
+    playSfx(this, 'uiPauseToggle');
     this.scene.stop();
     this.scene.resume('GameScene');
   }

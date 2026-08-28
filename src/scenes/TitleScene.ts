@@ -3,6 +3,7 @@ import { LEVEL_ORDER, TEST_LEVEL_ID } from '../config/levelOrder';
 import { hasSaveData, loadProgress } from '../objects/SaveManager';
 import { getProgressionManager } from '../systems/ProgressionManager';
 import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
+import { playSfx, startMusicOnce } from '../objects/AudioManager';
 
 export const TITLE_SCENE_KEY = 'TitleScene';
 
@@ -18,6 +19,12 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
 
+    // Menu-vs-gameplay music split is explicitly deferred (docs/TODO.md's
+    // Audio section) -- one continuous ambient bed started here plays
+    // through TitleScene and every scene reached from it, since Phaser's
+    // SoundManager is one shared instance game-wide, not per-Scene.
+    startMusicOnce(this);
+
     // Logo art replaces the text title (2026-08-26) -- chroma-keyed from
     // art-staging/trailing_edge_logo_chromakey_1787772147364.jpg via
     // tools/asset-prep/chroma-key.js into assets/ui/logo.png. Display size is
@@ -31,6 +38,7 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     startText.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
       this.scene.start('GameScene', { levelId: LEVEL_ORDER[0] });
     });
 
@@ -41,6 +49,7 @@ export class TitleScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       continueText.on('pointerdown', () => {
+        playSfx(this, 'uiClick');
         const save = loadProgress();
         this.scene.start('GameScene', { levelId: save?.levelId ?? LEVEL_ORDER[0] });
       });
@@ -56,6 +65,7 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     howToPlayText.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
       this.scene.launch(HOW_TO_PLAY_SCENE_KEY, { returnSceneKey: TITLE_SCENE_KEY });
       this.scene.pause();
     });
@@ -71,6 +81,7 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     testLevelText.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
       this.scene.start('GameScene', { levelId: TEST_LEVEL_ID });
     });
 

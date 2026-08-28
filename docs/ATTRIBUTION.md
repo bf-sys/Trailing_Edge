@@ -68,6 +68,20 @@ isn't lost when they're pulled in during Phase 2a/2b:
 | Space Sprites (probe-tagged sheet) | OpenGameArt (author: titmouse001) | **CC-BY 3.0** | Requires attribution to titmouse001. Also note: the pack's own comment thread records that it originally bundled Lostgarden-sourced material under a mismatched license, corrected after a licensing review — if any Lostgarden-originated sprite is used, attribute "Sinistar clone / Hard Vacuum / Remastered Tyrian graphics by Daniel Cook (Lostgarden.com)" separately, per the item's own copyright notice. |
 | Space Game Art Pack (Extended) — nebula layers | OpenGameArt (author: Tatermand) | **CC-BY-SA 3.0** | Share-alike: any modified/derivative asset extracted from this PSD, if distributed, must be released under CC-BY-SA 3.0 or compatible. Project owner has confirmed this build is not being distributed, so the share-alike clause does not currently trigger — re-check this note if distribution scope changes. |
 
+## Audio (added 2026-08-28)
+
+Sourced by the project owner from their local Kenney audio library (the
+same source `tools/audio-triage/scan-kenney-audio.mjs` scans) plus a few
+freesound.org community uploads, selected in `docs/reference/sfx-selections.md`
+against `docs/reference/sfx-sourcing-candidates.md`'s shortlist. Copied into
+`assets/audio/sfx/`/`assets/audio/music/` under semantic filenames — see that
+mapping in `src/config/audioConfig.ts`.
+
+| Asset (semantic name -> original filename) | Source | License |
+|---|---|---|
+| `click_confirm.ogg` (`mouseclick1.ogg`), `thruster_loop.ogg` (`thrusterFire_001.ogg`), `debris_impact.wav` (`sfx_sounds_impact3.wav`), `hazard_drain_loop.ogg` (`rumble3.ogg`), `ship_explosion.ogg` (`explosionCrunch_000.ogg`), `probe_found.ogg` (`powerUp5.ogg`), `energy_pickup.ogg` (`select_004.ogg`), `scan_activate.ogg` (`zap1.ogg`), `teleport_arm.ogg` (`lowFrequency_explosion_001.ogg`), `teleport_blink.ogg` (`laser4.ogg`), `ui_click.ogg` (`click_001.ogg`), `ui_pause_toggle.ogg` (`minimize_001.ogg`), `ambient_loop.ogg` (`OutThere.ogg`) | Kenney (project owner's local library) | Believed CC0 1.0, consistent with every other Kenney-sourced asset in this project — **not individually re-verified pack-by-pack for this pass**; confirm against the specific pack each ships in before distribution. |
+| `beacon_reached.mp3` (`freesound_community-futuristic-sound-96179.mp3`), `resupply_loop.mp3` (`freesound_community-laser-weld-103309.mp3`), `rocket_boost.mp3` (`freesound_community-rocketmp3-94928.mp3`), `meteoroid_impact.mp3` (`universfield-impact-cinematic-boom-02-487858.mp3`) | freesound.org (community uploads) | **Not verified.** freesound.org licenses are set per-upload (CC0, CC-BY, CC-BY-NC all common) and aren't captured anywhere in this project's tooling — check each file's actual freesound.org page before distributing this build, per this file's own Policy note below. |
+
 ## Policy note
 Per project owner: this build is a class project and will not be
 distributed, so CC-BY-SA's share-alike obligation is currently inactive.

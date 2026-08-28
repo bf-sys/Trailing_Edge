@@ -17,6 +17,10 @@ interface BoostState {
 export const EXPLORATION_EVENTS = {
   DestinationSet: 'onDestinationSet',
   TeleportConfirmed: 'onTeleportConfirmed',
+  // Audio-only (2026-08-28, AudioManager) -- fires only on the "actually
+  // armed" transition below, not on the cancel-by-re-press branch (there's
+  // no chosen sfx for a cancel yet, see docs/reference/sfx-selections.md).
+  TeleportArmed: 'onTeleportArmed',
 } as const;
 
 export interface TeleportConfirmedPayload {
@@ -145,6 +149,7 @@ export class ExplorationController implements GameSystem {
       }
       if (!ship.ability.canActivate('teleport', scene.time.now)) return;
       this.teleportArmed = true;
+      ship.image.emit(EXPLORATION_EVENTS.TeleportArmed);
     });
 
     scene.input.keyboard?.on(`keydown-${abilityConfig.rocketBoost.hotkey}`, () => {

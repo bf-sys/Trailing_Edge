@@ -6,6 +6,7 @@ import { createThrusterParticleTexture } from '../objects/ShipThrusterTrail';
 import { createResupplySparkTexture } from '../objects/ResupplyPoint';
 import { createEnergyNodeTexture } from '../objects/EnergyNodeElement';
 import { createShipExplosionTexture } from '../objects/ShipExplosionVfx';
+import { sfxConfig, musicConfig } from '../config/audioConfig';
 
 export const BOOT_SCENE_KEY = 'BootScene';
 
@@ -15,6 +16,11 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    (Object.keys(sfxConfig) as (keyof typeof sfxConfig)[]).forEach((key) => {
+      this.load.audio(key, `audio/sfx/${sfxConfig[key].file}`);
+    });
+    this.load.audio(musicConfig.key, `audio/music/${musicConfig.file}`);
+
     this.load.image('ship_base', 'ship/ship_base.png');
     this.load.image('debris_large', 'hazards/debris_large.png');
     this.load.image('debris_large_alt2', 'hazards/debris_large_alt2.png');

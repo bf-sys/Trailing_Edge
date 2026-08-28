@@ -29,6 +29,7 @@ import { ScanActivationVfx } from '../objects/ScanActivationVfx';
 import { TeleportBlinkVfx } from '../objects/TeleportBlinkVfx';
 import { ShipDamageFlash } from '../objects/ShipDamageFlash';
 import { ShipExplosionVfx } from '../objects/ShipExplosionVfx';
+import { AudioManager } from '../objects/AudioManager';
 import { hazardConfig } from '../config/hazardConfig';
 import type { HazardTypeConfig } from '../config/hazardConfig';
 import { PuzzleElementBase } from '../objects/PuzzleElementBase';
@@ -80,6 +81,7 @@ export class GameScene extends Phaser.Scene {
   private shipThrusterTrail!: ShipThrusterTrail;
   private shipDamageFlash!: ShipDamageFlash;
   private shipExplosionVfx!: ShipExplosionVfx;
+  private audioManager!: AudioManager;
   private levelIntroBanner!: LevelIntroBanner;
 
   constructor() {
@@ -256,6 +258,12 @@ export class GameScene extends Phaser.Scene {
     this.shipDamageFlash = new ShipDamageFlash(this);
     this.shipExplosionVfx = new ShipExplosionVfx(this);
     this.shipThrusterTrail = new ShipThrusterTrail(this);
+    this.audioManager = new AudioManager(this, {
+      hazards: this.hazards,
+      resupplyPoints: this.resupplyPoints,
+      energyNodeManager: this.energyNodeManager,
+      tracker,
+    });
     this.levelIntroBanner = new LevelIntroBanner(this);
 
     this.wireHardFailRestart();
@@ -314,6 +322,7 @@ export class GameScene extends Phaser.Scene {
     this.teleportRangeRing.update();
     this.shipThrusterTrail.update();
     this.shipDamageFlash.update();
+    this.audioManager.update();
   }
 
   // Real levelOrder resolution + SaveManager (GDD §11.8/§11.9, Phase 2a

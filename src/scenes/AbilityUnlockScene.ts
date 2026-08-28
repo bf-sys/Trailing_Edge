@@ -3,6 +3,7 @@ import type { AbilityType } from '../config/abilityConfig';
 import { abilityUnlockContent } from '../config/abilityUnlockContent';
 import { WindowFrame } from '../objects/WindowFrame';
 import { windowFrameConfig } from '../config/windowFrameConfig';
+import { playSfx } from '../objects/AudioManager';
 
 export const ABILITY_UNLOCK_SCENE_KEY = 'AbilityUnlockScene';
 
@@ -79,6 +80,7 @@ export class AbilityUnlockScene extends Phaser.Scene {
     windowFrame.add(closeButton);
 
     closeButton.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
       this.sceneData.onClose();
       this.scene.stop();
     });

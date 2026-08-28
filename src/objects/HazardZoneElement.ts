@@ -22,6 +22,26 @@ export type HazardMovementPattern = 'static' | 'linear' | 'trochoid' | 'patrol';
 // rework); any hazard can combine it with blocksMovement.
 export type HazardActivation = 'continuous' | 'pulsed' | 'impact';
 
+// Display/audio-only events (2026-08-28, AudioManager) -- purely reporting
+// state HazardZoneElement already computes for its own mechanical logic,
+// never a second path that could itself apply a cost (that stays gated by
+// applyResourceCost()/applyImpactCost() calling ShipSurvivalComponent's
+// consume methods, per this file's own hard rule). ContactEnter/ContactExit
+// fire on the isOverlappingShip() transition for continuous/pulsed hazards
+// (never for 'impact' hazards, which use isCollidingWithShip() instead).
+// PhysicalContact fires on every Arcade collider step while a blocksMovement
+// hazard is touching the ship -- consumers debounce it themselves (see
+// audioConfig.ts's physicalContactSfxCooldownMs) rather than this class
+// gating it, since "how often is a thud allowed to retrigger" is a mixing
+// decision, not a mechanical one. ImpactHit fires once per landed
+// 'impact' hit, already gated by hitCooldownSeconds.
+export const HAZARD_ZONE_EVENTS = {
+  ContactEnter: 'onHazardContactEnter',
+  ContactExit: 'onHazardContactExit',
+  PhysicalContact: 'onHazardPhysicalContact',
+  ImpactHit: 'onHazardImpactHit',
+} as const;
+
 export interface HazardZoneConfig {
   x: number;
   y: number;
@@ -134,13 +154,14 @@ export interface HazardZoneConfig {
 // configs. Phase 1 only exercises the Debris Field config (static,
 // movement-blocking, zero resource cost); the other branches exist so
 // Phase 2b's remaining hazards are config, not code.
-export class HazardZoneElement {
+export class HazardZoneElement extends Phaser.Events.EventEmitter {
   private readonly scene: Phaser.Scene;
   private readonly config: HazardZoneConfig;
   private readonly zone: Phaser.Physics.Arcade.Image;
   private pulseElapsedSeconds = 0;
   private lastHitTimeMs = -Infinity; // allows an 'impact' hazard's first contact to land immediately
   private continuousExposureSeconds = 0; // exposureRampPerSecond's input -- see that field's comment
+  private inContact = false; // ContactEnter/ContactExit edge-detection, continuous/pulsed hazards only
 
   // 'trochoid' movement state -- the carrier is an invisible point that
   // advances in a straight line (same math 'linear' uses for its Arcade
@@ -161,6 +182,7 @@ export class HazardZoneElement {
   private linearHeadingRadians = 0;
 
   constructor(scene: Phaser.Scene, config: HazardZoneConfig) {
+    super();
     this.scene = scene;
     this.config = config;
 
@@ -184,8 +206,12 @@ export class HazardZoneElement {
       // cancelTargetOnContact (see the field's comment above): fires every
       // physics step the bodies remain in contact, same as the cost side of
       // things -- repeatedly clearing an already-null target is harmless.
-      const onCollide = config.cancelTargetOnContact ? () => getExplorationController().cancelTarget() : undefined;
-      if (ship) scene.physics.add.collider(this.zone, ship.image, onCollide);
+      if (ship) {
+        scene.physics.add.collider(this.zone, ship.image, () => {
+          if (config.cancelTargetOnContact) getExplorationController().cancelTarget();
+          this.emit(HAZARD_ZONE_EVENTS.PhysicalContact);
+        });
+      }
     }
   }
 
@@ -331,7 +357,13 @@ export class HazardZoneElement {
       return;
     }
 
-    if (this.isOverlappingShip()) {
+    const overlapping = this.isOverlappingShip();
+    if (overlapping !== this.inContact) {
+      this.inContact = overlapping;
+      this.emit(overlapping ? HAZARD_ZONE_EVENTS.ContactEnter : HAZARD_ZONE_EVENTS.ContactExit);
+    }
+
+    if (overlapping) {
       // exposureRampPerSecond's clock -- counts up only while actually
       // inside a 'continuous' hazard. Incremented before applyResourceCost()
       // reads it below; whether the ramp uses the pre- or post-increment
@@ -460,6 +492,7 @@ export class HazardZoneElement {
     const { resourceCost } = this.config;
     if (resourceCost.energy > 0) ship.survival.consumeEnergy(resourceCost.energy, 'hazard-zone');
     if (resourceCost.structure > 0) ship.survival.consumeStructure(resourceCost.structure, 'hazard-zone', this.getPosition());
+    this.emit(HAZARD_ZONE_EVENTS.ImpactHit);
 
     if (this.config.knockbackSpeed) this.applyKnockback(ship.image, this.config.knockbackSpeed);
   }

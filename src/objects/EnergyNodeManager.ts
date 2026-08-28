@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { EnergyNodeElement } from './EnergyNodeElement';
+import { EnergyNodeElement, ENERGY_NODE_EVENTS } from './EnergyNodeElement';
 import type { HazardZoneElement } from './HazardZoneElement';
 import type { LevelObjectiveTracker } from './LevelObjectiveTracker';
 import type { Point } from '../levels/levelTypes';
@@ -23,7 +23,7 @@ import { energyNodeConfig, computeEnergyNodePoolSize } from '../config/energyNod
 // direction to travel through -- capped by maxNodesNearObjective so that
 // bias can't pile an unbounded number of nodes on one spot (see
 // pickRespawnPosition below).
-export class EnergyNodeManager {
+export class EnergyNodeManager extends Phaser.Events.EventEmitter {
   private readonly nodes: EnergyNodeElement[] = [];
 
   constructor(
@@ -34,9 +34,14 @@ export class EnergyNodeManager {
     private readonly levelWidth: number,
     private readonly levelHeight: number,
   ) {
+    super();
     const poolSize = computeEnergyNodePoolSize(levelWidth, levelHeight);
     for (let i = 0; i < poolSize; i++) {
-      this.nodes.push(new EnergyNodeElement(scene, this.pickScatterPosition()));
+      const node = new EnergyNodeElement(scene, this.pickScatterPosition());
+      // Re-broadcast on this manager's own emitter (2026-08-28, AudioManager)
+      // so a consumer subscribes once here instead of once per pool node.
+      node.on(ENERGY_NODE_EVENTS.Collected, () => this.emit(ENERGY_NODE_EVENTS.Collected));
+      this.nodes.push(node);
     }
   }
 

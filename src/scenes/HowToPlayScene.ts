@@ -3,6 +3,7 @@ import { WindowFrame } from '../objects/WindowFrame';
 import { windowFrameConfig } from '../config/windowFrameConfig';
 import { howToPlayConfig } from '../config/howToPlayConfig';
 import { howToPlayPages } from '../config/howToPlayContent';
+import { playSfx } from '../objects/AudioManager';
 
 export const HOW_TO_PLAY_SCENE_KEY = 'HowToPlayScene';
 
@@ -59,7 +60,10 @@ export class HowToPlayScene extends Phaser.Scene {
       .text(centerX - navButtonOffsetPx, navY, '< Prev', { fontSize: '16px', color: '#8fd3ff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    this.prevButton.on('pointerdown', () => this.goToPage(this.pageIndex - 1));
+    this.prevButton.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
+      this.goToPage(this.pageIndex - 1);
+    });
     this.windowFrame.add(this.prevButton);
 
     this.pageIndicatorText = this.add
@@ -71,14 +75,20 @@ export class HowToPlayScene extends Phaser.Scene {
       .text(centerX + navButtonOffsetPx, navY, 'Next >', { fontSize: '16px', color: '#8fd3ff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    this.nextButton.on('pointerdown', () => this.goToPage(this.pageIndex + 1));
+    this.nextButton.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
+      this.goToPage(this.pageIndex + 1);
+    });
     this.windowFrame.add(this.nextButton);
 
     const closeButton = this.add
       .text(centerX, closeY, 'Close', { fontSize: '18px', color: '#8fd3ff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    closeButton.on('pointerdown', () => this.closeAndReturn());
+    closeButton.on('pointerdown', () => {
+      playSfx(this, 'uiClick');
+      this.closeAndReturn();
+    });
     this.windowFrame.add(closeButton);
 
     this.renderPage();

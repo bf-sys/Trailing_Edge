@@ -294,6 +294,42 @@ playthrough on record. Not a substitute for Phase 3's own planned pass
 (`Continue` resume and a packaged-build run are still unconfirmed), but a
 real data point toward it.
 
+**Audio implemented end-to-end (2026-08-28).** `docs/reference/sfx-selections.md`'s
+choices (Kenney library files plus a few freesound.org community clips, all
+copied from the project owner's `audio-staging/` into `assets/audio/sfx/`/
+`assets/audio/music/` under semantic filenames) are wired to their trigger
+points via a new `src/config/audioConfig.ts` (per-sound volume/loop,
+`window.tuning.audio`) and `src/objects/AudioManager.ts` — see the
+Architecture contract's `AudioManager` bullet for the event wiring and the
+loop-sound reference-counting it uses. Getting this to react to gameplay
+without touching resource mutation required a few small, additive event
+emitters on classes that didn't previously expose any: `HazardZoneElement`
+(`HAZARD_ZONE_EVENTS`: `ContactEnter`/`ContactExit`/`PhysicalContact`/
+`ImpactHit`), `ResupplyPoint` (`RESUPPLY_EVENTS`), `EnergyNodeElement`/
+`EnergyNodeManager` (`ENERGY_NODE_EVENTS`), and `ExplorationController`
+(`TeleportArmed`, alongside the pre-existing `DestinationSet`/
+`TeleportConfirmed`) — each purely reports a state transition the class
+already computes for its own mechanical logic, same contract
+`ShipSurvivalComponent`'s pre-existing `StructureHit` event already
+established for `ShipDamageFlash`. Two source clips (`resupply_loop.mp3`,
+`rocket_boost.mp3`) are meaningfully longer than the moment they're
+triggered for and are explicitly truncated via a timed `sound.stop()` rather
+than relying on the clip's own length — see `docs/TODO.md`'s "trim the
+longer sourced SFX clips" item for cleaning up the source files themselves.
+Verified in-browser (Test Level): music autoplay, click-to-move confirm, and
+scan activation all confirmed actually starting/stopping real Web Audio
+sound instances with zero console errors; the remaining trigger points
+(hazard contact/drain, resupply loop, energy pickup, meteoroid impact,
+teleport/rocketBoost, ship explosion, UI clicks) are wired the same
+event-driven way but weren't each individually re-triggered in that pass.
+Two `sfx-selections.md` cells were left unwired on purpose — no file was
+chosen for them (a generic structure-hit stinger, since Nebula/Ion Storm's
+drain loop and Meteoroid's impact boom already cover that; Exit Wormhole's
+open/transition cues and the ability-unlocked fanfare, all three explicitly
+marked "deferring" in that doc). Player-facing volume control (a menu/pause
+slider) and trimming the two long source clips both remain open,
+`docs/TODO.md`'s Audio section.
+
 Asset prep status lives in `docs/STATUS.md` (read that first for what's
 sourced vs. still open). Other reference docs live in `docs/`:
 - `docs/trailing_edge_art_asset_list.md` — full asset taxonomy/requirements list
@@ -723,6 +759,29 @@ file's age. `CheckpointManager` remains deferred by design.
   (`energyNodeVfxConfig.ts`). Landed alongside dropping
   `survivalConfig.energyRegenPerSecond` `8` → `2` so the pickups are a
   deliberate routing incentive, not a bonus on top of an adequate trickle.
+- **`AudioManager`** (added 2026-08-28) — `GameScene`-scoped, event-driven,
+  same convention as `ScanActivationVfx`/`TeleportBlinkVfx`/
+  `ShipDamageFlash`: reacts to events other systems already emit (or a
+  handful of small additive ones, see Current project state) rather than
+  being called into directly, and never itself calls
+  `ShipSurvivalComponent`'s consume/regen methods. Two loop sounds
+  (`hazardDrainLoop`, `resupplyLoop`) are reference-counted rather than a
+  single active flag — a hazard-drain count is load-bearing (overlapping
+  hazard zones can both be "in contact" at once; the loop must only stop
+  once the last one exits), a resupply count is defensive (geometrically
+  near-impossible to have two active given one ship, but cheap to make
+  correct anyway). `thrusterLoop` is the one sound needing a per-frame
+  `update()` poll (ship velocity has no discrete start/stop event),
+  mirroring `ShipThrusterTrail`'s own `update()`. Also exports two Scene-
+  agnostic helpers used outside any one `GameScene` attempt: `playSfx()`
+  (menu-button clicks in `TitleScene`/`PauseScene`/`HowToPlayScene`/
+  `AbilityUnlockScene`, none of which own a gameplay event to react to) and
+  `startMusicOnce()` (idempotent against Phaser's SoundManager being one
+  instance shared game-wide, not per-Scene — checked via `scene.sound.get()`
+  rather than a module-level flag, called once from `TitleScene.create()`).
+  All per-sound volumes/loop flags live in `audioConfig.ts`
+  (`window.tuning.audio`), not inline here, per this file's tunable-
+  parameters convention.
 
 ## Development plan shape (GDD §12)
 

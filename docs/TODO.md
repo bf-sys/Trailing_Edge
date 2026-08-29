@@ -65,3 +65,15 @@ Primarily on Bryan to playtest and direct — tracked here, not assigned as buil
 Add your own notes here (post-its, ideas not yet in any doc, etc.) — once this section has everything, we can go through and prioritize/action the full list together.
 
 -
+
+## itch.io packaged-build pipeline
+
+Scoped out 2026-08-28, in response to confirming itch.io as the Phase 3 "packaged-build run" target (see that item under Code / Systems above). No formalized pipeline exists yet — today "packaged build" means only the raw `npm run build` command, unverified against current content. Not yet started.
+
+- [x] ~~**Fix `vite.config.ts`** — add `base: './'`.~~ — **done 2026-08-28.** Confirmed bug before the fix: `dist/index.html` emitted a root-absolute `<script src="/assets/...">`, which 404s once served from itch.io's non-root CDN path. Rebuilt after the fix and confirmed the emitted tag is now `<script src="./assets/index-CXDO4sl3.js">` — relative, itch.io-safe. `this.load.image/audio()` calls in `BootScene.ts` already used loader-relative paths and needed no change.
+- [x] ~~**Fresh verified build** — `npm run build` against current `src/`.~~ — **done 2026-08-28**, as part of the fix above: both `tsc --noEmit` and `vite build` passed clean against current `src/` (the previously-checked-in `dist/` predated most current content). One pre-existing warning, unrelated to this fix: the main JS chunk is ~1.57 MB (364 KB gzipped), above Vite's 500 KB default chunk-size warning — not a build failure, just a size note; not investigated further here.
+- [ ] **Local smoke test of the built bundle** — `npm run preview`, full `LEVEL_ORDER` playthrough against the *built* output, not the dev server. This is the literal "packaged-build run" half of the Phase 3 integration item above and hasn't been done in either form (dev or prod) yet.
+- [ ] **Zip for upload** — zip `dist/`'s contents at the zip root (not the `dist/` folder itself nested inside) — itch.io expects `index.html` at the root of the archive.
+- [ ] **itch.io project page setup** (one-time, manual) — kind = HTML5, upload the zip, check "This file will be played in the browser," set embed size to 1280x720 (the canvas is fixed-size, no Scale Manager), decide fullscreen-button/mobile-friendly toggles (likely off — no touch input exists).
+- [ ] **`butler` CLI** (optional) — itch.io's official upload tool; scripts the steps above into `butler push dist <user>/<game>:html5` instead of manual zip+drag-drop. Needs an itch.io API key held as a local secret, never committed.
+- [ ] **CI workflow** (optional) — no `.github/workflows` exists yet despite `origin` pointing at `github.com/bf-sys/Trailing_Edge`. A workflow running typecheck+build (and optionally `butler push`) on a tag or manual trigger would make this a repeatable pipeline rather than a one-off script.

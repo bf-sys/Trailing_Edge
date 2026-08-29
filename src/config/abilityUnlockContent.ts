@@ -8,21 +8,28 @@ export interface AbilityUnlockContent {
 // Ability-unlock popup copy (2026-08-14 ability rework,
 // docs/ability-rework-brainstorm-2026-08-14.md's "Ability-unlock info
 // popup" section) -- only the three abilities in abilityUnlockOrder ever
-// reach AbilityUnlockScene, so tractorBeam has no entry here.
+// reach AbilityUnlockScene, so tractorBeam has no entry here. Each
+// description leads with the actual activation step (2026-08-29 playtest
+// feedback -- players reached a new ability with no idea how to trigger
+// it) before folding into what the ability does, one flowing sentence
+// rather than a separate line. The literal key digits (1/2/3) mirror
+// abilityConfig.ts's scan/teleport/rocketBoost hotkey fields (ONE/TWO/
+// THREE) -- hand-written prose, not derived live, so keep these in sync if
+// those hotkeys ever change.
 export const abilityUnlockContent: Record<Exclude<AbilityType, 'tractorBeam'>, AbilityUnlockContent> = {
   scan: {
     title: 'Scan',
     description:
-      'Reveals nearby hazards and points you toward your current objective for a few seconds. Costs no energy, just a short cooldown -- use it whenever you need a bearing.',
+      'Press 1 to activate Scan, revealing nearby hazards and pointing you toward your current objective for a few seconds. Costs a small amount of energy and a short cooldown -- use it whenever you need a bearing.',
   },
   teleport: {
     title: 'Teleport',
     description:
-      'Blink a short, fixed distance in any direction, passing straight through solid obstacles like Debris Fields. Press the hotkey to aim, then left-click to confirm.',
+      'Press 2 to aim, then left-click to confirm and blink a short, fixed distance in any direction, passing straight through solid obstacles like Debris Fields.',
   },
   rocketBoost: {
     title: 'Rocket Boost',
     description:
-      'A quick burst of speed along your current heading -- good for outrunning a hazard or racing to a resupply point. Solid obstacles still stop you cold, unlike Teleport.',
+      'Press 3 to activate Rocket Boost, a quick burst of speed along your current heading -- good for outrunning a hazard or racing to a resupply point. Solid obstacles still stop you cold, unlike Teleport.',
   },
 };

@@ -179,6 +179,30 @@ export class AudioManager {
     });
   }
 
+  // Sound instances created via scene.sound.add() belong to the game-wide
+  // SoundManager, not this Scene's display list -- Phaser never stops or
+  // destroys them on its own when the Scene transitions (scene.start(),
+  // scene.restart(), scene.pause()), unlike every VFX class in this
+  // codebase's sibling modules, whose GameObjects genuinely are torn down
+  // by Scene shutdown. Any active loop must be stopped explicitly, or it
+  // keeps playing straight through a level-complete transition or a
+  // hard-fail restart. Called from GameScene's handleLevelComplete() (all
+  // four exit branches) and wireHardFailRestart(), both of which reuse or
+  // replace this Scene without Phaser ever tearing down these sounds itself.
+  stopAllLoops(): void {
+    this.thrusterSound?.stop();
+    this.thrusterSound = undefined;
+    this.thrusterPlaying = false;
+
+    this.hazardDrainSound?.stop();
+    this.hazardDrainSound = undefined;
+    this.hazardContactCount = 0;
+
+    this.resupplySound?.stop();
+    this.resupplySound = undefined;
+    this.resupplyActiveCount = 0;
+  }
+
   // rocketBoost's source clip (9.3s) is far longer than the burst it plays
   // for (boostDurationSeconds, 0.6s) -- explicitly truncated via a timed
   // stop() rather than relying on the clip's own length, per the "can you

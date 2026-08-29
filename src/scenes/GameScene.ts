@@ -349,6 +349,14 @@ export class GameScene extends Phaser.Scene {
   // cast below documents that rather than guarding against a case that
   // can't happen.
   private handleLevelComplete(): void {
+    // Stops thrusterLoop/hazardDrainLoop/resupplyLoop before any of the
+    // branches below -- see AudioManager.stopAllLoops()'s comment for why
+    // this doesn't happen on its own (sound.add() sounds outlive a Scene
+    // transition unless stopped explicitly). Without this, e.g. thruster
+    // noise from moving into the Exit Wormhole carried straight through
+    // into the next level or WinScene.
+    this.audioManager.stopAllLoops();
+
     if (this.levelId === TEST_LEVEL_ID) {
       this.scene.start('TitleScene');
       return;
@@ -409,6 +417,11 @@ export class GameScene extends Phaser.Scene {
       this.input.enabled = false;
       if (this.input.keyboard) this.input.keyboard.enabled = false;
       this.physics.pause();
+      // Same reasoning as handleLevelComplete()'s call -- physics.pause()
+      // freezes the ship's velocity rather than zeroing it, so
+      // thrusterLoop would otherwise keep looping through the whole death
+      // beat and into the restarted level.
+      this.audioManager.stopAllLoops();
 
       const { x, y } = ship.image;
       ship.image.setVisible(false);

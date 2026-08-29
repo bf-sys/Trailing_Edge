@@ -33,6 +33,9 @@ export type SfxKey =
 
 // Selections per docs/reference/sfx-selections.md (2026-08-28). Volumes are a
 // first pass, not a playtested mix -- retune via window.tuning.audio.sfx.
+// thrusterLoop lowered 0.22 -> 0.15 on 2026-08-29 playtest feedback: it's
+// active basically the entire time the player is moving, so at its original
+// level it read as too dominant against everything else.
 // Two source files (resupplyLoop, rocketBoost) are longer than the moment
 // they're triggered for (11.6s/9.3s clips against a ~5s repair session and a
 // 0.6s boost burst respectively) -- AudioManager stops them explicitly
@@ -40,7 +43,7 @@ export type SfxKey =
 // source files" item for cleaning up the source clips themselves.
 export const sfxConfig: Record<SfxKey, SfxTypeConfig> = {
   clickConfirm: { file: 'click_confirm.ogg', volume: 0.5 },
-  thrusterLoop: { file: 'thruster_loop.ogg', volume: 0.22, loop: true },
+  thrusterLoop: { file: 'thruster_loop.ogg', volume: 0.15, loop: true },
   debrisImpact: { file: 'debris_impact.wav', volume: 0.6 },
   hazardDrainLoop: { file: 'hazard_drain_loop.ogg', volume: 0.45, loop: true },
   meteoroidImpact: { file: 'meteoroid_impact.mp3', volume: 0.8 },

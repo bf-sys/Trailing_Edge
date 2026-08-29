@@ -141,8 +141,13 @@ export class GameScene extends Phaser.Scene {
     this.createParallaxBackground();
     placeBackgroundSetPieces(this, this.levelId, this.levelWidth, this.levelHeight);
 
+    // levelId prefix is dev-only debug info (2026-08-29) -- "Click to move"
+    // is a real player-facing hint and stays in release builds too.
+    const cornerHintText = import.meta.env.DEV
+      ? `levelId: ${this.levelId}\nClick to move`
+      : 'Click to move';
     this.add
-      .text(8, 88, `levelId: ${this.levelId}\nClick to move`, { fontSize: '14px', color: '#ffffff' })
+      .text(8, 88, cornerHintText, { fontSize: '14px', color: '#ffffff' })
       .setScrollFactor(0)
       .setDepth(1000);
 
@@ -281,7 +286,9 @@ export class GameScene extends Phaser.Scene {
     this.levelIntroBanner = new LevelIntroBanner(this);
 
     this.wireHardFailRestart();
-    this.setUpObjectiveDebugReadout(tracker);
+    // Debug-only probe/beacon readout -- dev builds only (2026-08-29),
+    // same import.meta.env.DEV gate as TitleScene's Test Level link.
+    if (import.meta.env.DEV) this.setUpObjectiveDebugReadout(tracker);
 
     this.input.keyboard?.on('keydown-ESC', () => {
       this.scene.launch('PauseScene');

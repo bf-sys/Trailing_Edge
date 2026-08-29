@@ -80,16 +80,21 @@ export class TitleScene extends Phaser.Scene {
     // side of this trip (GameScene.handleLevelComplete() special-cases
     // TEST_LEVEL_ID to return here directly). Exists for human playtesting
     // and for running test passes against a level carrying every hazard and
-    // every puzzle element at once, per config/levelOrder.ts.
-    const testLevelText = this.add
-      .text(width / 2, height / 2 + 128, 'Test Level', { fontSize: '16px', color: '#7a8a99' })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
+    // every puzzle element at once, per config/levelOrder.ts. Dev-only
+    // (2026-08-29, same import.meta.env.DEV gate as "Dev: Jump to Level"
+    // below) -- Vite strips this out of a release build entirely, so
+    // players never see or can reach it.
+    if (import.meta.env.DEV) {
+      const testLevelText = this.add
+        .text(width / 2, height / 2 + 128, 'Test Level', { fontSize: '16px', color: '#7a8a99' })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
 
-    testLevelText.on('pointerdown', () => {
-      playSfx(this, 'uiClick');
-      this.scene.start('GameScene', { levelId: TEST_LEVEL_ID });
-    });
+      testLevelText.on('pointerdown', () => {
+        playSfx(this, 'uiClick');
+        this.scene.start('GameScene', { levelId: TEST_LEVEL_ID });
+      });
+    }
 
     // Dev-only level select (import.meta.env.DEV, same gate as
     // devTuning.ts's window.tuning) -- lets a real LEVEL_ORDER entry be

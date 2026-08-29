@@ -39,6 +39,7 @@ import type { HazardPlacement } from '../levels/levelTypes';
 import { createPuzzleElement, puzzleSiteMarkerPosition } from '../levels/puzzleElementFactory';
 import { ABILITY_UNLOCK_SCENE_KEY } from './AbilityUnlockScene';
 import type { AbilityType } from '../config/abilityConfig';
+import { abilityUnlockContent, levelOneIntroContent } from '../config/abilityUnlockContent';
 
 export const GAME_SCENE_KEY = 'GameScene';
 
@@ -49,6 +50,12 @@ interface GameSceneData {
   // end of create() below for why this moved here instead of firing at the
   // completed level, before the transition).
   unlockedAbility?: AbilityType;
+  // Set only by TitleScene's Start button (2026-08-29) -- never by
+  // Continue, a level-to-level transition, or a hard-fail scene.restart().
+  // Gates the level-1-only movement/core-loop intro popup below; see
+  // pendingLevelIntro's comment for why a hard-fail death on level 1 must
+  // not re-show it on every restart.
+  isNewGameStart?: boolean;
 }
 
 // Parameterized by levelId only — always starts at the level's beginning,
@@ -68,6 +75,12 @@ export class GameScene extends Phaser.Scene {
   private levelWidth!: number;
   private levelHeight!: number;
   private pendingAbilityUnlock: AbilityType | undefined;
+  // Derived fresh from data.isNewGameStart in init() every create() call --
+  // false on a hard-fail scene.restart() (its data has no such field),
+  // which is exactly what keeps the level-1 intro from re-showing on every
+  // death/restart the way the (harmless, banner-only) "Level N" re-show
+  // already does deliberately.
+  private pendingLevelIntro = false;
   private hazards: HazardZoneElement[] = [];
   private movingHazards: HazardZoneElement[] = [];
   private movingHazardManager!: MovingHazardManager;
@@ -91,6 +104,7 @@ export class GameScene extends Phaser.Scene {
   init(data: GameSceneData): void {
     this.levelId = data.levelId;
     this.pendingAbilityUnlock = data.unlockedAbility;
+    this.pendingLevelIntro = !!data.isNewGameStart;
   }
 
   create(): void {
@@ -294,11 +308,26 @@ export class GameScene extends Phaser.Scene {
     // hard-fail scene.restart() never passes it, so restarting a level
     // never re-shows this.
     if (this.pendingAbilityUnlock) {
-      const abilityType = this.pendingAbilityUnlock;
+      const abilityType = this.pendingAbilityUnlock as Exclude<AbilityType, 'tractorBeam'>;
       this.pendingAbilityUnlock = undefined;
       this.scene.pause();
       this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
-        abilityType: abilityType as Exclude<AbilityType, 'tractorBeam'>,
+        windowTitle: 'ABILITY UNLOCKED',
+        content: abilityUnlockContent[abilityType],
+        onClose: () => {
+          this.scene.resume(GAME_SCENE_KEY);
+          this.levelIntroBanner.show(introLabel);
+        },
+      });
+    } else if (this.pendingLevelIntro) {
+      this.pendingLevelIntro = false;
+      this.scene.pause();
+      // windowTitle deliberately distinct from levelOneIntroContent.title
+      // ('Getting Started') below it -- both said the same thing until
+      // 2026-08-29 playtest feedback caught it reading as redundant.
+      this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
+        windowTitle: 'WELCOME ABOARD',
+        content: levelOneIntroContent,
         onClose: () => {
           this.scene.resume(GAME_SCENE_KEY);
           this.levelIntroBanner.show(introLabel);
@@ -383,7 +412,8 @@ export class GameScene extends Phaser.Scene {
 
     this.scene.pause();
     this.scene.launch(ABILITY_UNLOCK_SCENE_KEY, {
-      abilityType: grantedAbility as Exclude<AbilityType, 'tractorBeam'>,
+      windowTitle: 'ABILITY UNLOCKED',
+      content: abilityUnlockContent[grantedAbility as Exclude<AbilityType, 'tractorBeam'>],
       onClose: () => this.scene.start('WinScene'),
     });
   }

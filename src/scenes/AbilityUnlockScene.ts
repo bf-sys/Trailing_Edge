@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import type { AbilityType } from '../config/abilityConfig';
-import { abilityUnlockContent } from '../config/abilityUnlockContent';
+import type { AbilityUnlockContent } from '../config/abilityUnlockContent';
 import { WindowFrame } from '../objects/WindowFrame';
 import { windowFrameConfig } from '../config/windowFrameConfig';
 import { playSfx } from '../objects/AudioManager';
@@ -8,7 +7,8 @@ import { playSfx } from '../objects/AudioManager';
 export const ABILITY_UNLOCK_SCENE_KEY = 'AbilityUnlockScene';
 
 export interface AbilityUnlockSceneData {
-  abilityType: Exclude<AbilityType, 'tractorBeam'>;
+  windowTitle: string;
+  content: AbilityUnlockContent;
   onClose: () => void;
 }
 
@@ -21,6 +21,13 @@ export interface AbilityUnlockSceneData {
 // click-anywhere dismiss -- the close button is the only way out, and it
 // performs the level transition handleLevelComplete() would otherwise have
 // made immediately.
+//
+// Content-agnostic since 2026-08-29 (windowTitle/content passed directly,
+// rather than an abilityType key looked up internally) -- GameScene also
+// reuses this same popup for a level-1-only movement/core-loop intro
+// (levelOneIntroContent in abilityUnlockContent.ts), a deliberate one-off
+// exception, not a sign this class should grow a broader "generic info
+// popup" scope beyond that.
 export class AbilityUnlockScene extends Phaser.Scene {
   private sceneData!: AbilityUnlockSceneData;
 
@@ -34,7 +41,7 @@ export class AbilityUnlockScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
-    const content = abilityUnlockContent[this.sceneData.abilityType];
+    const content = this.sceneData.content;
 
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
 
@@ -45,7 +52,7 @@ export class AbilityUnlockScene extends Phaser.Scene {
       y: height / 2 - windowHeight / 2,
       width: windowWidth,
       height: windowHeight,
-      title: 'ABILITY UNLOCKED',
+      title: this.sceneData.windowTitle,
     });
 
     // Content below is added as children of the WindowFrame container, so

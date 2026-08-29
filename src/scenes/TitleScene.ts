@@ -42,7 +42,10 @@ export class TitleScene extends Phaser.Scene {
 
     startText.on('pointerdown', () => {
       playSfx(this, 'uiClick');
-      this.scene.start('GameScene', { levelId: LEVEL_ORDER[0] });
+      // isNewGameStart (2026-08-29) gates GameScene's level-1-only
+      // movement/core-loop intro popup -- never set from Continue below, so
+      // a returning player resuming mid-progression never sees it again.
+      this.scene.start('GameScene', { levelId: LEVEL_ORDER[0], isNewGameStart: true });
     });
 
     if (hasSaveData()) {

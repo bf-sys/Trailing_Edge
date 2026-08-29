@@ -110,9 +110,18 @@ export class ShipDamageFlash {
   }
 
   private createOverlay(ship: PlayerShip): void {
+    // Sized from shipConfig's authored constants, not the live
+    // ship.image.displayWidth/displayHeight -- reported red-screen bug
+    // (2026-08-29, screenshot evidence) showed this overlay covering most of
+    // the viewport instead of staying ship-sized. Root cause unconfirmed
+    // (no console errors accompanied it), but the live sprite reading is the
+    // only input that could let this overlay's size disagree with the ship's
+    // actual footprint, so removing it closes off that failure mode
+    // regardless of cause -- also matches CLAUDE.md's "gameplay dimensions
+    // come from authored data, not a sprite's native/current size" rule.
     this.overlay = this.scene.add
       .image(ship.image.x, ship.image.y, ship.image.texture.key)
-      .setDisplaySize(ship.image.displayWidth, ship.image.displayHeight)
+      .setDisplaySize(shipConfig.displayWidth, shipConfig.displayHeight)
       .setRotation(ship.image.rotation)
       .setTintFill(shipDamageFlashConfig.color)
       .setDepth(shipDamageFlashConfig.depth)

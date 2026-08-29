@@ -18,6 +18,14 @@ export const shipConfig = {
   // size) without this needing to change to match.
   displayWidth: 46,
   displayHeight: 56,
+  // A cancelTargetOnContact-style collider (Meteoroid, ResupplyPoint) fires
+  // every physics step the ship remains touching a solid hazard/obstacle --
+  // including the step right after a fresh click, before the ship has had a
+  // single frame to accelerate away. Without this grace window, a target set
+  // while still in contact could get wiped before ever taking effect,
+  // deadlocking movement for as long as contact persists (2026-08-29 fix,
+  // reported as "stuck next to an Asteroid, can't click or hold to move").
+  targetCancelGraceMs: 50,
 };
 
 registerTuning('ship', shipConfig);

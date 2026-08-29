@@ -56,6 +56,7 @@ export class ExplorationController implements GameSystem {
   private playerShip?: PlayerShip;
   private scene?: Phaser.Scene;
   private target: Target | null = null;
+  private targetSetAtMs = 0;
   private boosting: BoostState | null = null;
   private teleportArmed = false;
 
@@ -68,6 +69,7 @@ export class ExplorationController implements GameSystem {
     // stale target/boost/arm state from the previous attempt must not carry
     // over.
     this.target = null;
+    this.targetSetAtMs = 0;
     this.boosting = null;
     this.teleportArmed = false;
 
@@ -76,6 +78,7 @@ export class ExplorationController implements GameSystem {
 
     const setTargetFromPointer = (pointer: Phaser.Input.Pointer) => {
       this.target = { x: pointer.worldX, y: pointer.worldY };
+      this.targetSetAtMs = scene.time.now;
     };
 
     // teleport-armed (2026-08-14 ability rework) repurposes left-click from
@@ -294,7 +297,19 @@ export class ExplorationController implements GameSystem {
   // collider fires this on every contact frame so steering stops re-driving
   // the ship back toward a destination on the far side of the hazard,
   // fighting Arcade's own collision separation.
+  //
+  // Grace-windowed as of 2026-08-29: a solid collider's collide callback
+  // (Meteoroid, ResupplyPoint) fires every physics step the ship is still
+  // touching it, including the step right after a fresh click -- before the
+  // ship has had a single frame to actually move. Without this window, a
+  // target set while still in contact (e.g. clicking to leave a resupply
+  // asteroid the ship is resting against) could get wiped before ever
+  // taking effect, deadlocking movement for as long as contact persists.
+  // Ignoring a cancel within shipConfig.targetCancelGraceMs of the target
+  // being set lets the ship take at least one real step toward it first.
   cancelTarget(): void {
+    const now = this.scene?.time.now ?? 0;
+    if (this.target && now - this.targetSetAtMs < shipConfig.targetCancelGraceMs) return;
     this.target = null;
   }
 

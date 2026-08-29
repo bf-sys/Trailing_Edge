@@ -64,7 +64,20 @@ export class TitleScene extends Phaser.Scene {
       continueText.on('pointerdown', () => {
         playSfx(this, 'uiClick');
         const save = loadProgress();
-        this.scene.start('GameScene', { levelId: save?.levelId ?? LEVEL_ORDER[0] });
+        const levelId = save?.levelId ?? LEVEL_ORDER[0];
+        // ProgressionManager's unlockedAbilities is in-memory only (never
+        // part of SaveData) -- a browser refresh wipes it, so Continue would
+        // otherwise resume at the saved level with zero abilities even
+        // though a real playthrough would already have earned some (2026-08-29
+        // fix, reported as "abilities missing after Continue"). Re-grant
+        // using the same "one ability per preceding level" formula "Dev:
+        // Jump to Level" below already relies on. Safe to call
+        // unconditionally: grantNextAbility() no-ops once an ability is
+        // already unlocked, so this changes nothing on a same-session
+        // Continue where the abilities are already correct.
+        const index = Math.max(LEVEL_ORDER.indexOf(levelId), 0);
+        for (let i = 0; i < index; i++) getProgressionManager().grantNextAbility();
+        this.scene.start('GameScene', { levelId });
       });
     }
 

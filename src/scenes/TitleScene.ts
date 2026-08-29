@@ -28,6 +28,13 @@ export class TitleScene extends Phaser.Scene {
 
     new VolumeSlider(this, width - 200, 40);
 
+    // __BUILD_ID__ is stamped by CI (.github/workflows/build.yml), 'dev' for
+    // anything built locally -- lets a stale cached itch.io build be told
+    // apart from an actual regression at a glance.
+    this.add
+      .text(width - 8, height - 8, `Build ${__BUILD_ID__}`, { fontSize: '11px', color: '#4a5560' })
+      .setOrigin(1, 1);
+
     // Logo art replaces the text title (2026-08-26) -- chroma-keyed from
     // art-staging/trailing_edge_logo_chromakey_1787772147364.jpg via
     // tools/asset-prep/chroma-key.js into assets/ui/logo.png. Display size is

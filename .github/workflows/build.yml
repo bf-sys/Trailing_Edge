@@ -27,6 +27,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set build ID
+        # Auto-incrementing per run (github.run_number), plus a short commit
+        # SHA -- read by vite.config.ts's `define` and shown on the title
+        # screen so a stale cached itch.io build can be told apart from an
+        # actual regression at a glance.
+        run: echo "BUILD_ID=${{ github.run_number }}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
       - name: Build (tsc --noEmit && vite build)
         run: npm run build
 

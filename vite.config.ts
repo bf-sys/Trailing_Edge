@@ -15,4 +15,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  // Stamped by CI (see .github/workflows/build.yml) so the title screen can
+  // show which build is actually live on itch.io -- distinguishes a real
+  // problem from a stale cached build. `dev` for anything built outside CI
+  // (a local `npm run dev`/`npm run build`).
+  define: {
+    __BUILD_ID__: JSON.stringify(process.env.BUILD_ID ?? 'dev'),
+  },
 });

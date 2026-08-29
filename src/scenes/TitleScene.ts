@@ -4,6 +4,7 @@ import { hasSaveData, loadProgress } from '../objects/SaveManager';
 import { getProgressionManager } from '../systems/ProgressionManager';
 import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
 import { playSfx, startMusicOnce } from '../objects/AudioManager';
+import { VolumeSlider } from '../objects/VolumeSlider';
 
 export const TITLE_SCENE_KEY = 'TitleScene';
 
@@ -24,6 +25,8 @@ export class TitleScene extends Phaser.Scene {
     // through TitleScene and every scene reached from it, since Phaser's
     // SoundManager is one shared instance game-wide, not per-Scene.
     startMusicOnce(this);
+
+    new VolumeSlider(this, width - 200, 40);
 
     // Logo art replaces the text title (2026-08-26) -- chroma-keyed from
     // art-staging/trailing_edge_logo_chromakey_1787772147364.jpg via

@@ -7,6 +7,7 @@ import { createResupplySparkTexture } from '../objects/ResupplyPoint';
 import { createEnergyNodeTexture } from '../objects/EnergyNodeElement';
 import { createShipExplosionTexture } from '../objects/ShipExplosionVfx';
 import { sfxConfig, musicConfig } from '../config/audioConfig';
+import { loadMasterVolume } from '../objects/SaveManager';
 
 export const BOOT_SCENE_KEY = 'BootScene';
 
@@ -45,6 +46,14 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Applied once here, before TitleScene's startMusicOnce() plays
+    // anything -- scene.sound is one SoundManager instance shared
+    // game-wide, so this master level holds for the rest of the session
+    // regardless of which Scene set it last (VolumeSlider mutates the same
+    // property directly).
+    const savedVolume = loadMasterVolume();
+    if (savedVolume !== null) this.sound.volume = savedVolume;
+
     createBackgroundSetPieceTextures(this);
     createDestinationMarkerTexture(this);
     createThrusterParticleTexture(this);

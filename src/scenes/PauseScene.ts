@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { HOW_TO_PLAY_SCENE_KEY } from './HowToPlayScene';
 import { playSfx } from '../objects/AudioManager';
+import { VolumeSlider } from '../objects/VolumeSlider';
 
 export const PAUSE_SCENE_KEY = 'PauseScene';
 
@@ -26,6 +27,8 @@ export class PauseScene extends Phaser.Scene {
     this.add
       .text(width / 2, height / 2 - 60, 'Paused', { fontSize: '28px', color: '#ffffff' })
       .setOrigin(0.5);
+
+    new VolumeSlider(this, width - 200, 40);
 
     // Same text-button convention as TitleScene/AbilityUnlockScene — ESC
     // already resumed pre-existing behavior; this just also exposes it as

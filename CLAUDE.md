@@ -799,9 +799,21 @@ Sequential vertical slice first, **then** fan out — the fan-out is a
    `level-001` through `level-010` exist — see `src/config/levelOrder.ts`
    for the full per-level history and `docs/reference/level-design-guide.md`
    for the authoring conventions.
-5. **Phase 3 — integration only, not yet started.** Full `levelOrder`
-   playthrough, confirm `Continue` resumes correctly, `WinScene` on the true
-   last level, a real packaged-build run.
+5. **Phase 3 — integration pass complete (2026-08-29).** All four items —
+   full `levelOrder` playthrough, `Continue`-resume, `WinScene` on the true
+   last level, a real packaged-build run — closed in one session: `vite.config.ts`
+   gained `base: './'` (itch.io serves HTML5 uploads from a non-root CDN
+   path, so the prior root-absolute asset references would 404 there; see
+   `docs/TODO.md`'s "itch.io packaged-build pipeline" section for the rest of
+   that distribution work, still open), then the project owner ran
+   `npm run build` + `npm run preview` (worked around a Windows PowerShell
+   execution-policy block on plain `npm` via `npm.cmd`, no system settings
+   changed) and played all 10 levels through the served build to a win —
+   the first full playthrough against the actual packaged output, not the
+   dev server. Same session also returned to the main menu mid-run at
+   level 5, chose Continue, and confirmed it resumed at level 5 correctly.
+   `CheckpointManager` is still deferred by design — this only confirms
+   level-granularity resume, not a mid-level save.
 
 ## Puzzle taxonomy vs. hazard taxonomy — don't conflate these two tables (GDD §9)
 

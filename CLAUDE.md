@@ -354,6 +354,7 @@ Living reference guides (for the human, kept accurate over time) live in
 - `docs/reference/sfx-asset-list.md` — the single audio asset list (SFX + the one music item), cut by Required-vs-Nice-to-have priority; consolidated 2026-08-26 from a since-deleted `docs/trailing_edge_audio_asset_list.md`
 - `docs/reference/sfx-sourcing-candidates.md` — auto-generated (`tools/audio-triage/scan-kenney-audio.mjs`) filename-keyword triage of the project owner's local Kenney audio library against `sfx-asset-list.md`'s categories; a shortlist for a human listening pass, not a perceptual evaluation; rerun the script rather than hand-editing this file
 - `docs/reference/sfx-selections.md` — hand-maintained record of which exact file (from the candidates doc above) was chosen per category, ready to hand off for actual asset-copying/wiring; NOT touched by the triage script
+- `docs/reference/butler-ci-guide.md` — plain-language explainer for the `butler` CLI and a GitHub Actions CI workflow, the two optional items in `docs/TODO.md`'s "itch.io packaged-build pipeline" section; neither is built yet, this is what building either would require
 
 ## Tech stack (confirmed, GDD §11)
 

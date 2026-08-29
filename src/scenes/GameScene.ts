@@ -141,15 +141,16 @@ export class GameScene extends Phaser.Scene {
     this.createParallaxBackground();
     placeBackgroundSetPieces(this, this.levelId, this.levelWidth, this.levelHeight);
 
-    // levelId prefix is dev-only debug info (2026-08-29) -- "Click to move"
-    // is a real player-facing hint and stays in release builds too.
-    const cornerHintText = import.meta.env.DEV
-      ? `levelId: ${this.levelId}\nClick to move`
-      : 'Click to move';
-    this.add
-      .text(8, 88, cornerHintText, { fontSize: '14px', color: '#ffffff' })
-      .setScrollFactor(0)
-      .setDepth(1000);
+    // Dev-only debug HUD (2026-08-29, gate widened 2026-08-29) -- "Click to
+    // move" used to also show in release builds, but the level-1 intro
+    // popup (see TitleScene's isNewGameStart) now covers that for real
+    // players, so this is levelId-debug-info only and hidden in release.
+    if (import.meta.env.DEV) {
+      this.add
+        .text(8, 88, `levelId: ${this.levelId}\nClick to move`, { fontSize: '14px', color: '#ffffff' })
+        .setScrollFactor(0)
+        .setDepth(1000);
+    }
 
     // Nobody hand-edits this loop per-system — systems register themselves
     // via SystemRegistry from their own module (see src/systems/index.ts).

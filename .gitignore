@@ -4,3 +4,4 @@ audio-staging/
 node_modules/
 dist/
 .env
+docs/TODO.md

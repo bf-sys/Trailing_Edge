@@ -25,7 +25,7 @@ config. Ran `npx tsc --noEmit -p .` (clean) and grepped for hard-rule
 violations (`localStorage` outside `SaveManager`, direct
 `currentEnergy`/`currentStructure` writes outside `ShipSurvivalComponent`,
 non-`arcadeBodyHelpers` `setCircle`/`setSize` calls) — none found. Also
-read the prior `docs/gap-analysis-2026-08-11.md` for method/format
+read the prior `docs/history/gap-analysis-2026-08-11.md` for method/format
 precedent and to check whether anything found this run had already been
 flagged-and-deferred there (it hadn't — see below).
 

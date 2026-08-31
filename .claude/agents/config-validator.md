@@ -33,15 +33,20 @@ specific job.
    schema error, not a stylistic choice.) Flag any level missing one of
    the four.
 2. **Valid `HazardZoneElement` configs:** `movementPattern` is one of
-   `'static' | 'linear' | 'patrol'`; `activation` is one of
-   `'continuous' | 'pulsed'`; `resourceCost` has both `energy` and
-   `structure` keys even if one is 0; `pulseIntervalSeconds` present when
-   `activation` is `'pulsed'`; `blocksMovement`, when set, is a boolean
-   (Debris Field's config — a solid collider, GDD §9's 2026-08-07
-   re-scope). A `movementPattern: 'linear'` hazard needs nothing beyond its
-   initial `x`/`y` — `MovingHazardManager` (added 2026-08-17) owns its
-   respawn behavior automatically, so don't flag a "missing" wrap/respawn
-   config for one.
+   `'static' | 'linear' | 'patrol' | 'trochoid'` (`'trochoid'` added
+   2026-08-25 for Ion Storm — also expects `orbitRadius`/
+   `orbitAngularSpeedRadiansPerSecond`); `activation` is one of
+   `'continuous' | 'pulsed' | 'impact'` (`'impact'` added 2026-08-21 for
+   Meteoroid — also expects `hitCooldownSeconds`); `resourceCost` has both
+   `energy` and `structure` keys even if one is 0; `pulseIntervalSeconds`
+   present when `activation` is `'pulsed'`; `blocksMovement`, when set, is
+   a boolean (Debris Field's config — a solid collider, GDD §9's
+   2026-08-07 re-scope; no longer implies zero contact cost as of the
+   2026-08-21 Meteoroid rework — a hazard can be both a solid collider and
+   still charge `resourceCost` on contact). A `movementPattern: 'linear'`
+   or `'trochoid'` hazard needs nothing beyond its initial `x`/`y` —
+   `MovingHazardManager` (added 2026-08-17) owns its respawn behavior
+   automatically, so don't flag a "missing" wrap/respawn config for one.
 3. **Valid `CostData`** on any per-hazard/per-ability cost entries — no
    missing `energyCost`/`structureCost` or `energyCost`/`cooldownSeconds`
    fields.

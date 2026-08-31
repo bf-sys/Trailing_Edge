@@ -25,18 +25,32 @@ sequence per new asset need, don't invent a new sourcing method here.
 - `docs/ATTRIBUTION.md` — license ledger; append to it, don't regenerate.
 
 ## Immediate open items (as of the last sync — check `docs/STATUS.md` for current state)
-- **Probe** — has an owner-original greyscale placeholder
-  (`objectives/probe_PLACEHOLDER.png`), not sourced from a licensed pack.
-  Fine as a Phase 1 stand-in; still worth a real Sourcing → Evaluation →
-  Prep pass before treating it as final art.
-- **Signal Array** (the renamed sequence-puzzle element) — unsourced again;
+- **Probe** — resolved. Replaced with final AI-generated art
+  (`objectives/probe.png`) on 2026-08-01; no longer a greyscale
+  placeholder. (This bullet was stale as of a 2026-08-17 edit to this
+  file — it kept describing the pre-2026-08-01 state. Left here as a
+  worked example: always re-check `assets/` directly rather than trusting
+  this list's memory of a prior sync.)
+- **Ion Storm / Nebula Field style** — resolved. Final, independently-
+  directed art sourced and integrated 2026-08-19 through 2026-08-22
+  (`assets/hazards/hazard_ion_storm.png`,
+  `hazard_nebula_field`/`_alt2`/`_alt3.png`); the Accessibility/
+  Telegraphing Reviewer's 2026-08-27 pass confirmed the two read as
+  distinct in motion, in-engine. See `CLAUDE.md`'s Open design questions
+  section — closed unless the art or motion pattern changes again.
+- **Meteoroid** — resolved. Final art integrated 2026-08-20, re-integrated
+  2026-08-22 with a corrected ember-trail angle
+  (`assets/hazards/hazard_meteoroid.png`).
+- **Signal Array** (the renamed sequence-puzzle element) — still unsourced;
   its previously-sourced satellite asset was reassigned to the Relay Beacon
   waypoint instead.
-- **Cargo Pod/Wreckage** — already sourced, not yet extracted; crop when
-  Phase 2a's `PushPullObjectElement` work starts.
-- **Comet vs. Meteoroid**, **Ion Storm/Nebula Field style**, **Beacon
-  Cluster** — all still open per `docs/STATUS.md`'s "explicitly out of
-  scope" list; pick up as Phase 2a/2b need each one.
+- **Cargo Pod/Wreckage** — still sourced but not extracted
+  (`art-staging/warped_top_down_tech_lab_extension.png`). Phase 2a has
+  since shipped (2026-08-10/11) with `PushPullObjectElement` using a
+  placeholder procedural texture instead — this crop is genuinely open,
+  not blocked on Phase 2a starting anymore.
+- **Comet vs. Meteoroid** and **Beacon Cluster** — still open/unsourced;
+  pick up as Phase 2b need arises.
 
 ## Tasks
 1. **Coverage as new needs arise** — when a Content Agent or the

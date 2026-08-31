@@ -67,8 +67,11 @@ identical candidates waste the loop.
    (a solid, movement-blocking collider instead of an overlap-and-drain
    zone — Debris Field's config, GDD §9's 2026-08-07 re-scope). Levels
    typically mix multiple hazard types (§3); early levels may use just one
-   as a soft tutorial. `movementPattern: 'linear'` hazards (Ion Storm,
-   Meteoroid) are additionally picked up automatically by
+   as a soft tutorial. `movementPattern: 'linear'` (Meteoroid) and
+   `movementPattern: 'trochoid'` (Ion Storm, switched from `'linear'`
+   2026-08-25 — an invisible carrier point advances in a straight line
+   while the hazard's drawn position orbits it, sweeping a wide looping
+   band) hazards are both additionally picked up automatically by
    `MovingHazardManager` (added 2026-08-17) — a level file only needs to
    place their *initial* position; don't build any respawn/wrap logic
    yourself, `GameScene` wires it in without any per-level config beyond

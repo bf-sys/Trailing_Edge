@@ -76,19 +76,27 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // that objective. Shared clearance constant so the range math (how far
 // each objective sits from its pocket's walls) only needs deriving once --
 // same role level-003's PROBE_WALL_CLEARANCE plays.
+//
+// Kept at its absolute 150px value through the 2026-09-02 resize below
+// (not scaled) -- same reasoning as debrisWall's spacing/amplitude
+// constants (level-design-guide.md §11): this distance is a ship/debris-
+// radius-derived approach buffer (see pocketApproachDistance's sanity
+// check further down), not a proportional layout dimension, so it doesn't
+// shrink just because the level did.
 const POCKET_WALL_CLEARANCE = 150;
 
-// Probe pocket -- top-left corner, nearest to the Probe's (1000, 700).
-// Wall positions are derived directly from the Probe's location plus
-// POCKET_WALL_CLEARANCE, so moving the Probe and re-deriving these two
-// values keeps the clearance invariant automatically.
-const PROBE_POCKET_WALL_X = 1000 + POCKET_WALL_CLEARANCE; // 1150 -- vertical wall's x
-const PROBE_POCKET_WALL_Y = 700 + POCKET_WALL_CLEARANCE; // 850 -- horizontal wall's y
+// Probe pocket -- top-left corner, nearest to the Probe's scaled
+// (855, 598) (was (1000, 700) pre-resize). Wall positions are derived
+// directly from the Probe's location plus POCKET_WALL_CLEARANCE, so moving
+// the Probe and re-deriving these two values keeps the clearance invariant
+// automatically.
+const PROBE_POCKET_WALL_X = 855 + POCKET_WALL_CLEARANCE; // 1005 -- vertical wall's x (was 1150)
+const PROBE_POCKET_WALL_Y = 598 + POCKET_WALL_CLEARANCE; // 748 -- horizontal wall's y (was 850)
 
 // Relay Beacon pocket -- bottom-right corner, nearest to the Beacon's
-// (6300, 3400).
-const BEACON_POCKET_WALL_X = 6300 - POCKET_WALL_CLEARANCE; // 6150 -- vertical wall's x
-const BEACON_POCKET_WALL_Y = 3400 - POCKET_WALL_CLEARANCE; // 3250 -- horizontal wall's y
+// scaled (5385, 2906) (was (6300, 3400) pre-resize).
+const BEACON_POCKET_WALL_X = 5385 - POCKET_WALL_CLEARANCE; // 5235 -- vertical wall's x (was 6150)
+const BEACON_POCKET_WALL_Y = 2906 - POCKET_WALL_CLEARANCE; // 2756 -- horizontal wall's y (was 3250)
 
 // Seventh real level. Generated via the level GER loop (content-agent ->
 // level-evaluator-agent -> level-refiner-agent, per level-design-guide.md
@@ -155,46 +163,95 @@ const BEACON_POCKET_WALL_Y = 3400 - POCKET_WALL_CLEARANCE; // 3250 -- horizontal
 // 6480x3646 (the largest level built so far), per this guide's explicit
 // floor ("holding steady or growing... is fine, don't go smaller").
 //
+// RESIZED 2026-09-02 (project-owner request, not evaluator-driven; second
+// of a same-day pair with level-006): shrunk from 7020x3949 down to exactly
+// 6000x3375, matching level-005/level-006's new project-wide max footprint.
+// Per level-design-guide.md §11, this is NOT the uniform single-factor
+// scale §2/§10 use for same-shape resizes -- 7020x3949 isn't exactly 16:9
+// the way 6000x3375 is, so two independent per-axis factors were used:
+// scaleX = 6000/7020 = 0.854701, scaleY = 3375/3949 = 0.854647. Safe to
+// apply independently here specifically because every wall/pocket segment
+// in this file is axis-aligned (perfectly vertical or horizontal, confirmed
+// by inspecting every debrisWall() call below) -- non-uniform per-axis
+// scaling introduces zero shear for axis-aligned geometry. Every plain
+// point placement (objectives, resupply, Nebula/Ion Storm/Meteoroid
+// instances) was scaled directly; every debrisWall() call (including the
+// four pocket-wall segments) was re-run from newly-scaled *endpoints*
+// rather than scaling the pre-generated instance arrays (§11's explicit
+// warning), with spacing (100 throughout) and the undulation constants
+// (SWEEP_AMPLITUDE/TEXTURE_AMPLITUDE/etc. above) deliberately left at their
+// existing absolute-pixel values per §11's stated default, since they're
+// tied to Debris Field's fixed 60px collision radius, not to level size.
+// Unlike level-006's resize, no wall/pocket segment here needed a spacing
+// override -- re-verified by regenerating every array and measuring actual
+// worst-case neighbor distance, not assumed: wallA/B/C land at 104.2/101.2/
+// 96.5px (all comfortably under 120px), the four pocket-wall segments land
+// at 96.0-107.8px, and both pocket corner joins measure exactly 100.0px --
+// see the dev-time sanity check below for the live re-confirmation.
+// POCKET_WALL_CLEARANCE (150) was deliberately left unscaled (see its own
+// comment above) -- PROBE_POCKET_WALL_X/Y and BEACON_POCKET_WALL_X/Y are
+// re-derived from the *scaled* Probe/Beacon locations plus that same fixed
+// 150px, not by scaling the old 1150/850/6150/3250 values directly (which
+// would have shrunk the approach clearance along with the map, rather than
+// preserving the ship/debris-radius-derived buffer it's supposed to be).
+//
+// Two moving-hazard placement issues were found and handled during this
+// resize's re-verification -- see the "Moving hazards" comment further
+// below for the full writeup of what was fixed (Ion Storm 2, an actual new
+// sub-250px violation) vs. what was left alone (Ion Storm 1's thinned-but-
+// still-compliant margin; Meteoroid 0's pre-existing sub-250px margin,
+// unrelated to this resize).
+//
+// Objective-spacing percentages (Probe<->Beacon 73.9%, Beacon<->Exit 61.9%,
+// Probe<->Exit 11.9%) came out unchanged to one decimal place from the
+// pre-resize figures below, since scaleX and scaleY are close enough
+// (0.854701 vs 0.854647) that diagonal-relative distances barely move --
+// only the raw px figures throughout this file's comments were updated.
+//
 // THE SEALED POCKETS (this candidate's axis; originally three, now two --
 // see the 2026-08-25 follow-up above):
 // - Probe pocket, top-left corner, nearest to the Probe itself at
-//   (1000, 700).
+//   (855, 598) (was (1000, 700) pre-resize).
 // - Relay Beacon pocket, bottom-right corner, nearest to the Beacon at
-//   (6300, 3400) -- the first level to seal a *mandatory* waypoint other
-//   than the Probe.
-// - Resupply, at the AsteroidField (3800, 2000), is deliberately unsealed
-//   (see above) -- no seal, no pocket, plain open-ground placement.
-// Both remaining pockets share POCKET_WALL_CLEARANCE (150px, each
-// objective's distance from its own pocket's two walls), so the range math
-// only needs deriving once: a ship's body (shipConfig: 46x56 display size)
-// stops against a pocket wall's outer edge at roughly
-// POCKET_WALL_CLEARANCE (150) + 60 (debris radius) + ~28 (ship half-size)
-// = 238px from the objective -- comfortably inside teleport's fixed 350px
-// maxRange (abilityConfig.teleport.maxRange), leaving 112px of slack
-// regardless of approach angle, identical to level-003's verified math.
-// Once inside either, normal movement can't get back out either -- the
-// player waits out teleport's 8s cooldown to blink back out. Deliberate
-// every time, not a softlock: the wait is short and no hazard drains
-// anything inside a pocket. The Exit Wormhole is deliberately left UNSEALED
-// (open ground, reachable by normal movement) -- sealing every core-loop
-// object would make the level about waiting out cooldowns rather than
-// routing, and Exit's own gameplay gate (LevelObjectiveTracker.canReturn(),
-// tinted inactive until the Beacon is reached) already gives it a
-// meaningful closed state without a physical wall on top.
+//   (5385, 2906) (was (6300, 3400) pre-resize) -- the first level to seal a
+//   *mandatory* waypoint other than the Probe.
+// - Resupply, at the AsteroidField (3248, 1709) (was (3800, 2000)), is
+//   deliberately unsealed (see above) -- no seal, no pocket, plain
+//   open-ground placement.
+// Both remaining pockets share POCKET_WALL_CLEARANCE (150px, unscaled --
+// see its own comment above), so the range math only needs deriving once: a
+// ship's body (shipConfig: 46x56 display size) stops against a pocket
+// wall's outer edge at roughly POCKET_WALL_CLEARANCE (150) + 60 (debris
+// radius) + ~28 (ship half-size) = 238px from the objective -- unchanged by
+// this resize (every term is a fixed pixel value, not a scaled one) --
+// comfortably inside teleport's fixed 350px maxRange
+// (abilityConfig.teleport.maxRange), leaving 112px of slack regardless of
+// approach angle, identical to level-003's verified math. Once inside
+// either, normal movement can't get back out either -- the player waits
+// out teleport's 8s cooldown to blink back out. Deliberate every time, not
+// a softlock: the wait is short and no hazard drains anything inside a
+// pocket. The Exit Wormhole is deliberately left UNSEALED (open ground,
+// reachable by normal movement) -- sealing every core-loop object would
+// make the level about waiting out cooldowns rather than routing, and
+// Exit's own gameplay gate (LevelObjectiveTracker.canReturn(), tinted
+// inactive until the Beacon is reached) already gives it a meaningful
+// closed state without a physical wall on top.
 //
 // Objectives (§3 -- only *consecutive* Probe<->Beacon and Beacon<->Exit
 // need to be pushed far apart; non-consecutive Probe<->Exit is
-// deliberately left close): diagonal = sqrt(7020^2 + 3949^2) ~= 8054.5px.
-// Probe(1000,700) <-> Beacon(6300,3400): ~5948px (~73.9% of diagonal, in
-// the 65-76% precedent band). Beacon <-> Exit(1850,1150): ~4987px (~61.9%,
-// a bit under the band -- geometrically unavoidable here since Exit has to
-// sit close to Probe *and* Probe is already pushed into the far corner
-// from Beacon to maximize Probe<->Beacon, leaving Exit no room to also
-// extend away from Beacon; still comfortably more than half the map's
+// deliberately left close): diagonal = sqrt(6000^2 + 3375^2) ~= 6884.1px
+// (was ~8054.5px pre-resize). Probe(855,598) <-> Beacon(5385,2906): ~5084px
+// (~73.9% of diagonal, in the 65-76% precedent band, matching the
+// pre-resize ~73.9% almost exactly). Beacon <-> Exit(1581,983): ~4262px
+// (~61.9%, a bit under the band -- geometrically unavoidable here since
+// Exit has to sit close to Probe *and* Probe is already pushed into the far
+// corner from Beacon to maximize Probe<->Beacon, leaving Exit no room to
+// also extend away from Beacon; still comfortably more than half the map's
 // diagonal, and §3 states the band is "not a hard target," precedent
-// level-005 already landed slightly outside it on the high side). Probe
-// <-> Exit (non-consecutive): ~962px (~11.9%, essentially matching the
-// 12-13% band). Entry sits at (500, 3550), a reasonable starting corner
+// level-005 already landed slightly outside it on the high side; unchanged
+// from the pre-resize ~61.9%). Probe <-> Exit (non-consecutive): ~822px
+// (~11.9%, essentially matching the 12-13% band and the pre-resize ~11.9%).
+// Entry sits at (427, 3034) (was (500, 3550)), a reasonable starting corner
 // clear of every hazard -- see per-placement clearance notes below.
 //
 // Debris Field: three conventional, non-sealed walls (A/B/C below) provide
@@ -204,51 +261,110 @@ const BEACON_POCKET_WALL_Y = 3400 - POCKET_WALL_CLEARANCE; // 3250 -- horizontal
 // competing with a maze for attention. None spans a full map dimension;
 // each is open at both ends per §5's baseline (this level doesn't reuse
 // level-006's single-gap maze pattern). Every wall segment keeps 250px+
-// clearance from every objective/resupply point/pocket wall (verified by
-// distance below, not just eyeballed) -- note a pocket's *own* enclosed
-// objective is naturally < 250px from its own pocket walls by design
-// (that's the point of a sealed pocket); the clearance rule is checked
-// against every *other* wall/pocket instead. Distances below are
-// edge-to-edge (raw center distance minus both radii involved), recomputed
-// 2026-08-25 for the two bullets that used to reference a ring.
-// - Wall A: (2400,2200)-(2400,3400), vertical, between the Entry/SW region
-//   and the map's center. Closest point to the (now-unsealed) Resupply
-//   asteroid is ~1314px; to Entry ~1906px (raw); to Meteoroid's initial
-//   spot ~361px (raw).
-// - Wall B: (4800,1200)-(4800,2600), vertical, between the Resupply point
-//   and the Beacon pocket. Closest point to the Resupply asteroid is
-//   ~900px; to the Beacon pocket's nearest wall is ~1378px.
-// - Wall C: (1200,2000)-(2200,2000), horizontal, a short early divider on
-//   the Entry-to-Probe route. Closest point to the Probe pocket's nearest
-//   wall is ~1031px; to Exit ~850px (raw).
+// clearance from every objective/resupply point/pocket wall (re-verified
+// by distance below post-resize, not just eyeballed) -- note a pocket's
+// *own* enclosed objective is naturally < 250px from its own pocket walls
+// by design (that's the point of a sealed pocket); the clearance rule is
+// checked against every *other* wall/pocket instead. Distances below are
+// edge-to-edge (raw center distance minus both radii involved) unless
+// marked "(raw)".
+// - Wall A: (2051,1880)-(2051,2906), vertical, between the Entry/SW region
+//   and the map's center (was (2400,2200)-(2400,3400)). Closest point to
+//   the (now-unsealed) Resupply asteroid is ~1109px; to Entry ~1629px
+//   (raw); to Meteoroid's initial spot ~308.7px (raw) (was ~1314px/~1906px/
+//   ~361px respectively).
+// - Wall B: (4103,1026)-(4103,2222), vertical, between the Resupply point
+//   and the Beacon pocket (was (4800,1200)-(4800,2600)). Closest point to
+//   the Resupply asteroid is ~758px; to the Beacon pocket's nearest wall is
+//   ~1132px (was ~900px/~1378px).
+// - Wall C: (1026,1709)-(1880,1709), horizontal, a short early divider on
+//   the Entry-to-Probe route (was (1200,2000)-(2200,2000)). Closest point
+//   to the Probe pocket's nearest wall is ~841px; to Exit ~723px (raw) (was
+//   ~1031px/~850px).
 //
 // Nebula Field (§6, four instances, placed with intent): a bypass toll at
 // Wall A's open south end (also doubling as the last obstacle before
-// Entry, 1900px+ clear of it), an early-route toll on Entry's way toward
+// Entry, ~1624px clear of it), an early-route toll on Entry's way toward
 // the Probe pocket and Wall C, a bridging toll on the close Probe<->Exit
-// hop (sitting near the Probe pocket's nearest wall, ~221px clear of it
-// edge-to-edge, and ~381px raw-center clear of Exit), and a toll on the
-// route from the Resupply/Wall B area toward the Beacon pocket. Two are
-// allowed to sit close to a Debris Field wall's open end per §6 ("fine,
-// even good... reads as a compound obstacle").
+// hop (sitting near the Probe pocket's nearest wall, ~325px raw-center
+// clear of Exit), and a toll on the route from the Resupply/Wall B area
+// toward the Beacon pocket. Two are allowed to sit close to a Debris Field
+// wall's open end per §6 ("fine, even good... reads as a compound
+// obstacle"). Coordinates rescaled 2026-09-02; see each placement's inline
+// comment for its pre-resize value.
 //
 // Moving hazards (§7): held at the established baseline (2 Ion Storm, 1
-// Meteoroid), same reasoning level-006 used for its own non-axis
+// Meteoroid, since expanded to 4 Ion Storm / 3 Meteoroid by the 2026-08-25
+// follow-up below), same reasoning level-006 used for its own non-axis
 // dimensions -- this candidate's axis is sealed-section density, not
 // moving-hazard density (that's a different candidate's job), so pushing
 // both at once would blur the comparison the GER loop's Evaluate stage is
-// meant to make. All three initial placements keep 250px+ clearance from
-// every wall/pocket/objective/resupply point (verified by distance in the
-// placement comments below).
+// meant to make. Coordinates rescaled 2026-09-02 (scaleX=0.854701,
+// scaleY=0.854647); the trajectory/clearance re-verification this resize
+// requires (level-design-guide.md §11) found and handled three things,
+// using the updated per-pattern methods now in effect (Ion Storm switched
+// 'linear' -> 'trochoid' 2026-08-25; Meteoroid switched 'linear' ->
+// 'homing' 2026-09-02, the same day as this resize -- see hazardConfig.ts):
+// - Ion Storm 2 (below) had its initial clearance from Wall C drop from
+//   ~316px (pre-resize) to ~246px -- a genuine NEW sub-250px violation
+//   introduced by the resize (the fixed 170px ionStorm-radius+debris-radius
+//   sum doesn't shrink even though the gap it's measured against did, the
+//   same "fixed absolute pixel amount vs. a shrinking level" issue §11
+//   flags for wall spacing/amplitude, just showing up here for a moving-
+//   hazard's placement clearance instead). Fixed by nudging its y by -40px
+//   (within this level's existing NW-quadrant placement, not a redesign) --
+//   restores ~286px clearance from every wall, while also keeping ~289px
+//   clear of Exit (checked explicitly since Exit sits nearby in the same
+//   quadrant -- the fix was chosen to balance both, not just clear Wall C).
+// - Ion Storm 1's clearance from Wall B also thinned (~322px pre-resize ->
+//   ~266px post-resize, same fixed-radius-vs-shrinking-gap cause as above)
+//   but stayed on the right side of the 250px floor -- left unmodified,
+//   since it isn't a violation, just a smaller margin than before.
+// - Full first-leg trochoid re-simulation (carrier+orbit sweep, same method
+//   as level-006/009/010) against the new 6000x3375 bounds for all four Ion
+//   Storm placements found no *new* instance of the already-documented,
+//   already-accepted "a moving hazard's path isn't checked against wall
+//   geometry" gap (CLAUDE.md's Current project state / MovingHazardManager
+//   entry): Ion Storm 0 and 1 already swept into a pocket wall / Wall C
+//   respectively during their first leg *before this resize too*
+//   (re-confirmed by re-running the identical simulation against the old
+//   7020x3949 bounds/coordinates -- old overlap depths ~168-170px, new
+//   ~140-169px, same severity, not worse); Ion Storm 2 and 3 stay clear of
+//   every wall on both old and new bounds (old clearance ~112px/453px, new
+//   ~58px/350px -- margins shrank with the resize but neither crossed into
+//   overlap). Not re-fixed here beyond the initial-placement nudge above --
+//   doing so would mean relocating baseline Ion Storm placements mid-loop,
+//   a hazard-placement redesign outside a pure resize's scope, consistent
+//   with the project's own decision (CLAUDE.md) to leave this broader gap
+//   unaddressed for now.
+// - Meteoroid's 'linear' -> 'homing' switch (2026-09-02, same day as this
+//   resize) means there's no longer a single deterministic full-leg line to
+//   simulate -- only the short pre-retarget segment (heading fixed east at
+//   280px/s for up to homingCloseRetargetIntervalSeconds (0.5s) or
+//   retargetIntervalSeconds (1s), whichever applies based on the spawn-time
+//   distance to the player's Entry position) was checked, per
+//   level-design-guide.md §11's adapted method. All three placements stay
+//   in-bounds and clear of every wall through that segment except Meteoroid
+//   0's *static* starting clearance from Wall A -- which was already
+//   ~245px (sub-250px) *before* this resize (pre-existing, not introduced
+//   by it) and is now ~193px post-resize (thinned further by the same
+//   fixed-radius-vs-shrinking-gap effect as the Ion Storm cases above, but
+//   not a new crossing of the floor -- it never satisfied the floor to
+//   begin with). Left unfixed, matching level-006's explicit precedent for
+//   an analogous pre-existing, resize-adjacent margin: repositioning a
+//   baseline Meteoroid instance is outside a pure resize's scope. Meteoroid
+//   1 and 2 stay comfortably clear (~614px/~881px) on both old and new
+//   bounds.
 //
 // No puzzle-taxonomy element placed (consistent with every real level so
 // far -- Phase 2b content, still unstarted).
 // Named so the dev-only sanity check below can re-inspect the same
-// generated arrays the hazards list spreads. count@spacing100: 13, 15, 11
-// -- all three clear MIN_UNDULATE_COUNT=8.
-const wallA = debrisWall(2400, 2200, 2400, 3400, 100); // Wall A -- Entry/SW region divider
-const wallB = debrisWall(4800, 1200, 4800, 2600, 100); // Wall B -- Resupply/Beacon region divider
-const wallC = debrisWall(1200, 2000, 2200, 2000, 100); // Wall C -- short early Entry-to-Probe divider
+// generated arrays the hazards list spreads. count@spacing100 post-resize:
+// 11, 13, 10 -- all three clear MIN_UNDULATE_COUNT=8 (was 13, 15, 11
+// pre-resize).
+const wallA = debrisWall(2051, 1880, 2051, 2906, 100); // Wall A -- Entry/SW region divider (was 2400,2200-2400,3400)
+const wallB = debrisWall(4103, 1026, 4103, 2222, 100); // Wall B -- Resupply/Beacon region divider (was 4800,1200-4800,2600)
+const wallC = debrisWall(1026, 1709, 1880, 1709, 100); // Wall C -- short early Entry-to-Probe divider (was 1200,2000-2200,2000)
 
 // Probe pocket -- vertical wall down from the top edge, horizontal wall in
 // from the left edge, meeting at (PROBE_POCKET_WALL_X, PROBE_POCKET_WALL_Y).
@@ -264,50 +380,66 @@ const probePocketWallLeft = debrisWall(PROBE_POCKET_WALL_X - 100, PROBE_POCKET_W
 // wall in from the right edge, meeting at (BEACON_POCKET_WALL_X,
 // BEACON_POCKET_WALL_Y). Same corner-join offset trick as the Probe pocket
 // above, mirrored: the horizontal wall's start is offset past the join.
-const beaconPocketWallUp = debrisWall(BEACON_POCKET_WALL_X, BEACON_POCKET_WALL_Y, BEACON_POCKET_WALL_X, 3949, 100);
-const beaconPocketWallRight = debrisWall(BEACON_POCKET_WALL_X + 100, BEACON_POCKET_WALL_Y, 7020, BEACON_POCKET_WALL_Y, 100);
+// Bottom/right edges are the level's new 3375/6000 (post-resize), not the
+// old 3949/7020.
+const beaconPocketWallUp = debrisWall(BEACON_POCKET_WALL_X, BEACON_POCKET_WALL_Y, BEACON_POCKET_WALL_X, 3375, 100);
+const beaconPocketWallRight = debrisWall(BEACON_POCKET_WALL_X + 100, BEACON_POCKET_WALL_Y, 6000, BEACON_POCKET_WALL_Y, 100);
 
 export const LEVEL_007: LevelConfig = {
-  width: 7020,
-  height: 3949,
-  entryWormholeLocation: { x: 500, y: 3550 },
-  exitWormholeLocation: { x: 1850, y: 1150 },
-  probeLocation: { x: 1000, y: 700 },
-  relayBeaconLocation: { x: 6300, y: 3400 },
+  width: 6000,
+  height: 3375,
+  entryWormholeLocation: { x: 427, y: 3034 },
+  exitWormholeLocation: { x: 1581, y: 983 },
+  probeLocation: { x: 855, y: 598 },
+  relayBeaconLocation: { x: 5385, y: 2906 },
 
-  resupplyPoints: [{ x: 3800, y: 2000, textureKey: 'asteroid_large', radius: 40 }],
+  resupplyPoints: [{ x: 3248, y: 1709, textureKey: 'asteroid_large', radius: 40 }],
 
   hazards: [
     // Nebula Field -- four instances, placed with intent rather than
     // scattered (see file comment above for each one's role/clearance).
     // Cycles the three sourced Nebula Field textures (2026-08-21,
     // mirroring Debris Field's alt2/alt3 precedent) so four instances on
-    // one map don't read as one sprite copy-pasted four times.
-    { type: 'nebulaField', x: 2400, y: 3550, textureKey: NEBULA_TEXTURES[0] }, // bypass toll at Wall A's open south end, ~1900px clear of Entry
-    { type: 'nebulaField', x: 900, y: 3200, textureKey: NEBULA_TEXTURES[1] }, // early-route toll on Entry's way toward the Probe pocket
-    { type: 'nebulaField', x: 1500, y: 1000, textureKey: NEBULA_TEXTURES[2] }, // bridges the close Probe<->Exit hop
-    { type: 'nebulaField', x: 5600, y: 3100, textureKey: NEBULA_TEXTURES[0] }, // tolls the route from Resupply/Wall B toward the Beacon pocket
+    // one map don't read as one sprite copy-pasted four times. Coordinates
+    // rescaled 2026-09-02 (scaleX=0.854701, scaleY=0.854647).
+    { type: 'nebulaField', x: 2051, y: 3034, textureKey: NEBULA_TEXTURES[0] }, // bypass toll at Wall A's open south end, ~1624px clear of Entry; was (2400, 3550)
+    { type: 'nebulaField', x: 769, y: 2735, textureKey: NEBULA_TEXTURES[1] }, // early-route toll on Entry's way toward the Probe pocket; was (900, 3200)
+    { type: 'nebulaField', x: 1282, y: 855, textureKey: NEBULA_TEXTURES[2] }, // bridges the close Probe<->Exit hop; was (1500, 1000)
+    { type: 'nebulaField', x: 4786, y: 2649, textureKey: NEBULA_TEXTURES[0] }, // tolls the route from Resupply/Wall B toward the Beacon pocket; was (5600, 3100)
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager. Initial
     // positions only, held at the established 2-1 baseline (this
     // candidate's axis is sealed sections, not moving-hazard density),
-    // clear of every wall/pocket/objective/resupply point.
-    { type: 'ionStorm', x: 3200, y: 900 },
-    { type: 'ionStorm', x: 5300, y: 1800 }, // Refine round 1: nudged +100px from x=5200 -- that
-    // position sat exactly at the 250px clearance floor from Wall B
+    // clear of every wall/pocket/objective/resupply point. Coordinates
+    // rescaled 2026-09-02 -- see the file-header "Moving hazards" comment
+    // for the full trajectory/clearance re-verification this resize
+    // required, including the one placement (Ion Storm 2, below) that
+    // needed an explicit clearance-restoring nudge.
+    { type: 'ionStorm', x: 2735, y: 769 }, // was (3200, 900)
+    { type: 'ionStorm', x: 4530, y: 1538 }, // Refine round 1 (pre-resize): nudged +100px from x=5200 --
+    // that position sat exactly at the 250px clearance floor from Wall B
     // (400px horizontal gap - 90 ionStorm radius - 60 debris radius =
     // 250.0px exactly), and its Math.PI heading drifts it -x, i.e.
-    // straight at Wall B from spawn. x=5300 gives 350px clearance,
-    // in line with every other measured pairing in this file (see
-    // docs/history/level-eval-log-2026-08-17.md for the flag).
-    { type: 'meteoroid', x: 2700, y: 3600 },
+    // straight at Wall B from spawn. x=5300 gave 350px clearance pre-resize
+    // (docs/history/level-eval-log-2026-08-17.md). Rescaled 2026-09-02 from
+    // (5300, 1800) -- clearance from Wall B thinned to ~266px (still over
+    // the 250px floor, not re-nudged; see file-header comment for why).
+    { type: 'meteoroid', x: 2308, y: 3077 }, // was (2700, 3600)
     // Two more of each, added 2026-08-25 (user request) -- spread across
     // the open interior's four quadrants (NW/NE/SW/SE relative to Wall A/B),
     // each 250px+ clear of every wall/pocket/objective/resupply point.
-    { type: 'ionStorm', x: 2000, y: 1500 }, // NW, ~381px clear of Exit, ~806px of Wall A
-    { type: 'ionStorm', x: 1800, y: 3000 }, // SW, ~600px clear of Wall A
-    { type: 'meteoroid', x: 5600, y: 900 }, // NE, ~854px clear of Wall B
-    { type: 'meteoroid', x: 4200, y: 3600 }, // SE, ~1166px clear of Wall B, ~1500px from the first Meteoroid
+    // Coordinates rescaled 2026-09-02.
+    { type: 'ionStorm', x: 1709, y: 1242 }, // NW; was (2000, 1500). Resize-driven fix, 2026-09-02: the
+    // plain rescale (1709, 1282) left only ~246px clearance from Wall C --
+    // a new sub-250px violation the pre-resize placement (~316px) didn't
+    // have (see file-header "Moving hazards" comment for why: the fixed
+    // ionStorm+debris radius sum doesn't shrink along with the level).
+    // Nudged y by -40px to restore ~286px clearance from every wall while
+    // keeping ~289px clear of Exit (checked explicitly since Exit sits
+    // nearby in the same quadrant).
+    { type: 'ionStorm', x: 1538, y: 2564 }, // SW; was (1800, 3000)
+    { type: 'meteoroid', x: 4786, y: 769 }, // NE; was (5600, 900)
+    { type: 'meteoroid', x: 3590, y: 3077 }, // SE; was (4200, 3600)
 
     // Debris Field -- three conventional, non-sealed walls providing
     // baseline routing texture (see file comment above for per-wall
@@ -394,8 +526,8 @@ const MIN_POCKET_INTERIOR = 100; // px, arbitrary "clearly usable" floor -- not 
 
 const probeInteriorWidth = PROBE_POCKET_WALL_X - nodeWallKeepOut - energyNodeConfig.edgeMargin;
 const probeInteriorHeight = PROBE_POCKET_WALL_Y - nodeWallKeepOut - energyNodeConfig.edgeMargin;
-const beaconInteriorWidth = 7020 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_X + nodeWallKeepOut);
-const beaconInteriorHeight = 3949 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_Y + nodeWallKeepOut);
+const beaconInteriorWidth = 6000 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_X + nodeWallKeepOut);
+const beaconInteriorHeight = 3375 - energyNodeConfig.edgeMargin - (BEACON_POCKET_WALL_Y + nodeWallKeepOut);
 
 const pocketInteriors: Array<[string, number, number]> = [
   ['Probe', probeInteriorWidth, probeInteriorHeight],

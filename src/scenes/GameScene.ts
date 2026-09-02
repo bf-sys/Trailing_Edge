@@ -254,6 +254,7 @@ export class GameScene extends Phaser.Scene {
     this.hudOverlay = new HudOverlay(this, tracker);
     this.hudOverlay.setPuzzleSites(puzzleSiteMarkers);
     this.hudOverlay.setResupplyPoints(this.resupplyPoints.map((resupply) => resupply.getPosition()));
+    this.hudOverlay.setHazards(this.hazards);
     // 2026-08-14 ability rework: the objective marker is no longer
     // always-on (see HudOverlay.flashObjectiveMarker()) -- flash once at
     // level start, and again on each of these two moments the game changes

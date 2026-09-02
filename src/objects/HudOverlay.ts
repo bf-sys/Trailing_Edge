@@ -4,10 +4,12 @@ import { hudConfig } from '../config/hudConfig';
 import { abilityConfig, abilityUnlockOrder } from '../config/abilityConfig';
 import { getPlayerShip } from '../systems/ExplorationController';
 import type { PuzzleSite } from './PuzzleSite';
+import type { HazardZoneElement } from './HazardZoneElement';
 
 const DEPTH = 2000;
 const OBJECTIVE_MARKER_KEY = 'objective_marker';
 const RESUPPLY_MARKER_KEY = 'resupply_marker';
+const HAZARD_MARKER_KEY = 'hazard_marker';
 // tractorBeam is de-scoped from all player-facing ability UI (2026-08-14
 // ability rework) -- abilityUnlockOrder (now 3 entries) is the source of
 // truth for what appears here, not every key in abilityConfig.
@@ -24,8 +26,9 @@ export interface PuzzleSiteMarker {
 // as a plain Image so rotation follows the same proven convention as
 // PlayerShip (faces up by default, rotation = atan2(dy,dx) + PI/2), rather
 // than Phaser's Triangle Shape GameObject, whose rotation pivot doesn't
-// match its visual center. Shared by both edge-pinned markers below (key
-// parameterized since the two use different sizes/colors, added 2026-08-21).
+// match its visual center. Shared by all three edge-pinned markers below (key
+// parameterized since each uses a different size/color; a third joined the
+// original two 2026-09-02).
 function createMarkerTexture(scene: Phaser.Scene, key: string, size: number, color: number): void {
   if (scene.textures.exists(key)) return;
 
@@ -50,10 +53,12 @@ export class HudOverlay {
   private readonly tracker: LevelObjectiveTracker;
   private readonly objectiveMarker: Phaser.GameObjects.Image;
   private readonly resupplyMarker: Phaser.GameObjects.Image;
+  private readonly hazardMarker: Phaser.GameObjects.Image;
   private readonly abilityIcons: Phaser.GameObjects.Graphics;
   private readonly puzzleSiteIndicator: Phaser.GameObjects.Text;
   private puzzleSites: PuzzleSiteMarker[] = [];
   private resupplyPoints: { x: number; y: number }[] = [];
+  private hazards: HazardZoneElement[] = [];
   // 2026-08-14 ability rework: one-shot objective-marker flash window (see
   // flashObjectiveMarker() below), timestamped in the same this.scene.time.now
   // clock updateObjectiveMarker() reads every frame.
@@ -82,6 +87,16 @@ export class HudOverlay {
     createMarkerTexture(scene, RESUPPLY_MARKER_KEY, hudConfig.resupplyMarkerSize, hudConfig.resupplyMarkerColor);
     this.resupplyMarker = scene.add
       .image(0, 0, RESUPPLY_MARKER_KEY)
+      .setScrollFactor(0)
+      .setDepth(DEPTH + 1)
+      .setVisible(false);
+
+    // Off-screen moving-hazard marker (2026-09-02) — points at the nearest
+    // off-screen moving hazard (Ion Storm/Meteoroid) while scan is active;
+    // see hudConfig.ts's comment for the color/pulse rationale.
+    createMarkerTexture(scene, HAZARD_MARKER_KEY, hudConfig.hazardMarkerSize, hudConfig.hazardMarkerColor);
+    this.hazardMarker = scene.add
+      .image(0, 0, HAZARD_MARKER_KEY)
       .setScrollFactor(0)
       .setDepth(DEPTH + 1)
       .setVisible(false);
@@ -122,6 +137,14 @@ export class HudOverlay {
     this.resupplyPoints = points;
   }
 
+  // Display-only registration, same contract as the two above — HudOverlay
+  // never creates/owns hazards, only reads position/movementPattern to
+  // decide where the moving-hazard marker points. GameScene calls this once
+  // per level with the same array it hands HazardScanOverlay.
+  setHazards(hazards: HazardZoneElement[]): void {
+    this.hazards = hazards;
+  }
+
   // 2026-08-14 ability rework: opens a brief window where the objective
   // marker shows regardless of scan state. GameScene calls this once at
   // level start and on LevelObjectiveTracker's ProbeFound/BeaconReached
@@ -134,6 +157,7 @@ export class HudOverlay {
   update(): void {
     this.updateObjectiveMarker();
     this.updateResupplyMarker();
+    this.updateHazardMarker();
     this.updateAbilityIcons();
     this.updatePuzzleSiteIndicator();
   }
@@ -236,31 +260,77 @@ export class HudOverlay {
     this.positionEdgeMarker(this.resupplyMarker, nearest.x, nearest.y);
   }
 
-  // Shared by both edge-pinned markers (added 2026-08-21 alongside the
-  // resupply marker — previously inlined in updateObjectiveMarker() only).
+  // Off-screen moving-hazard marker (2026-09-02) — same scan-gated
+  // nearest-target convention as updateResupplyMarker() above, filtered to
+  // movementPattern !== 'static' (Ion Storm/Meteoroid) since a stationary
+  // hazard's danger is already fully conveyed by HazardScanOverlay's
+  // on-screen outline — only a *moving* threat can be bearing down on you
+  // from somewhere you can't currently see. Pulses alpha while visible,
+  // unlike the two static markers, so it reads as more urgent.
+  private updateHazardMarker(): void {
+    const nowMs = this.scene.time.now;
+    const ship = getPlayerShip();
+    const scanActive = ship?.ability.isActive('scan', nowMs) ?? false;
+    // Filtered to off-screen candidates *before* picking "nearest" — unlike
+    // updateResupplyMarker() above, picking nearest-overall-then-hide-if-
+    // onscreen would be wrong here: an on-screen Ion Storm sitting closer
+    // than an off-screen homing Meteoroid must not swallow the pick, since
+    // the whole point of this marker is surfacing a threat the player can't
+    // currently see. A closer resupply point doesn't have that concern.
+    const offScreenMovingHazards = this.hazards.filter(
+      (hazard) => hazard.getMovementPattern() !== 'static' && this.isOffScreen(hazard.getPosition()),
+    );
+
+    if (!scanActive || !ship || offScreenMovingHazards.length === 0) {
+      this.hazardMarker.setVisible(false);
+      return;
+    }
+
+    let nearestPos = offScreenMovingHazards[0].getPosition();
+    let nearestDistance = Phaser.Math.Distance.Between(ship.image.x, ship.image.y, nearestPos.x, nearestPos.y);
+    for (let i = 1; i < offScreenMovingHazards.length; i++) {
+      const pos = offScreenMovingHazards[i].getPosition();
+      const distance = Phaser.Math.Distance.Between(ship.image.x, ship.image.y, pos.x, pos.y);
+      if (distance < nearestDistance) {
+        nearestPos = pos;
+        nearestDistance = distance;
+      }
+    }
+
+    this.positionEdgeMarker(this.hazardMarker, nearestPos.x, nearestPos.y);
+    if (!this.hazardMarker.visible) return;
+
+    const cyclesElapsed = nowMs / 1000 / hudConfig.hazardMarkerPulsePeriodSeconds;
+    const pulseT = (Math.sin(cyclesElapsed * Math.PI * 2) + 1) / 2;
+    this.hazardMarker.setAlpha(
+      Phaser.Math.Linear(hudConfig.hazardMarkerPulseMinAlpha, hudConfig.hazardMarkerPulseMaxAlpha, pulseT),
+    );
+  }
+
+  // Shared by all three edge-pinned markers (added 2026-08-21 alongside the
+  // resupply marker — previously inlined in updateObjectiveMarker() only;
+  // the hazard marker joined 2026-09-02). Doesn't touch alpha, so a caller
+  // that wants a pulse (the hazard marker) is free to set it right after.
   // Hides the marker if its target is already on-screen (the whole point of
   // an edge-pinned arrow is orienting toward something off-screen); otherwise
   // clamps its position to the margin-inset screen rect along the
   // center->target ray, and rotates the (up-pointing) arrow to face it.
   private positionEdgeMarker(marker: Phaser.GameObjects.Image, targetX: number, targetY: number): void {
-    const camera = this.scene.cameras.main;
-    const screenX = targetX - camera.scrollX;
-    const screenY = targetY - camera.scrollY;
-
-    const margin = hudConfig.objectiveMarkerEdgeMargin;
-    const withinViewport =
-      screenX >= margin && screenX <= camera.width - margin && screenY >= margin && screenY <= camera.height - margin;
-
-    if (withinViewport) {
+    if (!this.isOffScreen({ x: targetX, y: targetY })) {
       marker.setVisible(false);
       return;
     }
+
+    const camera = this.scene.cameras.main;
+    const screenX = targetX - camera.scrollX;
+    const screenY = targetY - camera.scrollY;
 
     const centerX = camera.width / 2;
     const centerY = camera.height / 2;
     const dx = screenX - centerX;
     const dy = screenY - centerY;
 
+    const margin = hudConfig.objectiveMarkerEdgeMargin;
     const halfWidth = centerX - margin;
     const halfHeight = centerY - margin;
     const scale = Math.min(dx !== 0 ? Math.abs(halfWidth / dx) : Infinity, dy !== 0 ? Math.abs(halfHeight / dy) : Infinity);
@@ -268,5 +338,18 @@ export class HudOverlay {
     marker.setPosition(centerX + dx * scale, centerY + dy * scale);
     marker.setRotation(Math.atan2(dy, dx) + Math.PI / 2);
     marker.setVisible(true);
+  }
+
+  // Factored out of positionEdgeMarker() (2026-09-02) so updateHazardMarker()
+  // can filter candidate hazards to off-screen ones *before* picking
+  // "nearest" — see that method's comment for why order matters there.
+  private isOffScreen(target: { x: number; y: number }): boolean {
+    const camera = this.scene.cameras.main;
+    const screenX = target.x - camera.scrollX;
+    const screenY = target.y - camera.scrollY;
+    const margin = hudConfig.objectiveMarkerEdgeMargin;
+    const withinViewport =
+      screenX >= margin && screenX <= camera.width - margin && screenY >= margin && screenY <= camera.height - margin;
+    return !withinViewport;
   }
 }

@@ -287,6 +287,14 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
     return this.config.blocksMovement ?? false;
   }
 
+  // Read-only query for HudOverlay's off-screen moving-hazard marker
+  // (2026-09-02) -- lets it filter to only Ion Storm/Meteoroid-style
+  // threats (movementPattern !== 'static'), same getter contract as the
+  // others above.
+  getMovementPattern(): HazardMovementPattern {
+    return this.config.movementPattern;
+  }
+
   // Mutation surface for MovingHazardManager (2026-08-17) only -- every
   // other consumer above is read-only. Jumps this instance to a fresh
   // position and re-derives its velocity from headingRadians at the

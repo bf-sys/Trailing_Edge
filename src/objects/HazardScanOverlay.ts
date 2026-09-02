@@ -62,7 +62,7 @@ export class HazardScanOverlay {
 
   private colorFor(hazard: HazardZoneElement): number {
     const cost = hazard.getResourceCost();
-    if (cost.structure > 0) return shipStatusArcConfig.structureColor;
+    if (cost.structure > 0) return scanConfig.hazardDangerColor;
     if (cost.energy > 0) return shipStatusArcConfig.energyColor;
     return scanConfig.neutralColor;
   }

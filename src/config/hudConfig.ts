@@ -1,5 +1,6 @@
 import { registerTuning } from './devTuning';
 import { shipStatusArcConfig } from './shipStatusArcConfig';
+import { scanConfig } from './scanConfig';
 
 // Off-screen objective marker (resolves GDD §9's off-screen-objective-
 // visibility open question): a single edge-pinned arrow is sufficient since
@@ -29,6 +30,22 @@ export const hudConfig = {
   // information next to the mandatory objective.
   resupplyMarkerSize: 14,
   resupplyMarkerColor: shipStatusArcConfig.structureColor,
+
+  // Off-screen moving-hazard marker (2026-09-02, user request) -- a third
+  // edge-pinned arrow, same shape/positioning logic as the two above,
+  // pointing at the nearest currently-off-screen *moving* hazard (Ion
+  // Storm/Meteoroid -- movementPattern !== 'static') while scan is active.
+  // Colored to match scanConfig.hazardDangerColor (HazardScanOverlay's
+  // structure-cost outline color) on purpose, same "one color, one
+  // meaning" convention resupplyMarkerColor above established for
+  // structureColor. Pulses (unlike the other two static markers) since a
+  // moving hazard's direction is more time-sensitive information than a
+  // stationary objective/resupply point.
+  hazardMarkerSize: 14,
+  hazardMarkerColor: scanConfig.hazardDangerColor,
+  hazardMarkerPulseMinAlpha: 0.4,
+  hazardMarkerPulseMaxAlpha: 1,
+  hazardMarkerPulsePeriodSeconds: 0.8,
 
   // Ability icons (GDD §11.10, completed 2026-08-10/Phase 2a) -- one square
   // per AbilityType in abilityConfig, left-to-right in authored order,

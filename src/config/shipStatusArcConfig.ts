@@ -16,7 +16,16 @@ export const shipStatusArcConfig = {
   structureBarOffsetY: 34, // px below ship center
   structureBarTrackColor: 0x1a1a22,
   structureBarTrackAlpha: 0.7,
-  structureColor: 0xff8a4c,
+  // Switched orange -> green 2026-09-02 (user request) to match the
+  // conventional "green = health" reading almost every other game uses --
+  // was orange only because that was scanConfig's original hazard-danger
+  // color too, before this pass split the two meanings apart (see
+  // scanConfig.hazardDangerColor). Uses Okabe-Ito's "bluish green"
+  // (#009E73), not a pure #00FF00, so it stays reliably distinguishable
+  // from scanConfig.hazardDangerColor's vermillion under red-green color
+  // blindness -- that palette's colors are specifically chosen to survive
+  // protanopia/deuteranopia/tritanopia as a set, pure hues aren't.
+  structureColor: 0x009e73,
 
   energyBarWidth: 56,
   energyBarHeight: 4, // thinner than structureBarHeight so the two bars stay visually distinct

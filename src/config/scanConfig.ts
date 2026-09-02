@@ -13,9 +13,20 @@ export const scanConfig = {
   outlineThickness: 3,
   outlineMargin: 6, // px beyond the hazard's own radius, so the outline doesn't overlap its edge
   // blocksMovement hazards with zero resource cost (Debris Field) aren't
-  // structure- or energy-draining, so they don't earn shipStatusArcConfig's
-  // orange/blue -- a neutral color instead.
+  // structure- or energy-draining, so they don't earn a cost color -- a
+  // neutral color instead.
   neutralColor: 0xaaaaaa,
+  // Structure-cost hazard outline color (2026-09-02, user request/
+  // accessibility pass). Previously this branch just reused
+  // shipStatusArcConfig.structureColor (both happened to be the same
+  // orange) -- split into its own constant now that structureColor means
+  // "green/health" instead. Okabe-Ito vermillion (#D55E00), paired
+  // deliberately with structureColor's Okabe-Ito bluish-green: that
+  // palette's colors are chosen as a set to stay distinguishable under
+  // red-green color blindness, unlike an arbitrary green/red pair. Also
+  // used by HudOverlay's off-screen moving-hazard marker so the on-screen
+  // hazard-ID color and the off-screen direction-to-threat color match.
+  hazardDangerColor: 0xd55e00,
   labelFontSize: 13,
   labelColorCss: '#ffffff',
   labelOffsetY: 10, // px above the outline's top edge

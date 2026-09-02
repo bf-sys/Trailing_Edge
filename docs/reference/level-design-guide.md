@@ -12,7 +12,7 @@ is right and this guide is stale; update it.
 read §8 first** — every level from `level-004` onward starts with the
 player's full ability set already unlocked, and §8 is the explicit policy
 for that: push complexity/variety rather than staying conservative,
-verification discipline (§11) permitting.
+verification discipline (§12) permitting.
 
 Companion docs: `CLAUDE.md`'s Architecture contract (`HazardZoneElement`,
 `MovingHazardManager`, `LevelObjectiveTracker`, etc. — the code contract
@@ -171,7 +171,7 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
   ability specifically).
 - **Clearance:** keep every wall segment 250px+ from every
   objective/resupply point. Checked by hand/by construction so far, not by
-  an automated check — see §11's verification checklist.
+  an automated check — see §12's verification checklist.
 
 ### Undulation — don't leave a long wall ruler-straight
 
@@ -430,7 +430,7 @@ clearance margins) are this guide's pre-experimentation baseline, not a
 ceiling on what comes next. Update those sections once the conforming
 pass happens.
 
-**What doesn't relax:** §11's verification discipline, unchanged. An
+**What doesn't relax:** §12's verification discipline, unchanged. An
 experimental level still has to type-check, load with zero console
 errors, and — especially now that sealed sections are meant to recur
 rather than being a single deliberate exception — every gated area's
@@ -466,7 +466,39 @@ Precedent: `level-002` was flipped relative to how closely it echoed
 to `level-003` for the same reason (2026-08-17). Both read as genuinely
 different levels afterward, confirmed in-browser, not just on paper.
 
-## 11. Verification checklist for a new or edited level
+## 11. Resizing an existing level
+
+Shrinking a level while keeping its layout/structure intact (e.g. to cut
+down travel time) is not a uniform "multiply every number by a scale
+factor" pass — that's safe for simple point placements (objectives, single
+hazards, resupply points: scale `x`/`y` and the level's `width`/`height`
+together and spacing relationships carry over, same as §10's flip) but
+**not** for anything built with a wall-generator helper like `debrisWall()`
+or `nebulaWall()` (§2). Those take endpoint coordinates plus a `spacing`
+constant and derive instance count as `length / spacing`; the endpoints
+scale cleanly, but `spacing` and the undulation amplitude constants
+(`SWEEP_AMPLITUDE`/`TEXTURE_AMPLITUDE`) are fixed absolute pixel values
+tied to Debris Field's fixed 60px collision radius and the ship's size —
+neither of which shrinks with the level. Two options once the endpoints are
+scaled down, with different failure modes:
+
+- **Leave `spacing`/amplitude untouched.** The shorter wall automatically
+  resolves to fewer instances at the same density. Usually the safe
+  default.
+- **Scale `spacing` down to match the wall's new length.** Keeps the same
+  instance count, but tightens gaps between hazards whose radius didn't
+  shrink — can turn a previously-fair gap into an unfair one. Treat this as
+  a deliberate per-wall call, not something to do blindly across every wall
+  in a resize pass.
+
+Either way, a resize doesn't skip the rest of this guide: re-run §12's
+checklist, and re-simulate full trajectories for any `linear`/`trochoid`
+moving hazard (Ion Storm, Meteoroid) against the new bounds — a hazard's
+first authored leg is only as safe as the geometry it was checked against,
+and that geometry just changed (see `CLAUDE.md`'s "known, accepted gap"
+note on trajectory audits for the reference method).
+
+## 12. Verification checklist for a new or edited level
 
 1. `npx tsc --noEmit -p .` — catches placement/type errors immediately.
 2. Confirm registration: the level id is in both `src/levels/index.ts`'s
@@ -502,7 +534,7 @@ different levels afterward, confirmed in-browser, not just on paper.
    confirm normal movement is genuinely blocked; force a moving hazard's
    position out of bounds and confirm it respawns correctly.
 
-## 12. Open / not yet decided
+## 13. Open / not yet decided
 
 - Solar Flare has no placement precedent.
 - No fixed target for exactly how many Nebula/Debris instances "feels

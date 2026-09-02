@@ -36,7 +36,11 @@ export class HazardScanOverlay {
 
     this.hazards.forEach((hazard, index) => {
       const label = this.labels[index];
-      if (!scanActive || !ship) {
+      const cost = hazard.getResourceCost();
+      // Zero-cost hazards (Debris Field) have nothing for scan to disclose --
+      // they're already visible/solid and cost neither resource, so an
+      // outline+label just reads as clutter (2026-09-02 playtest feedback).
+      if (!scanActive || !ship || (cost.energy === 0 && cost.structure === 0)) {
         label.setVisible(false);
         return;
       }

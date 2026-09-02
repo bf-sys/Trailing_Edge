@@ -284,6 +284,17 @@ export class GameScene extends Phaser.Scene {
       energyNodeManager: this.energyNodeManager,
       tracker,
     });
+    // Safety net alongside the explicit stopAllLoops() calls in
+    // handleLevelComplete()/wireHardFailRestart() (both kept — they stop the
+    // loop the instant the triggering event fires, ahead of any async VFX,
+    // which this can't do since 'shutdown' only fires once the Scene is
+    // actually torn down). This catches every OTHER way GameScene can stop
+    // without going through either of those two, e.g. PauseScene's "Return
+    // to Title" calling `this.scene.stop('GameScene')` directly with no
+    // AudioManager reference of its own (reported 2026-09-02: thrusterLoop
+    // audible into the next level/TitleScene after pausing mid-move and
+    // returning to title).
+    this.events.once('shutdown', () => this.audioManager.stopAllLoops());
     this.levelIntroBanner = new LevelIntroBanner(this);
 
     this.wireHardFailRestart();

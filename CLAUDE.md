@@ -182,10 +182,13 @@ split.
 (2026-08-25, user request/experiment)** — see Architecture contract's
 `HazardZoneElement` bullet for the mechanism. Goal: on large levels, a single
 straight-line pass felt too brief to register; trochoid sweeps a wide
-looping band instead. Meteoroid stays `'linear'` on purpose, so the two
-moving hazards read as distinct threats. **A related orbit/dwell-loiter
-experiment (triggered when a `'linear'` hazard neared its aim point
-mid-transit) was tried the same day and reverted** after direct playtest
+looping band instead. Meteoroid stayed `'linear'` at the time, so the two
+moving hazards read as distinct threats — **since superseded: Meteoroid
+switched `'linear'` → `'homing'` on 2026-09-02 (see below), so the two now
+read as distinct via looping drift vs. a turning pursuit instead.** **A
+related orbit/dwell-loiter experiment (triggered when a `'linear'` hazard
+neared its aim point mid-transit) was tried the same day and reverted**
+after direct playtest
 feedback that it made hazards move in ways that read as buggy — don't
 reintroduce it without re-confirming the user wants another attempt. Only
 the aim-point route-bias half of that pass survived:
@@ -218,6 +221,24 @@ only the initial point — the level-009/010 refiner agents' method
 (grid-search a clear position, re-simulate the whole leg) is the reference
 implementation.
 
+**This audit's method only strictly applies to a hazard with a fixed
+heading for its whole first leg — no longer true of Meteoroid as of
+2026-09-02**, when it switched `'linear'` → `'homing'` (see below):
+`headingRadians` is now only the seed heading for the first
+`retargetIntervalSeconds` (default 1s, or `homingCloseRetargetIntervalSeconds`
+if the player starts within `homingCloseRangeDistancePx`), after which it
+continuously re-aims at the live player position for the rest of the level,
+so there's no longer a single deterministic full-leg line to simulate the
+way this section describes. Confirmed in practice during the
+`level-006.ts` 2026-09-02 resize (see Current project state's resize entry):
+the level-refiner-agent doing that resize could only re-check Meteoroid's
+short deterministic pre-retarget segment, not a full leg. Ion Storm is
+unaffected — its `'trochoid'` carrier still advances on a fixed heading for
+the same reason `'linear'` did, so the existing method still applies to it
+unchanged. Anyone re-running or extending this audit for Meteoroid going
+forward should simulate only that short pre-retarget segment, not assume a
+full-leg line the way the level-009/010 method did.
+
 **Fixed: a 'linear' hazard (Meteoroid) could freeze permanently mid-level
 (2026-08-26).** Found via the adversarial QA tool (`tools/adversarial-qa/`,
 a class assignment, not a project-mandated deliverable — see that
@@ -248,7 +269,13 @@ any `'linear'`/`'trochoid'` hazard that hasn't visibly moved in
 any other not-yet-discovered way a hazard's motion could get wedged.
 Re-verified against the original repro sweep (all 8 y-offsets, including
 the 2 that previously froze) with zero freezes after the fix; full traces
-in `tools/adversarial-qa/reports/`.
+in `tools/adversarial-qa/reports/`. **Both fix layers were extended to
+cover `'homing'` too when Meteoroid switched to it (2026-09-02)** — the
+velocity redrive and stall-detection net are keyed off the same underlying
+`linearHeadingRadians` state `'homing'` also drives, not off the
+`'linear'` pattern name specifically, so no new fix was needed, just
+broadened conditionals (see `HazardZoneElement.ts`'s and
+`MovingHazardManager.ts`'s own comments).
 
 **Hard-fail restart is no longer instant — a quick arcade-style death
 sequence plays first (2026-08-26, owner request).** On
@@ -504,20 +531,53 @@ file's age. `CheckpointManager` remains deferred by design.
     inclusive of the orbit offset) for wrap/out-of-bounds detection. Ion
     Storm's tuning (`orbitRadius: 220`, one loop per 5s) deliberately makes
     tangential loop speed exceed carrier speed, which is what produces
-    genuine loop-backs rather than a gentle wobble. Meteoroid stays
-    `'linear'` on purpose.
-  - **`'linear'` velocity redrive** (added 2026-08-26, fixing the freeze
-    bug described in Current project state) — `update()` now recomputes and
-    re-sets a `'linear'` hazard's Arcade velocity from its *current* heading
+    genuine loop-backs rather than a gentle wobble. Meteoroid stayed
+    `'linear'` at the time this pattern was added, but has since switched
+    to `'homing'` — see the next bullet.
+  - **`movementPattern: 'homing'`** (added 2026-09-02, Meteoroid, superseding
+    `'linear'` — user request: "a more present threat... something the
+    player has to react to more consistently") — a fifth
+    `HazardMovementPattern`. `headingRadians` is now only the seed heading
+    for the very first leg (same role it always had for `'linear'`); every
+    leg after that — including one `MovingHazardManager` sets on a wrap —
+    gets overridden by homing within one `retargetIntervalSeconds` (default
+    1s). Re-aims at the live player position on that cadence rather than
+    continuously, and turns `linearHeadingRadians` toward the new target
+    heading at a capped `maxTurnRateRadiansPerSecond` rather than snapping —
+    a gentle drift-toward-you correction, not a hard lock. Within
+    `homingCloseRangeDistancePx` of the player, re-aims on a faster
+    `homingCloseRetargetIntervalSeconds` cadence instead (Meteoroid:
+    500px / 0.5s vs. the default 1s) — a "close-range" speed-up added the
+    same day after a plain pure-pursuit-at-all-ranges variant read as
+    "weird" in playtest. Reuses `'linear'`'s own Arcade-velocity mechanism
+    (`body.setVelocity` from `linearHeadingRadians`/`config.speed`) rather
+    than being a separate code path, which is why the velocity-redrive and
+    stall-detection fixes below needed only a broadened conditional, not a
+    new fix. **Practical consequence for level design:** a Meteoroid
+    placement's heading/trajectory is only deterministic for the first
+    `retargetIntervalSeconds` (or `homingCloseRetargetIntervalSeconds` if
+    the player starts within `homingCloseRangeDistancePx`) — see Current
+    project state's trajectory-audit entry for how this changes that
+    audit's method going forward. Ion Storm is unaffected and stays
+    `'trochoid'`.
+  - **`'linear'`/`'homing'` velocity redrive** (added 2026-08-26 for
+    `'linear'`, fixing the freeze bug described in Current project state;
+    extended 2026-09-02 to also cover `'homing'` when Meteoroid switched,
+    since both patterns share the same underlying `linearHeadingRadians`
+    state and Arcade-velocity mechanism) — `update()` now recomputes and
+    re-sets the hazard's Arcade velocity from its *current* heading
     (`linearHeadingRadians`, an instance field distinct from
     `config.headingRadians` — the latter is only the fixed authored value
-    for the first leg; the former tracks whatever `reposition()` last set it
-    to) every single frame, rather than setting it once at construction/
-    `reposition()` and trusting Arcade to keep integrating it unattended.
-    Purely defensive/self-healing — under normal operation this redrives the
-    exact value that was already there, no behavior change; it only matters
-    if something external (confirmed: a same-physics-step collision with a
-    world-bounds-clamped ship) zeroes it out from under the hazard.
+    for the first leg; the former tracks whatever `reposition()` (or, for
+    `'homing'`, the per-frame re-aim) last set it to) every single frame,
+    rather than setting it once at construction/`reposition()` and trusting
+    Arcade to keep integrating it unattended. Purely defensive/self-healing
+    for `'linear'`/`'homing'`'s shared baseline — under normal operation
+    this redrives the exact value that was already there (or, for
+    `'homing'`, the value its own re-aim logic just computed), no behavior
+    change beyond that; it only matters if something external (confirmed:
+    a same-physics-step collision with a world-bounds-clamped ship) zeroes
+    it out from under the hazard.
   - **Debris Field re-scoped 2026-08-07 (GDD §9)** — was a static,
     structure-draining zone; now a solid, movement-blocking obstacle with
     **no resource drain** — naturally-occurring rock/ice debris, not ship
@@ -526,8 +586,11 @@ file's age. `CheckpointManager` remains deferred by design.
     and rejected, since it would collide with the `AsteroidField` resupply
     object below.
   - **`MovingHazardManager`** (added 2026-08-17) — keeps `movementPattern:
-    'linear'`/`'trochoid'` hazards (Ion Storm, Meteoroid) from drifting off
-    into the world bounds and never coming back. One `GameScene`-owned
+    'linear'`/`'trochoid'`/`'homing'` hazards (Ion Storm — `'trochoid'`;
+    Meteoroid — `'homing'` as of 2026-09-02, previously `'linear'`) from
+    drifting off into the world bounds and never coming back. Pattern-
+    agnostic by design (it only reads `HazardZoneElement.getPosition()`),
+    so `'homing'`'s addition needed no changes here. One `GameScene`-owned
     instance per level (reset each `create()`, **not** a `SystemRegistry`
     singleton — moving-hazard state has no reason to survive a hard-fail
     restart). Design: **wrap, not destroy-and-respawn** — a fixed
@@ -548,10 +611,12 @@ file's age. `CheckpointManager` remains deferred by design.
     moving threat by that point) — later overridden for `level-001`/
     `level-002` at explicit user request (see `level-design-guide.md` §4).
     **Stall-detection safety net** (added 2026-08-26, alongside the
-    `'linear'` velocity redrive above — same freeze-bug fix): `update()`
-    now takes `deltaMs` and, independent of the out-of-bounds check, tracks
-    each hazard's frame-to-frame displacement — if a `'linear'`/`'trochoid'`
-    hazard moves less than `movingHazardConfig.stallDisplacementThresholdPx`
+    `'linear'` velocity redrive above — same freeze-bug fix; covers
+    `'homing'` too since 2026-09-02, same broadened-conditional extension):
+    `update()` now takes `deltaMs` and, independent of the out-of-bounds
+    check, tracks each hazard's frame-to-frame displacement — if a
+    `'linear'`/`'trochoid'`/`'homing'` hazard moves less than
+    `movingHazardConfig.stallDisplacementThresholdPx`
     for `stallTimeoutSeconds` straight (these patterns have no legitimate
     reason to ever sit still), it's force-`reposition()`'d the same as
     drifting out of bounds. Defense-in-depth, not the primary fix — expected
@@ -926,3 +991,23 @@ Field re-scoped" bullet for the mechanism and rationale. An "Asteroid Field"
 rename was considered and rejected (collides with the `AsteroidField`
 resupply object). Final art sourced the same day; the full loop has since
 been playtested end-to-end with it in place.
+
+**Sketched, not decided (2026-08-31):** a "soft timer" — a per-level elapsed-
+time mechanic that escalates danger without itself being a hard fail (fail
+stays structure-only, per the Architecture contract's hard rule on
+`ShipSurvivalComponent`). Candidate approach discussed: rather than adding
+any new "instantiate an object into a live scene at runtime" pathway
+(nothing in the codebase does this today — `GameScene.create()` reads the
+entire placement set from `LevelConfig` once, up front), pre-author extra
+`HazardZoneElement` instances in the level config as normal but keep them
+dormant (inactive/invisible/non-colliding) until a timer threshold, then
+flip them active in `update()` — the same "fixed instance, toggle state,
+never destroy/recreate" convention `MovingHazardManager` already uses for
+wrap-vs-respawn. Would need a small new level-elapsed-time tracker (nothing
+currently tracks level duration) and a per-hazard activation-delay field
+(e.g. `activationDelaySeconds` on `HazardPlacement`). Tradeoff noted at the
+time: this bounds the escalation to whatever's pre-authored per level
+(acceptable for "more moving hazards over time," which is naturally
+bounded anyway) rather than open-ended runtime spawning. Not scoped to any
+phase or level yet — revisit if/when a level actually wants escalating
+pressure over a long traversal.

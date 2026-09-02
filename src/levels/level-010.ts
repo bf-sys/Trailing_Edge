@@ -79,29 +79,38 @@ function debrisWall(x1: number, y1: number, x2: number, y2: number, spacing = 11
 // POCKET_WALL_CLEARANCE/PROBE_WALL_CLEARANCE play in level-003/007's corner
 // pockets -- except here it applies on all four sides at once, since this
 // pocket has no map edge to lean on.
-const PROBE_X = 2150;
-const PROBE_Y = 1550;
+//
+// RESCALED 2026-09-02 (see the file-header resize comment below):
+// BOX_HALF_WIDTH/HEIGHT (180) were deliberately left UNSCALED -- they're a
+// fixed ship/debris-radius-derived clearance buffer, not a quantity that
+// should shrink with the map (same treatment level-007's
+// POCKET_WALL_CLEARANCE got during its own 2026-09-02 resize). PROBE_X/Y
+// are the *scaled* Probe location; BOX_X1/X2/Y1/Y2 are re-derived from that
+// scaled center plus the still-180px clearance, not by scaling the old
+// 1970/2330/1370/1730 values directly (which would have shrunk the vault's
+// own approach-clearance math along with the map).
+const PROBE_X = 1770; // was 2150 pre-resize
+const PROBE_Y = 1276; // was 1550 pre-resize
 const BOX_HALF_WIDTH = 180;
 const BOX_HALF_HEIGHT = 180;
-const BOX_X1 = PROBE_X - BOX_HALF_WIDTH; // 1970
-const BOX_X2 = PROBE_X + BOX_HALF_WIDTH; // 2330
-const BOX_Y1 = PROBE_Y - BOX_HALF_HEIGHT; // 1370
-const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
+const BOX_X1 = PROBE_X - BOX_HALF_WIDTH; // 1590 (was 1970)
+const BOX_X2 = PROBE_X + BOX_HALF_WIDTH; // 1950 (was 2330)
+const BOX_Y1 = PROBE_Y - BOX_HALF_HEIGHT; // 1096 (was 1370)
+const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1456 (was 1730)
 
 // Tenth real level. Generated via the level GER loop (content-agent ->
 // level-evaluator-agent -> level-refiner-agent, per level-design-guide.md
-// §1) -- this file is the GENERATE-STAGE OUTPUT ONLY: not yet evaluated,
-// not yet registered in src/levels/index.ts's LEVELS map or
-// src/config/levelOrder.ts's LEVEL_ORDER. Sits after level-009 (the current
-// last LEVEL_ORDER entry as of this writing), squarely in §8's
-// post-full-unlock experimentation zone -- the player already has
-// scan/teleport/rocketBoost (and tractorBeam, unlocked-by-default) by the
-// time they'd reach this level, so none of §4/§7's ability-gating
-// constraints apply. A sibling agent is concurrently authoring level-009 in
-// the same batch, also asked to push moving-hazard density -- this
-// candidate deliberately does NOT lean on that axis (see the moving-hazard
-// note below) so the two don't converge, per §8's "variety, not
-// convergence" principle.
+// §1) and registered into src/levels/index.ts's LEVELS map and
+// src/config/levelOrder.ts's LEVEL_ORDER the same day, alongside level-009
+// (in that order: level-009 then level-010). Sits after level-008 in
+// LEVEL_ORDER, squarely in §8's post-full-unlock experimentation zone --
+// the player already has scan/teleport/rocketBoost (and tractorBeam,
+// unlocked-by-default) by the time they'd reach this level, so none of
+// §4/§7's ability-gating constraints apply. A sibling agent concurrently
+// authored level-009 in the same batch, also asked to push moving-hazard
+// density -- this candidate deliberately does NOT lean on that axis (see
+// the moving-hazard note below) so the two don't converge, per §8's
+// "variety, not convergence" principle.
 //
 // CREATIVE AXIS: A DEBRIS FIELD MAZE WITH AN EMBEDDED SEALED VAULT. Every
 // sealed-section level so far has kept the device separate from routing
@@ -134,7 +143,10 @@ const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
 // interior-room benefit, no reliance on world bounds. See the dev-time
 // energy-node-interior sanity check at the bottom of this file for the
 // actual verified interior figures (128x128px net of every keep-out --
-// comfortably above the 100px "clearly usable" floor level-007 established).
+// comfortably above the 100px "clearly usable" floor level-007 established;
+// UNCHANGED by the 2026-09-02 resize below, since BOX_HALF_WIDTH/HEIGHT and
+// every keep-out term feeding this figure are all fixed pixel values, not
+// scaled ones).
 //
 // THE VAULT'S GEOMETRY (verified by generating the actual debrisWall()
 // output and measuring it, not just deriving it on paper -- see
@@ -158,7 +170,14 @@ const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
 // does not model bow undulation, so treat its 268px as an upper bound, not
 // the true worst case). Once inside, normal movement can't get back out
 // either -- same deliberate wait-out-the-cooldown consequence level-003/007
-// already established, not a softlock.
+// already established, not a softlock. **UNCHANGED by the 2026-09-02
+// resize** -- BOX_HALF_WIDTH/HEIGHT, BOW_AMPLITUDE, and every other term in
+// this math are fixed pixel values, and the box only moved (translated
+// with the scaled Probe location), it didn't change shape: the vault's
+// four wall point-clouds were confirmed byte-for-byte identical in shape
+// (relative to their own corner) pre- and post-resize by regenerating both
+// and diffing, so the live-measured ~298px/~52px-slack figure above still
+// holds exactly, not just approximately.
 //
 // EACH OF THE BOX'S FOUR WALLS IS SHORT (360px, 7 debrisWall() instances)
 // -- short enough that at the project's usual 100px undulating spacing, the
@@ -185,65 +204,138 @@ const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
 // pass) because every wall call shares literal endpoint coordinates
 // (BOX_X1/X2/Y1/Y2) and the bow envelope pins t=0/t=1 to those endpoints
 // exactly, same guarantee level-003/007's pocket-wall joins rely on.
+// **Re-confirmed unchanged post-2026-09-02-resize** -- same count=7/
+// 61.85px worst-case/58.15px margin, since the box's shape is untouched.
 //
-// Sizing: 7290x4101, i.e. level-003/004's 5400x3038 footprint scaled by
-// 7290/5400 = 4101/3038 (rounded from the exact 4101.3) = 1.35x -- both
-// target dimensions share that one factor, so it's a uniform scale-up
-// (level-design-guide.md §2), holding the established 16:9-ish aspect ratio
-// and growing beyond every level built so far (largest prior: level-007's
-// 7020x3949), per this guide's explicit floor ("holding steady or
-// growing... is fine, don't go smaller").
+// Sizing: originally 7290x4101, i.e. level-003/004's 5400x3038 footprint
+// scaled by 7290/5400 = 4101/3038 (rounded from the exact 4101.3) = 1.35x
+// -- both target dimensions shared that one factor, so it was a uniform
+// scale-up (level-design-guide.md §2), holding the established 16:9-ish
+// aspect ratio and growing beyond every level built so far at the time
+// (largest prior: level-007's 7020x3949), per this guide's explicit floor
+// ("holding steady or growing... is fine, don't go smaller").
+//
+// RESIZED 2026-09-02 (project-owner request, not evaluator-driven; third of
+// a same-day batch alongside level-006/level-007/level-008, level-009 done
+// in parallel): shrunk from 7290x4101 down to exactly 6000x3375, matching
+// level-005/006/007/008's new project-wide max footprint. Per
+// level-design-guide.md §11, this is NOT the uniform single-factor scale
+// §2/§10 use for same-shape resizes -- 7290x4101 isn't exactly 16:9 the way
+// 6000x3375 is, so two independent per-axis factors were used:
+// scaleX = 6000/7290 = 0.823045, scaleY = 3375/4101 = 0.822970. Safe to
+// apply independently here specifically because every wall in this file
+// (all four maze walls, all four vault walls) is axis-aligned (perfectly
+// vertical or horizontal, confirmed by inspecting every debrisWall() call
+// below) -- non-uniform per-axis scaling introduces zero shear for
+// axis-aligned geometry (it would for a diagonal wall, like level-009's
+// wallC). Every plain point placement (objectives, resupply, Nebula/Ion
+// Storm/Meteoroid instances) was scaled directly; every debrisWall() call
+// (all eight) was re-run from newly-scaled *endpoints* rather than scaling
+// the pre-generated instance arrays (§11's explicit warning), with spacing
+// (100 on the four maze walls, 60 on the four vault walls) and the
+// undulation constants (SWEEP_AMPLITUDE/TEXTURE_AMPLITUDE/BOW_AMPLITUDE/
+// etc. above) deliberately left at their existing absolute-pixel values per
+// §11's stated default, since they're tied to Debris Field's fixed 60px
+// collision radius, not to level size. No wall needed a spacing override --
+// re-verified by regenerating every array and measuring actual worst-case
+// neighbor distance, not assumed: the four maze walls land at 100.4/99.8/
+// 100.4/99.8px (all comfortably under 120px, ~19-20px margin, essentially
+// identical to the pre-resize ~19px margin), and the four vault walls land
+// at 61.85px each (unchanged -- see the vault geometry comment above for
+// why), with all four vault corner joins still exactly 0.00px. The vault's
+// box (BOX_HALF_WIDTH/HEIGHT, 180px) was deliberately left UNSCALED -- see
+// this file's earlier vault-constants comment for the full rationale
+// (parallel to level-007's POCKET_WALL_CLEARANCE treatment) -- PROBE_X/Y
+// are re-derived from the scaled Probe location, then BOX_X1/X2/Y1/Y2 from
+// that plus the still-180px clearance.
+//
+// One real, non-moving-hazard finding from this resize's re-verification,
+// distinct from the moving-hazard trajectory audit below: the vault's own
+// approach passages (the open space between the vault's west/east walls
+// and the maze's flanking wallM0/wallM1, inside lane1) measurably narrowed.
+// Direct point-cloud measurement (min pairwise distance between the actual
+// generated wall/vault instance arrays, net of both walls' 60px debris
+// radii) gives: west passage 366.2px raw / 246.2px net pre-resize -> 246.0px
+// raw / 126.0px net post-resize; east passage 463.4px raw / 343.4px net
+// pre-resize -> 349.0px raw / 229.0px net post-resize. (These are a more
+// precise re-derivation than this file's original "220px west / 350px east"
+// prose estimate below, which was close but not exact -- the west figure in
+// particular undercounted by ~26px; both pre- and post-resize numbers above
+// use the identical measurement method, so the *change* they show is
+// apples-to-apples even though the pre-resize baseline itself moved
+// slightly from what was originally written.) Both post-resize net figures
+// remain well clear of the ship's 46x56px display size (more than double
+// the ship's width on the tighter west side, over 4x on the east) -- a
+// real, worth-flagging tightening from this resize, but not a break: no
+// repositioning was needed or attempted, since "shrink to fit new bounds
+// while keeping design intent intact" is this task's explicit scope, and a
+// narrower-but-still-comfortably-passable lane is squarely inside that,
+// not a structural failure requiring a redesign.
+//
+// Objective-spacing percentages (Probe<->Beacon 66.0%, Beacon<->Exit 76.8%,
+// Probe<->Exit 12.7%) came out unchanged to one decimal place from the
+// pre-resize figures below, since scaleX and scaleY are close enough
+// (0.823045 vs 0.822970) that diagonal-relative distances barely move --
+// only the raw px figures throughout this file's comments were updated.
 //
 // THE MAZE (four vertical walls, shorter than level-006's six, carrying the
-// vault above): walls at x = 1600, 2800, 4000, 5200 (1200px lanes -- wider
-// than level-006's 600px, giving the vault room to sit inside lane 1
-// without crowding either flanking wall). Gaps alternate bottom/top/
-// bottom/top, same serpentine principle as level-006: wallM0 (x=1600) is
-// solid y:20-2900, gap y:2900-4081 (bottom, ~1181px); wallM1 (x=2800) is
-// solid y:1100-4081, gap y:20-1100 (top, ~1080px); wallM2 (x=4000) mirrors
-// wallM0; wallM3 (x=5200) mirrors wallM1. No wall spans a full map
-// dimension (each touches exactly one edge, per §5's hard rule), and every
-// gap is vastly wider than the ~120px two-debris-radius minimum, so the
-// maze stays solvable by normal movement alone (the vault requires
-// teleport; the maze itself never does).
+// vault above): walls at x = 1317, 2305, 3292, 4280 (988px lanes -- was
+// x = 1600, 2800, 4000, 5200 at 1200px lanes pre-resize; still wider than
+// level-006's post-resize ~555px lanes, giving the vault room to sit inside
+// lane 1 without crowding either flanking wall). Gaps alternate bottom/top/
+// bottom/top, same serpentine principle as level-006: wallM0 (x=1317) is
+// solid y:16-2387, gap y:2387-3359 (bottom, ~972px; was y:20-2900 solid,
+// gap y:2900-4081, ~1181px); wallM1 (x=2305) is solid y:905-3359, gap
+// y:16-905 (top, ~889px; was y:1100-4081 solid, gap y:20-1100, ~1080px);
+// wallM2 (x=3292) mirrors wallM0; wallM3 (x=4280) mirrors wallM1. No wall
+// spans a full map dimension (each touches exactly one edge, per §5's hard
+// rule), and every gap is vastly wider than the ~120px two-debris-radius
+// minimum, so the maze stays solvable by normal movement alone (the vault
+// requires teleport; the maze itself never does).
 //
 // REACHABILITY TRACE (west region -> east region, the long Probe<->Beacon
-// hop): west region (x<1600, open, Entry + Resupply) -> wallM0's bottom gap
-// (x=1600, y:2900-4081) -> lane1 (1600-2800; the vault sits at its
-// northern portion, PROBE_X/Y=(2150,1550), with a 220px passage on its west
-// side and a 350px passage on its east side around it -- both comfortably
-// more than the ship's ~56px width, confirmed by generating the vault's
-// actual bounding box, not eyeballed) -> wallM1's top gap (x=2800,
-// y:20-1100) -> lane2 (2800-4000, open) -> wallM2's bottom gap (x=4000,
-// y:2900-4081) -> lane3 (4000-5200, open) -> wallM3's top gap (x=5200,
-// y:20-1100) -> east region (x>5200, open, Beacon at 7100,4000). Return
-// trip (Beacon -> Exit) retraces the same maze in reverse, same
-// "cross-it-twice" compounding level-006/008 both already established for
-// their own axes.
+// hop): west region (x<1317, open, Entry + Resupply) -> wallM0's bottom gap
+// (x=1317, y:2387-3359) -> lane1 (1317-2305; the vault sits at its
+// northern portion, PROBE_X/Y=(1770,1276), with a ~126px net passage on its
+// west side and a ~229px net passage on its east side around it -- see the
+// resize-note passage-narrowing paragraph above for the precise pre/post
+// figures; both remain more than double the ship's ~46px width, confirmed
+// by generating the vault's actual bounding geometry, not eyeballed) ->
+// wallM1's top gap (x=2305, y:16-905) -> lane2 (2305-3292, open) ->
+// wallM2's bottom gap (x=3292, y:2387-3359) -> lane3 (3292-4280, open) ->
+// wallM3's top gap (x=4280, y:16-905) -> east region (x>4280, open, Beacon
+// at 5844,3292). Return trip (Beacon -> Exit) retraces the same maze in
+// reverse, same "cross-it-twice" compounding level-006/008 both already
+// established for their own axes.
 //
 // Objectives (§3 -- only *consecutive* Probe<->Beacon and Beacon<->Exit
 // need to be pushed far apart; non-consecutive Probe<->Exit is left close):
-// diagonal = sqrt(7290^2+4101^2) ~= 8364.3px. Probe(2150,1550) <->
-// Beacon(7100,4000): ~5523.1px (~66.0% of diagonal, inside the 65-76%
-// precedent band). Beacon <-> Exit(1100,1700): ~6425.7px (~76.8%, right at
-// the band's top edge -- matches level-005's own 77% landing). Probe <->
-// Exit (non-consecutive): ~1060.7px (~12.7%, inside the 12-13% band).
-// Entry sits at (400,3950), a genuine SW corner clear of every hazard
-// (nearest is wallM0, 1200px away). All figures computed from the exact
-// coordinates below, not estimated.
+// diagonal = sqrt(6000^2+3375^2) ~= 6884.1px. Probe(1770,1276) <->
+// Beacon(5844,3292): ~4545.5px (~66.0% of diagonal, inside the 65-76%
+// precedent band). Beacon <-> Exit(905,1399): ~5289.3px (~76.8%, right at
+// the band's top edge -- matches level-005's own 77% landing, and this
+// file's own pre-resize figure). Probe <-> Exit (non-consecutive):
+// ~873.7px (~12.7%, inside the 12-13% band). Entry sits at (329,3251), a
+// genuine SW corner clear of every hazard (nearest is wallM0, ~1312.5px
+// away, re-measured against the actual generated wall points). All figures
+// computed from the exact coordinates below, not estimated.
 //
-// Nebula Field (§6, four instances, placed with intent): an early-route
-// toll on Entry's way toward the maze (N1), a bypass toll right at wallM0's
-// gap threshold -- the maze's western entrance (N2), a bypass toll at
+// Nebula Field (§6, four instances, placed with intent, coordinates
+// rescaled 2026-09-02): an early-route toll on Entry's way toward the maze
+// (N1, 576,3045, was 700,3700 -- ~321.6px net of Entry), a bypass toll
+// right at wallM0's gap threshold -- the maze's western entrance (N2,
+// 1276,2551, was 1550,3100 -- ~480.4px net of Resupply), a bypass toll at
 // wallM3's gap threshold -- the maze's eastern exit, right before the
-// Beacon approach (N3), and a bridging toll on the close Probe<->Exit hop,
-// sitting in lane1 on the path back from the vault toward Exit (N4). N2 and
-// N4 are deliberately allowed to sit against/slightly inside a Debris Field
-// wall's edge per §6 ("fine, even good... reads as a compound obstacle").
-// Every instance keeps 250px+ net clearance from every objective/resupply
-// point (verified by distance below, not eyeballed) -- the two exceptions
-// are N2/N4's intentional overlap with wallM0 itself, which isn't an
-// objective and isn't subject to that floor.
+// Beacon approach (N3, 4280,576, was 5200,700 -- ~2605.8px net of Probe),
+// and a bridging toll on the close Probe<->Exit hop, sitting in lane1 on
+// the path back from the vault toward Exit (N4, 1440,1728, was 1750,2100 --
+// ~559.6px net of Probe). N2 and N4 are deliberately allowed to sit
+// against/slightly inside a Debris Field wall's edge per §6 ("fine, even
+// good... reads as a compound obstacle"). Every instance keeps 250px+ net
+// clearance from every objective/resupply point (re-verified by distance
+// above, not eyeballed) -- the two exceptions are N2/N4's intentional
+// overlap with wallM0 itself, which isn't an objective and isn't subject to
+// that floor.
 //
 // Moving hazards (§7): 4 Ion Storm + 3 Meteoroid -- the current expanded
 // baseline (level-005 pushed further to 5+4 as its own density axis;
@@ -270,9 +362,9 @@ const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
 // placements that were already clean were the two already positioned
 // entirely on the far side of every wall in their fixed direction of
 // travel (Ion Storm west of wallM0, Meteoroid east of wallM3) -- so all
-// four Ion Storm instances now sit in the open west region (x<1600, west
+// four Ion Storm instances now sit in the open west region (x<1317, west
 // of wallM0, heading further west/away from the maze) and all three
-// Meteoroid instances now sit in the open east region (x>5200, east of
+// Meteoroid instances now sit in the open east region (x>4280, east of
 // wallM3, heading further east/away from the maze). This is a real,
 // documented change to this candidate's moving-hazard distribution (all
 // four Ion Storm now share one region instead of one per lane), not a
@@ -283,25 +375,43 @@ const BOX_Y2 = PROBE_Y + BOX_HALF_HEIGHT; // 1730
 // after the move (20ms steps, trochoid carrier+orbit for Ion Storm,
 // straight line for Meteoroid): zero overlaps against every wall/vault/
 // objective/resupply point across all seven instances' complete first
-// legs, not just their initial points. Ion Storm's movementPattern is
+// legs, not just their initial points. Ion Storm's movementPattern was
 // 'trochoid' as of 2026-08-25 (a looping sweep, orbit-aware radius
-// 110+220=330, not a straight line) -- factored into the re-verification
-// above.
+// 110+220=330, not a straight line) -- factored into that re-verification.
 //
-// Resupply: one AsteroidField at (1250,3600), in the open west region
-// alongside Entry -- a natural stop before entering the maze. 250px+ clear
-// of every wall/objective (nearest: wallM0's endpoint, ~746px).
+// RE-VERIFIED POST-2026-09-02-RESIZE (coordinates rescaled per the
+// file-header resize comment above): Meteoroid switched 'linear' ->
+// 'homing' the same day (hazardConfig.ts, 2026-09-02), so its heading is no
+// longer fixed for a full leg -- only the short deterministic pre-retarget
+// segment applies (retargetIntervalSeconds=1s at this level's actual
+// player-start-to-hazard distances, all >>500px, so the closer-range 0.5s
+// interval never applies here; 280px/s * 1s = 280px straight east from each
+// start point). Re-ran both hazards' current-pattern simulations against
+// the new 6000x3375 bounds and rescaled coordinates: all 4 Ion Storm
+// placements' full carrier+orbit first legs (5.9-6.5s until wrapping out of
+// bounds) stay at least 326px clear of every maze/vault wall and every
+// objective/resupply point; all 3 Meteoroid placements' 280px pre-retarget
+// segments stay at least 307px clear of the same. Zero new overlaps
+// introduced by the resize -- every wall/objective clearance margin shrank
+// by roughly the same ~17-18% the axis scale factors imply (consistent with
+// a uniform-ish scale-down, not a qualitatively new problem), and every
+// placement that was clean before the resize is still clean after it.
+//
+// Resupply: one AsteroidField at (1029,2963) (was 1250,3600), in the open
+// west region alongside Entry -- a natural stop before entering the maze.
+// 250px+ clear of every wall/objective (nearest: wallM0, ~644.0px,
+// re-measured against the actual generated wall points).
 //
 // No puzzle-taxonomy element placed (consistent with every real level so
 // far -- Phase 2b content, still unstarted).
 // Named so the dev-only sanity checks below can re-inspect the same
 // generated arrays the hazards list spreads. Maze walls count@spacing100:
-// 30, 31, 30, 31 -- all sweep (>=8). Vault walls count@spacing60: 7 each --
-// all bow (4-7).
-const wallM0 = debrisWall(1600, 20, 1600, 2900, 100); // maze wall 0 -- bottom gap (y:2900-4081)
-const wallM1 = debrisWall(2800, 1100, 2800, 4081, 100); // maze wall 1 -- top gap (y:20-1100); vault sits in this lane
-const wallM2 = debrisWall(4000, 20, 4000, 2900, 100); // maze wall 2 -- bottom gap (y:2900-4081)
-const wallM3 = debrisWall(5200, 1100, 5200, 4081, 100); // maze wall 3 -- top gap (y:20-1100)
+// 25, 26, 25, 26 (was 30, 31, 30, 31 pre-resize) -- all sweep (>=8). Vault
+// walls count@spacing60: 7 each (unchanged) -- all bow (4-7).
+const wallM0 = debrisWall(1317, 16, 1317, 2387, 100); // maze wall 0 -- bottom gap (y:2387-3359); was (1600,20)-(1600,2900)
+const wallM1 = debrisWall(2305, 905, 2305, 3359, 100); // maze wall 1 -- top gap (y:16-905); vault sits in this lane; was (2800,1100)-(2800,4081)
+const wallM2 = debrisWall(3292, 16, 3292, 2387, 100); // maze wall 2 -- bottom gap (y:2387-3359); was (4000,20)-(4000,2900)
+const wallM3 = debrisWall(4280, 905, 4280, 3359, 100); // maze wall 3 -- top gap (y:16-905); was (5200,1100)-(5200,4081)
 
 // The vault's four walls -- spacing=60, not the project's usual 100 (see
 // the file-level comment above for the verified safety margin this buys).
@@ -311,41 +421,44 @@ const vaultNorth = debrisWall(BOX_X1, BOX_Y1, BOX_X2, BOX_Y1, 60);
 const vaultSouth = debrisWall(BOX_X1, BOX_Y2, BOX_X2, BOX_Y2, 60);
 
 export const LEVEL_010: LevelConfig = {
-  width: 7290,
-  height: 4101,
-  entryWormholeLocation: { x: 400, y: 3950 },
-  exitWormholeLocation: { x: 1100, y: 1700 },
-  probeLocation: { x: PROBE_X, y: PROBE_Y },
-  relayBeaconLocation: { x: 7100, y: 4000 },
+  width: 6000,
+  height: 3375,
+  entryWormholeLocation: { x: 329, y: 3251 }, // was (400, 3950)
+  exitWormholeLocation: { x: 905, y: 1399 }, // was (1100, 1700)
+  probeLocation: { x: PROBE_X, y: PROBE_Y }, // was (2150, 1550)
+  relayBeaconLocation: { x: 5844, y: 3292 }, // was (7100, 4000)
 
-  resupplyPoints: [{ x: 1250, y: 3600, textureKey: 'asteroid_large', radius: 40 }],
+  resupplyPoints: [{ x: 1029, y: 2963, textureKey: 'asteroid_large', radius: 40 }], // was (1250, 3600)
 
   hazards: [
     // Nebula Field -- four instances, placed with intent (see file comment
     // above for each one's role/clearance). Cycles the three sourced
     // Nebula Field textures so four instances on one map don't read as one
-    // sprite copy-pasted four times.
-    { type: 'nebulaField', x: 700, y: 3700, textureKey: NEBULA_TEXTURES[0] }, // early-route toll, Entry -> maze
-    { type: 'nebulaField', x: 1550, y: 3100, textureKey: NEBULA_TEXTURES[1] }, // bypass toll at wallM0's gap threshold (maze's west entrance)
-    { type: 'nebulaField', x: 5200, y: 700, textureKey: NEBULA_TEXTURES[2] }, // bypass toll at wallM3's gap threshold (maze's east exit, before Beacon)
-    { type: 'nebulaField', x: 1750, y: 2100, textureKey: NEBULA_TEXTURES[0] }, // bridging toll, lane1 on the path back toward Exit
+    // sprite copy-pasted four times. Coordinates rescaled 2026-09-02
+    // (scaleX=0.823045, scaleY=0.822970).
+    { type: 'nebulaField', x: 576, y: 3045, textureKey: NEBULA_TEXTURES[0] }, // early-route toll, Entry -> maze; was (700, 3700)
+    { type: 'nebulaField', x: 1276, y: 2551, textureKey: NEBULA_TEXTURES[1] }, // bypass toll at wallM0's gap threshold (maze's west entrance); was (1550, 3100)
+    { type: 'nebulaField', x: 4280, y: 576, textureKey: NEBULA_TEXTURES[2] }, // bypass toll at wallM3's gap threshold (maze's east exit, before Beacon); was (5200, 700)
+    { type: 'nebulaField', x: 1440, y: 1728, textureKey: NEBULA_TEXTURES[0] }, // bridging toll, lane1 on the path back toward Exit; was (1750, 2100)
 
     // Ion Storm / Meteoroid -- managed by MovingHazardManager. Initial
     // positions only, held at the current expanded baseline (4-3, see file
     // comment above). REPOSITIONED round 1 (see file comment above for the
-    // full rationale): all 4 Ion Storm now sit west of wallM0 (heading due
+    // full rationale): all 4 Ion Storm sit west of wallM0 (heading due
     // west, per hazardConfig.ts -- moving further away from the maze for
-    // their entire first leg), all 3 Meteoroid now sit east of wallM3
-    // (heading due east -- same reasoning). Every instance re-verified
-    // clean across its complete first-leg trajectory, not just its initial
-    // point.
-    { type: 'ionStorm', x: 750, y: 300 }, // west region, north -- was (3400,2200), overlapped wallM0/wallM1
-    { type: 'ionStorm', x: 1000, y: 2200 }, // west region, mid -- was (4600,1900), overlapped wallM0/wallM1/wallM2
-    { type: 'ionStorm', x: 650, y: 2750 }, // west region, south -- was (6200,2200), overlapped all four maze walls
-    { type: 'ionStorm', x: 900, y: 1000 }, // west region -- unchanged, already clean
-    { type: 'meteoroid', x: 5700, y: 1600 }, // east region, north -- was (2200,3400), overlapped wallM1/wallM3
-    { type: 'meteoroid', x: 5900, y: 2400 }, // east region, mid -- was (3400,900), overlapped wallM2
-    { type: 'meteoroid', x: 6500, y: 900 }, // east region -- unchanged, already clean
+    // their entire first leg), all 3 Meteoroid sit east of wallM3 (heading
+    // due east -- same reasoning). Coordinates rescaled 2026-09-02
+    // (scaleX=0.823045, scaleY=0.822970) and re-verified against the
+    // current movement patterns (Ion Storm 'trochoid', Meteoroid 'homing')
+    // -- see the file-header resize comment's "RE-VERIFIED
+    // POST-2026-09-02-RESIZE" paragraph. Zero new overlaps found.
+    { type: 'ionStorm', x: 617, y: 247 }, // west region, north; was (750, 300)
+    { type: 'ionStorm', x: 823, y: 1811 }, // west region, mid; was (1000, 2200)
+    { type: 'ionStorm', x: 535, y: 2263 }, // west region, south; was (650, 2750)
+    { type: 'ionStorm', x: 741, y: 823 }, // west region; was (900, 1000)
+    { type: 'meteoroid', x: 4691, y: 1317 }, // east region, north; was (5700, 1600)
+    { type: 'meteoroid', x: 4856, y: 1975 }, // east region, mid; was (5900, 2400)
+    { type: 'meteoroid', x: 5350, y: 741 }, // east region; was (6500, 900)
 
     // The maze -- four parallel vertical walls with alternating single
     // gaps (see file-level comment above for the full reachability trace).

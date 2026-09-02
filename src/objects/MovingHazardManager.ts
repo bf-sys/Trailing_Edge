@@ -3,10 +3,13 @@ import type { LevelObjectiveTracker } from './LevelObjectiveTracker';
 import { movingHazardConfig } from '../config/movingHazardConfig';
 import { getPlayerShip } from '../systems/ExplorationController';
 
-// Keeps 'linear' movementPattern hazards (Ion Storm, Meteoroid -- the only
-// two hazardConfig.ts entries using that pattern) inside a level instead of
-// letting them drift off into the world bounds and never come back
-// (GDD §9/§11.3). GameScene owns one of these per level, same lifecycle as
+// Keeps the moving hazards (Ion Storm -- 'trochoid'; Meteoroid -- 'homing'
+// as of 2026-09-02, previously 'linear') inside a level instead of letting
+// them drift off into the world bounds and never come back (GDD §9/§11.3).
+// Pattern-agnostic by design -- this class only reads getPosition() and
+// calls reposition(), both of which every moving HazardZoneElement
+// implements regardless of movementPattern, so a new pattern (like
+// 'homing') needs no changes here. GameScene owns one of these per level, same lifecycle as
 // this.hazards/this.resupplyPoints -- reset each create(), not a
 // SystemRegistry singleton, since moving-hazard state has no reason to
 // survive a hard-fail restart the way ProgressionManager's unlocks do.
@@ -70,7 +73,8 @@ export class MovingHazardManager {
     });
   }
 
-  // A 'linear'/'trochoid' hazard is never supposed to sit still -- if one
+  // A 'linear'/'trochoid'/'homing' hazard is never supposed to sit still --
+  // if one
   // has moved slower than stallSpeedThresholdPxPerSecond for
   // stallTimeoutSeconds straight, treat it the same as drifting out of
   // bounds: this is the safety-net half of the 2026-08-26 fix for a

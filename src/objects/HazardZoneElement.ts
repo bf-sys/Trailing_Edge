@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getPlayerShip, getExplorationController } from '../systems/ExplorationController';
+import type { PlayerShip } from './PlayerShip';
 import { setCircleFromWorldRadius, setRectFromWorldSize } from './arcadeBodyHelpers';
 
 export type HazardShape =
@@ -14,7 +15,23 @@ export type HazardShape =
 // band roughly 2x orbitRadius wide across the map instead of a single
 // infinitely-thin line, on purpose distinct from Meteoroid's straight
 // charge. See HazardZoneElement's initTrochoid()/update() for the math.
-export type HazardMovementPattern = 'static' | 'linear' | 'trochoid' | 'patrol';
+//
+// 'homing' (added 2026-09-02, Meteoroid rework -- user request: "a more
+// present threat... something the player has to react to more
+// consistently"). Re-aims a target heading at the player every
+// retargetIntervalSeconds (not continuously -- a constantly-updating target
+// reads as an inescapable laser-lock rather than something reactable), then
+// turns the hazard's *actual* travel heading toward that target every frame
+// at a capped maxTurnRateRadiansPerSecond -- speed stays constant
+// (config.speed, same as 'linear'), so a fixed max angular rate is exactly a
+// fixed turn radius (r = speed / angularRate). See
+// updateHomingHeading()/computeHomingTargetHeading() for the full
+// mechanism: targeting is always first-order predictive lead (a plain
+// pure-pursuit fallback at close range was tried and reverted the same day
+// -- read as "weird" in practice), and the retarget cadence itself tightens
+// at close range instead (homingCloseRangeDistancePx/
+// homingCloseRetargetIntervalSeconds).
+export type HazardMovementPattern = 'static' | 'linear' | 'trochoid' | 'patrol' | 'homing';
 // 'impact' applies resourceCost as a one-time lump on contact rather than a
 // per-second/per-pulse rate, gated by hitCooldownSeconds so a lingering
 // overlap (e.g. getting shoved out by a blocksMovement collider) doesn't
@@ -146,6 +163,28 @@ export interface HazardZoneConfig {
   // (see PlayerShip.ts) -- the codebase's established depth ladder,
   // documented alongside destinationMarkerConfig/thrusterVfxConfig/etc.
   depth?: number;
+  // 'homing' movementPattern only (added 2026-09-02, Meteoroid). How often
+  // (seconds) the target heading is recomputed from the player's live
+  // position -- unset defaults to 1s ("every second or so" per the request
+  // this shipped from). Deliberately not continuous -- see
+  // HazardMovementPattern's 'homing' comment.
+  retargetIntervalSeconds?: number;
+  // 'homing' movementPattern only. Max angular speed (radians/s) the
+  // hazard's actual heading can turn toward the current target heading --
+  // this, combined with the constant speed above, is what gives it a real
+  // turn radius rather than an instant snap. Unset defaults to Math.PI
+  // (effectively unlimited over one frame at normal framerates).
+  maxTurnRateRadiansPerSecond?: number;
+  // 'homing' movementPattern only (added 2026-09-02, retargeting always
+  // uses predictive lead -- see computeHomingTargetHeading()). Distance
+  // (px) below which the retarget cadence switches from
+  // retargetIntervalSeconds to the faster
+  // homingCloseRetargetIntervalSeconds. Unset defaults to 500.
+  homingCloseRangeDistancePx?: number;
+  // 'homing' movementPattern only. Retarget interval (seconds) used once
+  // within homingCloseRangeDistancePx -- see updateHomingHeading()'s
+  // comment for why close range re-aims faster. Unset defaults to 0.5.
+  homingCloseRetargetIntervalSeconds?: number;
 }
 
 // One parameterized class for all four open-world "zone" hazards (Debris
@@ -174,12 +213,21 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
   private trochoidHeadingRadians = 0;
   private trochoidAngle = 0;
 
-  // 'linear' movement state (2026-08-26 fix) -- the hazard's *current*
-  // heading, which reposition() changes on every wrap (MovingHazardManager),
-  // as distinct from config.headingRadians (the fixed authored value for the
-  // hazard's first leg only). update() redrives velocity from this every
-  // frame -- see that method's comment for why.
+  // 'linear'/'homing' movement state (2026-08-26 fix, extended 2026-09-02
+  // for 'homing') -- the hazard's *current* heading, which reposition()
+  // changes on every wrap (MovingHazardManager) and 'homing' additionally
+  // turns continuously every frame, as distinct from config.headingRadians
+  // (the fixed authored value for the hazard's first leg only). update()
+  // redrives velocity from this every frame -- see that method's comment
+  // for why.
   private linearHeadingRadians = 0;
+
+  // 'homing' movement state (2026-09-02) -- the heading updateHomingHeading()
+  // is currently turning linearHeadingRadians toward, refreshed only once
+  // per retargetIntervalSeconds (see computeHomingTargetHeading()), plus the
+  // elapsed-time clock driving that cadence.
+  private homingTargetHeadingRadians = 0;
+  private homingRetargetElapsedSeconds = 0;
 
   constructor(scene: Phaser.Scene, config: HazardZoneConfig) {
     super();
@@ -258,6 +306,13 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
 
     this.zone.setPosition(x, y);
     this.linearHeadingRadians = headingRadians;
+    // 'homing' state reset: a wrap/stall reposition already hands this
+    // hazard a fresh objective-biased heading via headingRadians above --
+    // start the next retarget cycle from here rather than resuming a
+    // partway-elapsed timer aimed at wherever the player was before the
+    // wrap.
+    this.homingTargetHeadingRadians = headingRadians;
+    this.homingRetargetElapsedSeconds = 0;
     const body = this.zone.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(Math.cos(headingRadians) * this.config.speed, Math.sin(headingRadians) * this.config.speed);
     if (this.config.spriteFacingOffsetRadians !== undefined) {
@@ -315,7 +370,11 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
     // keeps real Arcade-driven movement, since Meteoroid's blocksMovement
     // collision response depends on it, just stops trusting it to persist
     // unattended).
-    if (this.config.movementPattern === 'linear') {
+    if (this.config.movementPattern === 'homing') {
+      this.updateHomingHeading(time, dt);
+    }
+
+    if (this.config.movementPattern === 'linear' || this.config.movementPattern === 'homing') {
       const body = this.zone.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(Math.cos(this.linearHeadingRadians) * this.config.speed, Math.sin(this.linearHeadingRadians) * this.config.speed);
     }
@@ -377,6 +436,84 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
     }
   }
 
+  // 'homing' movementPattern (2026-09-02). Re-aims homingTargetHeadingRadians
+  // from the player's live position once per retarget interval, then turns
+  // linearHeadingRadians toward it every frame at a capped
+  // maxTurnRateRadiansPerSecond -- the turn-radius clamp is just "how much
+  // angle can change per frame," applied via Phaser.Math.Angle.Wrap so the
+  // shorter rotational direction is always taken (never spins the long way
+  // around past +-pi).
+  //
+  // Retarget cadence tightens at close range (2026-09-02 follow-up, user
+  // catch): retargetIntervalSeconds (1s) applies beyond
+  // homingCloseRangeDistancePx, but inside it the hazard re-aims on the
+  // faster homingCloseRetargetIntervalSeconds (0.5s) cadence instead --
+  // predictive lead's own estimate gets noisier the closer/faster the
+  // approach (small timeToCloseSeconds swings the predicted point around
+  // more per retarget), so re-checking twice as often close in keeps that
+  // noise from reading as "the hazard just went dumb right when it should
+  // be most dangerous."
+  //
+  // Frozen for hitCooldownSeconds right after an impact hit (user request:
+  // "brief pause" before re-acquiring) -- both the retarget clock and the
+  // turn itself hold still, so applyKnockback()'s deflection gets a clean
+  // window to actually open some distance rather than the hazard
+  // immediately correcting back through it.
+  private updateHomingHeading(time: number, dt: number): void {
+    const ship = getPlayerShip();
+    if (!ship) return;
+
+    const cooldownMs = (this.config.hitCooldownSeconds ?? 1) * 1000;
+    if (time - this.lastHitTimeMs < cooldownMs) return;
+
+    const pos = this.getPosition();
+    const distance = Phaser.Math.Distance.Between(pos.x, pos.y, ship.image.x, ship.image.y);
+    const closeRange = this.config.homingCloseRangeDistancePx ?? 500;
+    const interval =
+      distance <= closeRange
+        ? this.config.homingCloseRetargetIntervalSeconds ?? 0.5
+        : this.config.retargetIntervalSeconds ?? 1;
+
+    this.homingRetargetElapsedSeconds += dt;
+    if (this.homingRetargetElapsedSeconds >= interval) {
+      this.homingRetargetElapsedSeconds -= interval;
+      this.homingTargetHeadingRadians = this.computeHomingTargetHeading(ship, pos, distance);
+    }
+
+    const maxTurn = (this.config.maxTurnRateRadiansPerSecond ?? Math.PI) * dt;
+    const delta = Phaser.Math.Angle.Wrap(this.homingTargetHeadingRadians - this.linearHeadingRadians);
+    // Wrapped back into [-pi, pi] (not just the per-step delta above) --
+    // otherwise linearHeadingRadians drifts by whole turns over a long
+    // homing chase (confirmed via a synthetic multi-second test: it reached
+    // -377deg and climbing). Harmless for cos()/sin() either way, but an
+    // unbounded accumulator is bad hygiene and makes live-debugging the
+    // heading value confusing.
+    this.linearHeadingRadians = Phaser.Math.Angle.Wrap(
+      this.linearHeadingRadians + Phaser.Math.Clamp(delta, -maxTurn, maxTurn),
+    );
+
+    if (this.config.spriteFacingOffsetRadians !== undefined) {
+      this.zone.setRotation(this.linearHeadingRadians + this.config.spriteFacingOffsetRadians);
+    }
+  }
+
+  // First-order predictive lead at every range (2026-09-02 follow-up --
+  // user request: the near-range switch to plain pure pursuit read as
+  // "weird," so this now always leads, and homingCloseRangeDistancePx/
+  // homingCloseRetargetIntervalSeconds above handle the close-range
+  // behavior instead by re-aiming more often rather than by changing *how*
+  // it aims). Aims at the player's current position plus their current
+  // velocity times the estimated time-to-close (distance / this hazard's
+  // own speed) -- a real intercept course, not a tail-chase toward where
+  // the player already was.
+  private computeHomingTargetHeading(ship: PlayerShip, pos: { x: number; y: number }, distance: number): number {
+    const body = ship.image.body as Phaser.Physics.Arcade.Body;
+    const timeToCloseSeconds = distance / this.config.speed;
+    const predictedX = ship.image.x + body.velocity.x * timeToCloseSeconds;
+    const predictedY = ship.image.y + body.velocity.y * timeToCloseSeconds;
+    return Math.atan2(predictedY - pos.y, predictedX - pos.x);
+  }
+
   private isOverlappingShip(): boolean {
     const ship = getPlayerShip();
     if (!ship) return false;
@@ -422,9 +559,13 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
 
     if (movementPattern === 'static') return;
 
-    if (movementPattern === 'linear') {
+    if (movementPattern === 'linear' || movementPattern === 'homing') {
       const heading = this.config.headingRadians ?? 0;
       this.linearHeadingRadians = heading;
+      // 'homing' only -- seeds the first retarget target at the authored
+      // launch heading, so there's no re-aim pop on frame one before the
+      // first retargetIntervalSeconds tick lands.
+      this.homingTargetHeadingRadians = heading;
       body.setVelocity(Math.cos(heading) * speed, Math.sin(heading) * speed);
       if (this.config.spriteFacingOffsetRadians !== undefined) {
         this.zone.setRotation(heading + this.config.spriteFacingOffsetRadians);
@@ -509,9 +650,17 @@ export class HazardZoneElement extends Phaser.Events.EventEmitter {
   // to (playtesting: still felt "sticky" head-on with the radial version).
   // Deflecting sideways, out of the hazard's path, is what actually
   // resolves a head-on hit. Static hazards have no defined line of travel;
-  // headingRadians defaults to 0 the same way applyMovement()'s does.
+  // linearHeadingRadians defaults to 0 the same way applyMovement()'s does.
+  //
+  // Reads linearHeadingRadians (the *live* current heading), not
+  // config.headingRadians (2026-09-02 fix) -- the latter is only ever the
+  // fixed authored value for a hazard's first leg and goes stale the moment
+  // MovingHazardManager wraps a 'linear' hazard to a new heading, or (far
+  // more significantly) every single frame for 'homing', which never stops
+  // turning. Using the stale static value would deflect the ship relative
+  // to a direction the hazard may not even be traveling anymore.
   private applyKnockback(ship: Phaser.Physics.Arcade.Image, speed: number): void {
-    const heading = this.config.headingRadians ?? 0;
+    const heading = this.linearHeadingRadians;
     const perpX = -Math.sin(heading);
     const perpY = Math.cos(heading);
 

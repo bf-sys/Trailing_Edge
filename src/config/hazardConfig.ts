@@ -46,6 +46,12 @@ export interface HazardTypeConfig {
   // 'continuous' activation only (added 2026-08-25, Nebula Field). See
   // HazardZoneConfig's comment in HazardZoneElement.ts for the math.
   exposureRampPerSecond?: number;
+  // 'homing' movementPattern only (added 2026-09-02, Meteoroid). See
+  // HazardZoneConfig's comments in HazardZoneElement.ts for the math.
+  retargetIntervalSeconds?: number;
+  maxTurnRateRadiansPerSecond?: number;
+  homingCloseRangeDistancePx?: number;
+  homingCloseRetargetIntervalSeconds?: number;
   activation: HazardActivation;
   pulseIntervalSeconds?: number;
   hitCooldownSeconds?: number;
@@ -136,8 +142,12 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
   // (radius * angularSpeed ~= 276px/s) intentionally exceeds the carrier's
   // forward speed -- that's what makes it trace visible loop-the-loops (a
   // true trochoid, not just a wavy line) rather than a gentle sideways
-  // wobble. Meteoroid stays 'linear' on purpose -- see
-  // HazardMovementPattern's 'trochoid' comment in HazardZoneElement.ts.
+  // wobble. Meteoroid was 'linear' at the time this was written but has
+  // since switched to 'homing' (2026-09-02, see that hazard's own entry
+  // below) -- the two moving hazards still read as visually distinct
+  // (looping drift vs. a turning pursuit), just no longer via
+  // straight-line-vs-loop. See HazardMovementPattern's 'trochoid' comment in
+  // HazardZoneElement.ts.
   // Carrier speed dropped 200 -> 100 (2026-08-25, user playtest feedback
   // after a few in-browser iterations of the trochoid pattern) -- widens the
   // gap under the 276px/s tangential loop speed further, reads better with
@@ -236,9 +246,40 @@ export const hazardConfig: Record<HazardType, HazardTypeConfig> = {
     textureKey: 'hazard_meteoroid',
     displayName: 'METEOROID',
     shape: { kind: 'circle', radius: 56 },
-    movementPattern: 'linear',
-    speed: 280, // bumped from 140, 2026-08-25 (live console tuning)
+    // Switched 'linear' -> 'homing' (2026-09-02, user request: "a more
+    // present threat... something the player has to react to more
+    // consistently"). Re-aims at the player every retargetIntervalSeconds
+    // rather than continuously, and turns toward that re-aim at a capped
+    // maxTurnRateRadiansPerSecond rather than snapping -- see
+    // HazardMovementPattern's 'homing' comment in HazardZoneElement.ts for
+    // the full mechanism. headingRadians below is now only the seed heading
+    // for the very first leg (same role it always had for 'linear'); every
+    // leg after that -- including the one MovingHazardManager sets on a
+    // wrap -- gets overridden by homing within one retargetIntervalSeconds.
+    movementPattern: 'homing',
+    speed: 280, // bumped from 140, 2026-08-25 (live console tuning) -- unchanged by the homing switch, still the hazard's constant travel speed
     headingRadians: 0,
+    // Retarget cadence: "every second or so" per the request this shipped
+    // from -- literal 1s, not jittered/randomized.
+    retargetIntervalSeconds: 1,
+    // Turn-radius clamp: user chose "wide" (~20deg/s) over tighter options
+    // presented during design -- a gentle drift-toward-you correction
+    // rather than a hard-locking turn, reads more as "menacing" than
+    // "unavoidable." At speed 280, this implies a turn radius of roughly
+    // speed / angularRate(rad/s) ~= 280 / 0.349 ~= 800px -- a wide arc, not
+    // a tight pivot.
+    maxTurnRateRadiansPerSecond: (20 * Math.PI) / 180,
+    // Close-range retarget speed-up (2026-09-02 follow-up -- user request,
+    // after a plain pure-pursuit-when-close variant read as "weird" in
+    // playtest and was reverted in favor of leading at every range instead;
+    // see computeHomingTargetHeading()'s comment). Within
+    // homingCloseRangeDistancePx, re-aims twice as often
+    // (homingCloseRetargetIntervalSeconds) as the default 1s cadence.
+    // First-pass values, unplayed at other settings -- retune via
+    // window.tuning.hazard.meteoroid if the close-range behavior still
+    // reads oddly.
+    homingCloseRangeDistancePx: 500,
+    homingCloseRetargetIntervalSeconds: 0.5,
     // hazard_meteoroid.png's rock+ember-trail art faces down-and-left at
     // zero rotation, not due east -- same "measure the art, name the
     // offset" approach shipConfig.ts's comment describes. Recalibrated

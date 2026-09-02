@@ -1,8 +1,9 @@
 import { registerTuning } from './devTuning';
 
-// Tunables for MovingHazardManager (GDD §9/§11.3 -- Ion Storm/Meteoroid,
-// the two 'linear' movementPattern hazards). See that class for the
-// wrap-on-exit + objective-biased respawn design.
+// Tunables for MovingHazardManager (GDD §9/§11.3 -- the two moving hazards,
+// Ion Storm and Meteoroid; pattern-agnostic, see that class's header
+// comment). See that class for the wrap-on-exit + objective-biased respawn
+// design.
 export interface MovingHazardConfig {
   // Radius (px) of the random offset applied to the aim point (see
   // routeBiasMin/Max below) when picking the point a respawned hazard's
